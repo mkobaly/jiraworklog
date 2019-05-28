@@ -1,0 +1,79 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "NkpNQgmrdzGr9HUDL8Bp5YAxt0k=",
+			"path": "cloud.google.com/go/civil",
+			"revision": "741d62a9e2a86526f0e5a7bbc556c12bc1843b0c",
+			"revisionTime": "2019-05-13T11:52:49Z"
+		},
+		{
+			"checksumSHA1": "Majo9jfnDYNBc9HWddrFWUeC38A=",
+			"path": "github.com/denisenkom/go-mssqldb",
+			"revision": "731ef375ac027e24d275c5432221dbec5007a647",
+			"revisionTime": "2019-04-23T18:37:35Z"
+		},
+		{
+			"checksumSHA1": "wu8t19t2rmyrrfDfdu9v7f/+iag=",
+			"path": "github.com/denisenkom/go-mssqldb/internal/cp",
+			"revision": "731ef375ac027e24d275c5432221dbec5007a647",
+			"revisionTime": "2019-04-23T18:37:35Z"
+		},
+		{
+			"checksumSHA1": "BxH9xJUqczhpL57gfKZe2/VlBHY=",
+			"path": "github.com/fatih/color",
+			"revision": "3f9d52f7176a6927daacff70a3e8d1dc2025c53e",
+			"revisionTime": "2018-10-10T23:13:11Z"
+		},
+		{
+			"checksumSHA1": "PeuJXRCKfJukCtws9H09FbxcPZs=",
+			"path": "github.com/galdor/go-cmdline",
+			"revision": "f6df57bc77ea68f584e76b0214c1681e8df1e93a",
+			"revisionTime": "2018-12-17T21:23:30Z"
+		},
+		{
+			"checksumSHA1": "vFb/tA6zAeUX1rCRmp3a1BNCmXU=",
+			"path": "github.com/jmoiron/sqlx",
+			"revision": "38398a30ed8516ffda617a04c822de09df8a3ec5",
+			"revisionTime": "2019-04-26T15:48:59Z"
+		},
+		{
+			"checksumSHA1": "i2O6Ji8ZL6q+EL+4cu/ftBytqZg=",
+			"path": "github.com/jmoiron/sqlx/reflectx",
+			"revision": "38398a30ed8516ffda617a04c822de09df8a3ec5",
+			"revisionTime": "2019-04-26T15:48:59Z"
+		},
+		{
+			"checksumSHA1": "jRou8frV+eGk0Cj6benPsxoEDAc=",
+			"path": "github.com/mattn/go-colorable",
+			"revision": "3a70a971f94a22f2fa562ffcc7a0eb45f5daf045",
+			"revisionTime": "2019-02-22T16:30:38Z"
+		},
+		{
+			"checksumSHA1": "FCTkVf8YbFJ4rAHSiFJm/tCiLbY=",
+			"path": "github.com/mattn/go-isatty",
+			"revision": "c1975dc15c1d481e8da23f6ed313bb071136b98f",
+			"revisionTime": "2019-04-24T07:51:23Z"
+		},
+		{
+			"checksumSHA1": "UDvj5huw3BaGehfVRCB1UGQAtP4=",
+			"path": "golang.org/x/crypto/md4",
+			"revision": "22d7a77e9e5f409e934ed268692e56707cd169e5",
+			"revisionTime": "2019-04-19T16:04:53Z"
+		},
+		{
+			"checksumSHA1": "EdfZ4tc+cXrt7HZw8+W53PTvj5Q=",
+			"path": "golang.org/x/sys/unix",
+			"revision": "a5b02f93d862f065920dd6a40dddc66b60d0dec4",
+			"revisionTime": "2019-05-09T06:39:11Z"
+		},
+		{
+			"checksumSHA1": "QqDq2x8XOU7IoOR98Cx1eiV5QY8=",
+			"path": "gopkg.in/yaml.v2",
+			"revision": "51d6538a90f86fe93ac480b35f37b2be17fef232",
+			"revisionTime": "2018-11-15T11:05:04Z"
+		}
+	],
+	"rootPath": "github.com/mkobaly/jiraworklog"
+}
