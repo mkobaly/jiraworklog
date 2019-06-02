@@ -1,4 +1,4 @@
-package main
+package jiraworklog
 
 type WorklogQuery struct {
 	Ids []int `json:"ids"`

@@ -15,6 +15,8 @@ import (
 //Writer is the interface that handles writing Jira Worklog items
 type Writer interface {
 	Write(w types.WorklogItem) error
+	NonResolvedIssues() ([]string, error)
+	UpdateResolutionDate(issueKey string, resolvedDate time.Time) error
 }
 
 //SQLWriter is the SQL Server writer
@@ -29,6 +31,21 @@ type SQLWriter struct {
 // 	issuePriority FROM worklog`)
 // 	return result, err
 // }
+
+func (r *SQLWriter) NonResolvedIssues() ([]string, error) {
+	result := []string{}
+	err := r.DB.Select(&result, `
+		SELECT distinct IssueKey
+		FROM worklog
+		where IssueResolvedDate IS NULL
+		UNION
+		SELECT distinct parentIssueKey
+		FROM worklog
+		where parentIssueId IS NOT NULL
+		and parentIssueResolvedDate IS NULL
+	 `)
+	return result, err
+}
 
 //Write will add the worklogItem to SQL server
 func (s *SQLWriter) Write(w types.WorklogItem) error {
@@ -59,6 +76,25 @@ func (s *SQLWriter) Write(w types.WorklogItem) error {
 		default:
 			return err
 		}
+	}
+	return nil
+}
+
+func (s *SQLWriter) UpdateResolutionDate(issueKey string, resolvedDate time.Time) error {
+	stmt, err := s.DB.Prepare(`
+		UPDATE worklog 
+			SET issueResolvedDate = @p2
+		WHERE issueKey = @p1
+
+		UPDATE worklog
+			SET parentIssueResolvedDate = @p2
+		WHERE parentIssueKey = @p1`)
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = stmt.Exec(issueKey, sqlDate(resolvedDate))
+	if err != nil {
+		return err
 	}
 	return nil
 }

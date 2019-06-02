@@ -6,3 +6,4 @@ config.yaml
 # external packages folder
 vendor/*/
 !vendor/vendor.json
+bin/*/

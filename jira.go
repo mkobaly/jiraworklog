@@ -1,4 +1,4 @@
-package main
+package jiraworklog
 
 import (
 	"bytes"
@@ -77,34 +77,9 @@ func (j *Jira) WorklogDetails(q *WorklogQuery) ([]Worklog, error) {
 	return worklogs, nil
 }
 
-func (j *Jira) Issue(w Worklog) (Issue, error) {
+func (j *Jira) Issue(idOrKey string) (Issue, error) {
 	issue := Issue{}
-	req, err := http.NewRequest("GET", j.Config.Jira.URL+"/issue/"+w.IssueID+"?fields=priority,summary,parent,status,aggregateprogress,progress,issuetype,timespent,aggregatetimespent,timeoriginalestimate,timetracking,resolutiondate,created", nil)
-	req.SetBasicAuth(j.Config.Jira.Username, j.Config.Jira.Password)
-	resp, err := j.client.Do(req)
-	if err != nil {
-		return issue, err
-	}
-
-	if resp.StatusCode != 200 {
-		if resp.StatusCode == 404 {
-			return issue, ErrIssueNotFound
-		}
-
-		return issue, fmt.Errorf("Not 200 response %d", resp.StatusCode)
-	}
-
-	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&issue)
-	if err != nil {
-		return issue, err
-	}
-	return issue, nil
-}
-
-func (j *Jira) IssueById(idOrKey string) (Issue, error) {
-	issue := Issue{}
-	req, err := http.NewRequest("GET", j.Config.Jira.URL+"/issue/"+idOrKey+"?fields=priority,summary,parent,status,aggregateprogress,progress,issuetype,timespent,aggregatetimespent,timeoriginalestimate,timetracking,resolutiondate,created", nil)
+	req, err := http.NewRequest("GET", j.Config.Jira.URL+"/issue/"+idOrKey+"?fields=priority,summary,parent,status,aggregateprogress,progress,issuetype,timespent,aggregatetimespent,timeoriginalestimate,timetracking,resolutiondate,created,statuscategorychangedate", nil)
 	req.SetBasicAuth(j.Config.Jira.Username, j.Config.Jira.Password)
 	resp, err := j.client.Do(req)
 	if err != nil {
@@ -190,10 +165,11 @@ type Issue struct {
 	Self   string `json:"self"`
 	Key    string `json:"key"`
 	Fields struct {
-		Summary        string  `json:"summary"`
-		Created        string  `json:created`
-		ResolutionDate *string `json:resolutiondate`
-		Issuetype      struct {
+		Summary                  string  `json:"summary"`
+		Created                  string  `json:created`
+		ResolutionDate           *string `json:resolutiondate`
+		StatusCategoryChangeDate *string `json:"statuscategorychangedate"`
+		Issuetype                struct {
 			Self        string `json:"self"`
 			ID          string `json:"id"`
 			Description string `json:"description"`

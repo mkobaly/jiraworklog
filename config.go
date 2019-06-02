@@ -1,4 +1,4 @@
-package main
+package jiraworklog
 
 import (
 	"errors"
@@ -8,7 +8,7 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-var errNoConfigFile = errors.New("No config file. One will be created for you")
+var ErrNoConfigFile = errors.New("No config file. One will be created for you")
 
 //JiraSettings represent connection and credential information to Jira
 type JiraSettings struct {
@@ -19,6 +19,7 @@ type JiraSettings struct {
 
 // Config holds info needed for connecting to Jira and SQL
 type Config struct {
+	path          string
 	Jira          JiraSettings
 	SQLConnection string
 	MaxWorklogID  int
@@ -27,8 +28,17 @@ type Config struct {
 	DoneStatus    []string
 }
 
-//Save will persist the configuration information to the given path
-func (c *Config) Save(path string) error {
+//Save will persist the configuration information
+func (c *Config) Save() error {
+	bytes, err := yaml.Marshal(c)
+	if err == nil {
+		return ioutil.WriteFile(c.path, bytes, 0777)
+	}
+	return err
+}
+
+//Write will persist the configuration information to the given path
+func (c *Config) Write(path string) error {
 	bytes, err := yaml.Marshal(c)
 	if err == nil {
 		return ioutil.WriteFile(path, bytes, 0777)
@@ -46,10 +56,11 @@ func LoadConfig(path string) (*Config, error) {
 		if err == nil {
 			ioutil.WriteFile(path, bytes, 0644)
 		}
-		return nil, errNoConfigFile
+		return nil, ErrNoConfigFile
 	}
 
 	var config = new(Config)
+	config.path = path
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
