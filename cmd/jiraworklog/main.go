@@ -72,19 +72,12 @@ func main() {
 	}
 	logger.Info(writer)
 
-	jiraWorklogDownloader := job.NewJiraDownloadWorklogs(cfg, writer, logger)
-
-	// job1 := jiraworklog.Job{Name: "job1", Interval: 8 * time.Second, Action: func() error {
-	// 	logger.Info("Job1 running")
-	// 	return nil
-	// }}
-	// job2 := jiraworklog.Job{Name: "job2", Interval: 5 * time.Second, Action: func() error {
-	// 	logger.Info("Job2 running")
-	// 	return nil
-	// }}
-	worker := jiraworklog.NewWorker2(logger, jiraWorklogDownloader)
+	jira := jiraworklog.NewJira(cfg)
+	//List out all jobs we need here to run
+	j1 := job.NewJiraDownloadWorklogs(cfg, jira, writer, logger)
+	j2 := job.NewJiraCheckResolution(cfg, jira, writer, logger)
+	worker := jiraworklog.NewWorker2(logger, j1, j2)
 	go worker.Start()
-	//time.Sleep(30 * time.Second)
 
 	select {
 	case sig := <-c:

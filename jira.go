@@ -12,6 +12,12 @@ import (
 //var errUnknownProject = errors.New("Unknown Project")
 var ErrIssueNotFound = errors.New("Jira Issue not found")
 
+type JiraReader interface {
+	WorklogsUpdated(timestamp int64) (UpdatedWorklogs, error)
+	WorklogDetails(ids []int) ([]Worklog, error)
+	Issue(idOrKey string) (Issue, error)
+}
+
 type Jira struct {
 	Config *Config
 	client *http.Client
@@ -50,8 +56,8 @@ func (j *Jira) WorklogsUpdated(timestamp int64) (UpdatedWorklogs, error) {
 	return worklog, nil
 }
 
-func (j *Jira) WorklogDetails(q *WorklogQuery) ([]Worklog, error) {
-	b, err := json.Marshal(q)
+func (j *Jira) WorklogDetails(ids []int) ([]Worklog, error) {
+	b, err := json.Marshal(ids)
 	if err != nil {
 		return nil, err
 	}
