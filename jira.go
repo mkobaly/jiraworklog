@@ -40,6 +40,7 @@ func (j *Jira) WorklogsUpdated(timestamp int64) (UpdatedWorklogs, error) {
 	req, err := http.NewRequest("GET", j.Config.Jira.URL+"/worklog/updated"+since, nil)
 	req.SetBasicAuth(j.Config.Jira.Username, j.Config.Jira.Password)
 	resp, err := j.client.Do(req)
+	defer resp.Body.Close()
 	if err != nil {
 		return worklog, err
 	}
@@ -57,16 +58,19 @@ func (j *Jira) WorklogsUpdated(timestamp int64) (UpdatedWorklogs, error) {
 }
 
 func (j *Jira) WorklogDetails(ids []int) ([]Worklog, error) {
+
+	ids = []int{47136, 47137}
 	b, err := json.Marshal(ids)
 	if err != nil {
 		return nil, err
 	}
 
 	var worklogs []Worklog
-	req, err := http.NewRequest("POST", j.Config.Jira.URL+"/worklog/list", bytes.NewReader(b))
+	req, err := http.NewRequest("POST", j.Config.Jira.URL+"/worklog/list", bytes.NewBuffer(b))
 	req.SetBasicAuth(j.Config.Jira.Username, j.Config.Jira.Password)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := j.client.Do(req)
+	defer resp.Body.Close()
 	if err != nil {
 		return worklogs, err
 	}
@@ -88,6 +92,7 @@ func (j *Jira) Issue(idOrKey string) (Issue, error) {
 	req, err := http.NewRequest("GET", j.Config.Jira.URL+"/issue/"+idOrKey+"?fields=priority,summary,parent,status,aggregateprogress,progress,issuetype,timespent,aggregatetimespent,timeoriginalestimate,timetracking,resolutiondate,created,statuscategorychangedate", nil)
 	req.SetBasicAuth(j.Config.Jira.Username, j.Config.Jira.Password)
 	resp, err := j.client.Do(req)
+	defer resp.Body.Close()
 	if err != nil {
 		return issue, err
 	}

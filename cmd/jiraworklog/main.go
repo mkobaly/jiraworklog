@@ -75,8 +75,8 @@ func main() {
 	jira := jiraworklog.NewJira(cfg)
 	//List out all jobs we need here to run
 	j1 := job.NewJiraDownloadWorklogs(cfg, jira, writer, logger)
-	j2 := job.NewJiraCheckResolution(cfg, jira, writer, logger)
-	worker := jiraworklog.NewWorker2(logger, j1, j2)
+	//j2 := job.NewJiraCheckResolution(cfg, jira, writer, logger)
+	worker := jiraworklog.NewWorker2(logger, j1) //, j2)
 	go worker.Start()
 
 	select {
@@ -85,19 +85,6 @@ func main() {
 		worker.Shutdown()
 		time.Sleep(1 * time.Second)
 	}
-
-	// worker := jiraworklog.NewWorker(90*time.Second, logger, func() error {
-	// 	err := workers.Run(cfg, writer, logger)
-	// 	return err
-	// })
-	// workerResolution := jiraworklog.NewWorker(5*time.Minute, logger, func() error {
-	// 	err := workers.RunResolution(cfg, writer, logger)
-	// 	return err
-	// })
-	// //go worker.Run()
-	// go workerResolution.Run()
-	//select {} // block forever
-
 }
 
 func loadWriter(writerType string, cfg *jiraworklog.Config) (writers.Writer, error) {
@@ -109,6 +96,8 @@ func loadWriter(writerType string, cfg *jiraworklog.Config) (writers.Writer, err
 		}
 		writer := &writers.SQLWriter{DB: db}
 		return writer, nil
+	case "BOLTDB":
+
 	case "GOOGLESHEET":
 		return nil, ErrUnknownWriter
 	default:

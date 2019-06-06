@@ -9,6 +9,48 @@
 			"revisionTime": "2019-05-13T11:52:49Z"
 		},
 		{
+			"checksumSHA1": "8FQA5hPbDu66O7xOmoGhTmCosRQ=",
+			"path": "github.com/asdine/storm",
+			"revision": "e0f77eada154c7c2670527a8566d3c045880224f",
+			"revisionTime": "2019-04-18T13:38:42Z"
+		},
+		{
+			"checksumSHA1": "KXHP3AdJVnDxab4J2mDknFi8SPQ=",
+			"path": "github.com/asdine/storm/codec",
+			"revision": "e0f77eada154c7c2670527a8566d3c045880224f",
+			"revisionTime": "2019-04-18T13:38:42Z"
+		},
+		{
+			"checksumSHA1": "8B9a1JXYnmmzo353mN/z9MgKa2M=",
+			"path": "github.com/asdine/storm/codec/json",
+			"revision": "e0f77eada154c7c2670527a8566d3c045880224f",
+			"revisionTime": "2019-04-18T13:38:42Z"
+		},
+		{
+			"checksumSHA1": "5XPQWo5ZFEQQsZxJ5ac4UnB8kqA=",
+			"path": "github.com/asdine/storm/index",
+			"revision": "e0f77eada154c7c2670527a8566d3c045880224f",
+			"revisionTime": "2019-04-18T13:38:42Z"
+		},
+		{
+			"checksumSHA1": "ZeWqJTItWb5wJVWTX/1yJ8SqK/g=",
+			"path": "github.com/asdine/storm/internal",
+			"revision": "e0f77eada154c7c2670527a8566d3c045880224f",
+			"revisionTime": "2019-04-18T13:38:42Z"
+		},
+		{
+			"checksumSHA1": "pBAB/c6IqkA39xxNyrsoLO7ZPsE=",
+			"path": "github.com/asdine/storm/q",
+			"revision": "e0f77eada154c7c2670527a8566d3c045880224f",
+			"revisionTime": "2019-04-18T13:38:42Z"
+		},
+		{
+			"checksumSHA1": "CSPbwbyzqA6sfORicn4HFtIhF/c=",
+			"path": "github.com/davecgh/go-spew/spew",
+			"revision": "d8f796af33cc11cb798c1aaeb27a4ebc5099927d",
+			"revisionTime": "2018-08-30T19:11:22Z"
+		},
+		{
 			"checksumSHA1": "Majo9jfnDYNBc9HWddrFWUeC38A=",
 			"path": "github.com/denisenkom/go-mssqldb",
 			"revision": "731ef375ac027e24d275c5432221dbec5007a647",
@@ -69,10 +111,58 @@
 			"revisionTime": "2019-02-27T00:00:51Z"
 		},
 		{
+			"checksumSHA1": "LuFv4/jlrmFNnDb/5SCSEPAM9vU=",
+			"path": "github.com/pmezard/go-difflib/difflib",
+			"revision": "5d4384ee4fb2527b0a1256a821ebfc92f91efefc",
+			"revisionTime": "2018-12-26T10:54:42Z"
+		},
+		{
 			"checksumSHA1": "SVO+Zm6SNwWrpgyc6mcTXbH4aJ8=",
 			"path": "github.com/sirupsen/logrus",
 			"revision": "2a22dbedbad1fd454910cd1f44f210ef90c28464",
 			"revisionTime": "2019-05-18T13:52:02Z"
+		},
+		{
+			"checksumSHA1": "tLHFmMOC2eMcXYaPXfifUVj3wX4=",
+			"path": "github.com/stretchr/objx",
+			"revision": "35313a95ee26395aa17d366c71a2ccf788fa69b6",
+			"revisionTime": "2019-04-15T11:18:23Z"
+		},
+		{
+			"checksumSHA1": "DBdcVxnvaINHhWyyGgih/Mel6gE=",
+			"path": "github.com/stretchr/testify",
+			"revision": "34c6fa2dc70986bccbbffcc6130f6920a924b075",
+			"revisionTime": "2019-03-04T09:57:49Z"
+		},
+		{
+			"checksumSHA1": "IIsn0Wdi5rHU8xca+FzDd+YeYlc=",
+			"path": "github.com/stretchr/testify/assert",
+			"revision": "34c6fa2dc70986bccbbffcc6130f6920a924b075",
+			"revisionTime": "2019-03-04T09:57:49Z"
+		},
+		{
+			"checksumSHA1": "fg3TzS9/QK3wZbzei3Z6O8XPLHg=",
+			"path": "github.com/stretchr/testify/http",
+			"revision": "34c6fa2dc70986bccbbffcc6130f6920a924b075",
+			"revisionTime": "2019-03-04T09:57:49Z"
+		},
+		{
+			"checksumSHA1": "lsdl3fgOiM4Iuy7xjTQxiBtAwB0=",
+			"path": "github.com/stretchr/testify/mock",
+			"revision": "34c6fa2dc70986bccbbffcc6130f6920a924b075",
+			"revisionTime": "2019-03-04T09:57:49Z"
+		},
+		{
+			"checksumSHA1": "IL+W0JvlL7zRZFsSVHiX2hectIs=",
+			"path": "github.com/stretchr/testify/require",
+			"revision": "34c6fa2dc70986bccbbffcc6130f6920a924b075",
+			"revisionTime": "2019-03-04T09:57:49Z"
+		},
+		{
+			"checksumSHA1": "7uLtnRlZqKRoI6ZJifUqHhPLYoE=",
+			"path": "go.etcd.io/bbolt",
+			"revision": "2eb7227adea1d5cf85f0bc2a82b7059b13c2fa68",
+			"revisionTime": "2019-05-28T20:21:53Z"
 		},
 		{
 			"checksumSHA1": "UDvj5huw3BaGehfVRCB1UGQAtP4=",

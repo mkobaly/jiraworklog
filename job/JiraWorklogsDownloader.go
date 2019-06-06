@@ -6,7 +6,6 @@ import (
 	"github.com/mkobaly/jiraworklog/writers"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -33,7 +32,7 @@ func (j *JiraWorklogsDownloader) GetName() string {
 }
 
 func (j *JiraWorklogsDownloader) GetInterval() time.Duration {
-	return time.Second * 90
+	return time.Second * 99999
 }
 
 func (j *JiraWorklogsDownloader) Run() error {
@@ -62,6 +61,9 @@ func (j *JiraWorklogsDownloader) Run() error {
 		//query.Add(w.WorklogID)
 	}
 	details, err := j.jira.WorklogDetails(ids)
+	if err != nil {
+		return errors.Wrap(err, "failed to fetch worklog details")
+	}
 
 	for _, wd := range details {
 		if !j.okToProcess(wd, j.cfg.UserList) {
@@ -83,7 +85,7 @@ func (j *JiraWorklogsDownloader) Run() error {
 			issueParent, err = j.jira.Issue(issue.ParentID())
 		}
 
-		workItem := j.convert(wd, issue, issueParent)
+		workItem := types.NewWorklogItem(wd, issue, issueParent)
 		err = j.writer.Write(workItem)
 		if err != nil {
 			return errors.Wrap(err, "error writting issue "+workItem.IssueKey)
@@ -113,52 +115,52 @@ func (j *JiraWorklogsDownloader) okToProcess(w jiraworklog.Worklog, userNames []
 	return false
 }
 
-func (j *JiraWorklogsDownloader) convert(w jiraworklog.Worklog, i jiraworklog.Issue, parentIssue jiraworklog.Issue) types.WorklogItem {
+// func (j *JiraWorklogsDownloader) convert(w jiraworklog.Worklog, i jiraworklog.Issue, parentIssue jiraworklog.Issue) types.WorklogItem {
 
-	id, _ := strconv.Atoi(w.ID)
-	issueID, _ := strconv.Atoi(i.ID)
-	started, _ := time.Parse("2006-01-02T15:04:05.000-0700", w.Started)
-	created, _ := time.Parse("2006-01-02T15:04:05.000-0700", i.Fields.Created)
-	resolved := time.Time{}
-	if i.Fields.ResolutionDate != nil {
-		resolved, _ = time.Parse("2006-01-02T15:04:05.000-0700", *i.Fields.ResolutionDate)
-	}
+// 	id, _ := strconv.Atoi(w.ID)
+// 	issueID, _ := strconv.Atoi(i.ID)
+// 	started, _ := time.Parse("2006-01-02T15:04:05.000-0700", w.Started)
+// 	created, _ := time.Parse("2006-01-02T15:04:05.000-0700", i.Fields.Created)
+// 	resolved := time.Time{}
+// 	if i.Fields.ResolutionDate != nil {
+// 		resolved, _ = time.Parse("2006-01-02T15:04:05.000-0700", *i.Fields.ResolutionDate)
+// 	}
 
-	wi := types.WorklogItem{
-		ID:                id,
-		Author:            w.Author.Key,
-		IssueID:           issueID,
-		IssueKey:          i.Key,
-		IssuePriority:     i.Fields.Priority.Name,
-		IssueType:         i.Fields.Issuetype.Name,
-		IssueSummary:      i.Fields.Summary,
-		IssueStatus:       i.Fields.Status.Name,
-		IssueCreateDate:   created,
-		IssueResolvedDate: resolved,
+// 	wi := types.WorklogItem{
+// 		ID:                id,
+// 		Author:            w.Author.Key,
+// 		IssueID:           issueID,
+// 		IssueKey:          i.Key,
+// 		IssuePriority:     i.Fields.Priority.Name,
+// 		IssueType:         i.Fields.Issuetype.Name,
+// 		IssueSummary:      i.Fields.Summary,
+// 		IssueStatus:       i.Fields.Status.Name,
+// 		IssueCreateDate:   created,
+// 		IssueResolvedDate: resolved,
 
-		TimeSpentSeconds:        w.TimeSpentSeconds,
-		OriginalEstimateSeconds: i.Fields.Timeoriginalestimate,
-		Started:                 started,
-		Project:                 strings.Split(i.Key, "-")[0],
-	}
+// 		TimeSpentSeconds:        w.TimeSpentSeconds,
+// 		OriginalEstimateSeconds: i.Fields.Timeoriginalestimate,
+// 		Started:                 started,
+// 		Project:                 strings.Split(i.Key, "-")[0],
+// 	}
 
-	if i.HasParent() {
+// 	if i.HasParent() {
 
-		created, _ := time.Parse("2006-01-02T15:04:05.000-0700", parentIssue.Fields.Created)
-		resolved := time.Time{}
-		if parentIssue.Fields.ResolutionDate != nil {
-			resolved, _ = time.Parse("2006-01-02T15:04:05.000-0700", *parentIssue.Fields.ResolutionDate)
-		}
+// 		created, _ := time.Parse("2006-01-02T15:04:05.000-0700", parentIssue.Fields.Created)
+// 		resolved := time.Time{}
+// 		if parentIssue.Fields.ResolutionDate != nil {
+// 			resolved, _ = time.Parse("2006-01-02T15:04:05.000-0700", *parentIssue.Fields.ResolutionDate)
+// 		}
 
-		parentID, _ := strconv.Atoi(i.Fields.Parent.ID)
-		wi.ParentIssueID = &parentID
-		wi.ParentIssueKey = &i.Fields.Parent.Key
-		wi.ParentIssueType = &parentIssue.Fields.Issuetype.Name
-		wi.ParentIssuePriority = &parentIssue.Fields.Priority.Name
-		wi.ParentIssueSummary = &parentIssue.Fields.Summary
-		wi.ParentIssueStatus = &parentIssue.Fields.Status.Name
-		wi.ParentIssueCreateDate = created
-		wi.ParentIssueResolvedDate = resolved
-	}
-	return wi
-}
+// 		parentID, _ := strconv.Atoi(i.Fields.Parent.ID)
+// 		wi.ParentIssueID = &parentID
+// 		wi.ParentIssueKey = &i.Fields.Parent.Key
+// 		wi.ParentIssueType = &parentIssue.Fields.Issuetype.Name
+// 		wi.ParentIssuePriority = &parentIssue.Fields.Priority.Name
+// 		wi.ParentIssueSummary = &parentIssue.Fields.Summary
+// 		wi.ParentIssueStatus = &parentIssue.Fields.Status.Name
+// 		wi.ParentIssueCreateDate = created
+// 		wi.ParentIssueResolvedDate = resolved
+// 	}
+// 	return wi
+// }
