@@ -2,8 +2,8 @@ package job
 
 import (
 	"github.com/mkobaly/jiraworklog"
+	"github.com/mkobaly/jiraworklog/repository"
 	"github.com/mkobaly/jiraworklog/types"
-	"github.com/mkobaly/jiraworklog/writers"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"strings"
@@ -14,11 +14,11 @@ import (
 type JiraWorklogsDownloader struct {
 	cfg    *jiraworklog.Config
 	jira   jiraworklog.JiraReader
-	writer writers.Writer
+	writer repository.Repo
 	logger *log.Entry
 }
 
-func NewJiraDownloadWorklogs(cfg *jiraworklog.Config, jira jiraworklog.JiraReader, writer writers.Writer, logger *log.Entry) *JiraWorklogsDownloader {
+func NewJiraDownloadWorklogs(cfg *jiraworklog.Config, jira jiraworklog.JiraReader, writer repository.Repo, logger *log.Entry) *JiraWorklogsDownloader {
 	return &JiraWorklogsDownloader{
 		cfg:    cfg,
 		jira:   jira,
@@ -28,11 +28,11 @@ func NewJiraDownloadWorklogs(cfg *jiraworklog.Config, jira jiraworklog.JiraReade
 }
 
 func (j *JiraWorklogsDownloader) GetName() string {
-	return "JiraDownloadWorklogs"
+	return "JiraWorklogsDownloader"
 }
 
 func (j *JiraWorklogsDownloader) GetInterval() time.Duration {
-	return time.Second * 99999
+	return time.Second * 300
 }
 
 func (j *JiraWorklogsDownloader) Run() error {
@@ -42,24 +42,31 @@ func (j *JiraWorklogsDownloader) Run() error {
 
 	lastTimestamp := j.cfg.LastTimestamp
 	if lastTimestamp == 0 {
-		// default going back 60 days
-		lastTimestamp = time.Now().AddDate(0, -2, 0).UnixNano() / 1e6
+		// default going back 4 months
+		lastTimestamp = time.Now().AddDate(0, -4, 0).UnixNano() / 1e6
 	}
 	maxWorklogID := j.cfg.MaxWorklogID
+	j.logger.WithField("timestamp", lastTimestamp).Info("last timestamp")
 
 	//Fetch worklogs updated since last timestamp check
 	wl, err := j.jira.WorklogsUpdated(lastTimestamp)
 	if err != nil {
 		return errors.Wrap(err, "failed to fetch updated worklogs from jira")
 	}
+	j.logger.WithFields(log.Fields{"since": wl.Since, "until": wl.Until, "lastPage": wl.LastPage, "count": len(wl.Values)}).Info("worklogs updated stats")
 
 	//For given worklog Ids we now need to get the worklog details
 	var ids []int
-	//query := jiraworklog.NewWorklogQuery()
 	for _, w := range wl.Values {
-		ids = append(ids, w.WorklogID)
-		//query.Add(w.WorklogID)
+		if w.WorklogID > maxWorklogID {
+			ids = append(ids, w.WorklogID)
+		}
 	}
+
+	if len(ids) == 0 {
+		return nil //nothing to do
+	}
+
 	details, err := j.jira.WorklogDetails(ids)
 	if err != nil {
 		return errors.Wrap(err, "failed to fetch worklog details")

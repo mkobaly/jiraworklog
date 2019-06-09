@@ -1,63 +1,74 @@
 package jiraworklog
 
-// import (
-// 	log "github.com/sirupsen/logrus"
-// 	"time"
-// )
+import (
+	log "github.com/sirupsen/logrus"
+	"time"
+)
 
-// // Worker will do its Action once every interval, making up for lost time that
-// // happened during the Action by only waiting the time left in the interval.
-// type Worker struct {
-// 	Stopped         bool          // A flag determining the state of the worker
-// 	ShutdownChannel chan string   // A channel to communicate to the routine
-// 	Interval        time.Duration // The interval with which to run the Action
-// 	Action          func() error
-// 	logger          *log.Entry
-// }
+// Worker will do its Action once every interval, making up for lost time that
+// happened during the Action by only waiting the time left in the interval.
+type Worker struct {
+	Stopped  bool // A flag determining the state of the worker
+	Jobs     []Job
+	logger   *log.Entry
+	stopChan chan struct{}
+}
 
-// // NewWorker creates a new worker and instantiates all the data structures required.
-// func NewWorker(interval time.Duration, logger *log.Entry, action func() error) *Worker {
-// 	return &Worker{
-// 		Stopped:         false,
-// 		ShutdownChannel: make(chan string),
-// 		Interval:        interval,
-// 		Action:          action,
-// 		logger:          logger,
-// 	}
-// }
+type Job interface {
+	Run() error
+	GetInterval() time.Duration
+	GetName() string
+}
 
-// // Run starts the worker and listens for a shutdown call.
-// func (w *Worker) Run() {
-// 	// Loop that runs forever
-// 	for {
+// NewWorker creates a new worker and instantiates all the data structures required.
+func NewWorker(logger *log.Entry, jobs ...Job) *Worker {
+	return &Worker{
+		Stopped:  false,
+		stopChan: make(chan struct{}),
+		//ShutdownChannel: make(chan string),
+		logger: logger,
+		Jobs:   jobs,
+	}
+}
 
-// 		started := time.Now()
-// 		err := w.Action()
-// 		if err != nil {
-// 			w.logger.WithError(err).Error("worker run failed")
-// 			return
-// 		}
-// 		finished := time.Now()
-// 		duration := finished.Sub(started)
-// 		w.logger.WithField("duration", duration).Info("worker run complete")
+// Run starts the worker and listens for a shutdown call.
+func (w *Worker) Start() {
 
-// 		select {
-// 		case <-w.ShutdownChannel:
-// 			w.ShutdownChannel <- "Down"
-// 			return
-// 		case <-time.After(w.Interval):
-// 			// This breaks out of the select, not the for loop.
-// 			break
-// 		}
-// 	}
-// }
+	for _, job := range w.Jobs {
+		go w.Run(job)
+	}
+}
 
-// // Shutdown is a graceful shutdown mechanism
-// func (w *Worker) Shutdown() {
-// 	w.Stopped = true
+func (w *Worker) Run(job Job) {
+	for {
+		started := time.Now()
+		err := job.Run()
+		if err != nil {
+			w.logger.WithError(err).WithField("job", job.GetName()).Error("job run failed")
+			return
+		}
+		finished := time.Now()
+		duration := finished.Sub(started)
+		w.logger.WithField("duration", duration).WithField("job", job.GetName()).Info("job run complete")
 
-// 	w.ShutdownChannel <- "Down"
-// 	<-w.ShutdownChannel
+		select {
+		case <-w.stopChan:
+			w.logger.WithField("job", job.GetName()).Warn("Shutting down")
+			return
+		case <-time.After(job.GetInterval()):
+			// This breaks out of the select, not the for loop.
+			break
+		}
+	}
+}
 
-// 	close(w.ShutdownChannel)
-// }
+// Shutdown is a graceful shutdown mechanism
+func (w *Worker) Shutdown() {
+	w.Stopped = true
+	close(w.stopChan)
+
+	//w.ShutdownChannel <- "Down"
+	//<-w.ShutdownChannel
+
+	//close(w.ShutdownChannel)
+}

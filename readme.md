@@ -22,32 +22,39 @@ Jira writers handle the persistance of the Jira data pulled. The goal is to have
 ```sql
 create table worklog
 (
-	id int PRIMARY KEY NOT NULL identity(1,1),
-	worklogId int NOT NULL UNIQUE,
-	developer varchar(50) NOT NULL,
+	worklogId int NOT NULL PRIMARY KEY,
+	author varchar(50) NOT NULL,
 	[date] datetime NOT NULL,
-	timeSpendSeconds int NOT NULL,
+	timeSpentSeconds int NOT NULL,
 	originalEstimateSeconds int NOT NULL,
 	project varchar(10) NOT NULL,
-	
 	issueId int NOT NULL,
 	issueKey varchar(20) NOT NULL,
 	issueType varchar(20) NOT NULL,
 	issueSummary varchar(255) NOT NULL,
 	issuePriority varchar(20) NOT NULL,
 	issueStatus varchar(50) NOT NULL,
-	issueCreateDate datetime NOT NULL,
-	issueResolvedDate datetime NULL,
-
 	parentIssueId int NULL,
 	parentIssueKey varchar(20) NULL,
 	parentIssueType varchar(20) NULL,
 	parentIssueSummary varchar(255) NULL,
 	parentIssuePriority varchar(20) NULL,
 	parentIssueStatus varchar(50) NULL,
-	parentIssueCreateDate datetime NULL,
-	parentIssueResolvedDate datetime NULL,
+	dateInserted datetime NOT NULL default(getutcdate())
+)
 
+create table issue
+(
+	id int NOT NULL PRIMARY KEY,
+	[key] varchar(20) NOT NULL UNIQUE,
+	[type] varchar(20) NOT NULL,
+	summary varchar(255) NOT NULL,
+	priority varchar(20) NOT NULL,
+	status varchar(50) NOT NULL,
+	project varchar(10) NOT NULL,
+	createDate datetime NOT NULL,
+	resolvedDate datetime NULL,
+	isResolved bit NOT NULL DEFAULT(0),
 	dateInserted datetime NOT NULL default(getutcdate())
 )
 ```

@@ -29,7 +29,7 @@ func (j *FakeJira) WorklogsUpdated(timestamp int64) (jiraworklog.UpdatedWorklogs
 		"self": "https://atlassian.net/rest/api/3/worklog/updated?since=1556683200000",
 		"lastPage": true
 	}`
-	err := json.Unmarshal([]byte(jsonStr), result)
+	err := json.Unmarshal([]byte(jsonStr), &result)
 	return result, err
 
 }
@@ -93,67 +93,235 @@ func (j *FakeJira) WorklogDetails(ids []int) ([]jiraworklog.Worklog, error) {
 			"issueId": "6001"
 		}
 	]`
-	err := json.Unmarshal([]byte(jsonStr), result)
+	err := json.Unmarshal([]byte(jsonStr), &result)
 	return result, err
 }
 
 func (j *FakeJira) Issue(idOrKey string) (jiraworklog.Issue, error) {
 	var result jiraworklog.Issue
-	jsonStr := `
-	{
-		"expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
-		"id": "6001",
-		"self": "https://atlassian.net/rest/api/3/issue/6001",
-		"key": "ABC-1234",
-		"fields": {
-			"statuscategorychangedate": "2019-05-13T09:09:08.237-0500",
-			"summary": "Summary",
-			"issuetype": {
-				"self": "https://atlassian.net/rest/api/3/issuetype/10001",
-				"id": "10001",
-				"description": "A user story. Created by JIRA Software - do not edit or delete.",
-				"iconUrl": "https://atlassian.net/secure/viewavatar?size=xsmall&avatarId=10315&avatarType=issuetype",
-				"name": "Story",
-				"subtask": false,
-				"avatarId": 10315
-			},
-			"timespent": null,
-			"created": "2018-08-06T09:14:40.627-0500",
-			"timeoriginalestimate": null,
-			"aggregateprogress": {
-				"progress": 504000,
-				"total": 504000,
-				"percent": 100
-			},
-			"aggregatetimespent": 504000,
-			"priority": {
-				"self": "https://atlassian.net/rest/api/3/priority/1",
-				"iconUrl": "https://atlassian.net/images/icons/priorities/critical.svg",
-				"name": "Highest",
-				"id": "1"
-			},
-			"timetracking": {},
-			"resolutiondate": null,
-			"progress": {
-				"progress": 0,
-				"total": 0
-			},
-			"status": {
-				"self": "https://atlassian.net/rest/api/3/status/6",
-				"description": "The issue is considered finished, the resolution is correct. Issues which are closed can be reopened.",
-				"iconUrl": "https://atlassian.net/images/icons/statuses/closed.png",
-				"name": "Closed",
-				"id": "6",
-				"statusCategory": {
-					"self": "https://atlassian.net/rest/api/3/statuscategory/3",
-					"id": 3,
-					"key": "done",
-					"colorName": "green",
-					"name": "Done"
-				}
-			}
-		}
-	}`
-	err := json.Unmarshal([]byte(jsonStr), result)
+	jsonStr := ""
+	switch idOrKey {
+	case "6000", "ABC-1234":
+		jsonStr = issue6000
+	case "6001", "ABC-1235":
+		jsonStr = issue6001
+	case "6002", "ABC-1236":
+		jsonStr = issue6002
+	}
+	err := json.Unmarshal([]byte(jsonStr), &result)
 	return result, err
 }
+
+var issue6000 = `
+{
+	"expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+	"id": "6000",
+	"self": "https://atlassian.net/rest/api/3/issue/6001",
+	"key": "ABC-1234",
+	"fields": {
+		"statuscategorychangedate": "2019-05-13T09:09:08.237-0500",
+		"summary": "Summary",
+		"issuetype": {
+			"self": "https://atlassian.net/rest/api/3/issuetype/10001",
+			"id": "10001",
+			"description": "A user story. Created by JIRA Software - do not edit or delete.",
+			"iconUrl": "https://atlassian.net/secure/viewavatar?size=xsmall&avatarId=10315&avatarType=issuetype",
+			"name": "Story",
+			"subtask": false,
+			"avatarId": 10315
+		},
+		"timespent": null,
+		"created": "2018-08-06T09:14:40.627-0500",
+		"timeoriginalestimate": null,
+		"aggregateprogress": {
+			"progress": 504000,
+			"total": 504000,
+			"percent": 100
+		},
+		"aggregatetimespent": 504000,
+		"priority": {
+			"self": "https://atlassian.net/rest/api/3/priority/1",
+			"iconUrl": "https://atlassian.net/images/icons/priorities/critical.svg",
+			"name": "Highest",
+			"id": "1"
+		},
+		"timetracking": {},
+		"resolutiondate": null,
+		"progress": {
+			"progress": 0,
+			"total": 0
+		},
+		"status": {
+			"self": "https://atlassian.net/rest/api/3/status/6",
+			"description": "The issue is considered finished, the resolution is correct. Issues which are closed can be reopened.",
+			"iconUrl": "https://atlassian.net/images/icons/statuses/closed.png",
+			"name": "Closed",
+			"id": "6",
+			"statusCategory": {
+				"self": "https://atlassian.net/rest/api/3/statuscategory/3",
+				"id": 3,
+				"key": "done",
+				"colorName": "green",
+				"name": "Done"
+			}
+		}
+	}
+}`
+
+var issue6001 = `
+{
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "6001",
+    "self": "https://atlassian.net/rest/api/3/issue/54464",
+    "key": "ABC-1235",
+    "fields": {
+        "summary": "Summary test",
+        "statuscategorychangedate": "2019-03-18T15:20:34.877-0500",
+        "issuetype": {
+            "self": "https://atlassian.net/rest/api/3/issuetype/5",
+            "id": "5",
+            "description": "The sub-task of the issue",
+            "iconUrl": "https://atlassian.net/secure/viewavatar?size=xsmall&avatarId=10316&avatarType=issuetype",
+            "name": "Sub-task",
+            "subtask": true,
+            "avatarId": 10316
+        },
+        "parent": {
+            "id": "6002",
+            "key": "ABC-1236",
+            "self": "https://atlassian.net/rest/api/3/issue/54462",
+            "fields": {
+                "summary": "Parent Summary",
+                "status": {
+                    "self": "https://atlassian.net/rest/api/3/status/6",
+                    "description": "The issue is considered finished, the resolution is correct. Issues which are closed can be reopened.",
+                    "iconUrl": "https://atlassian.net/images/icons/statuses/closed.png",
+                    "name": "Closed",
+                    "id": "6",
+                    "statusCategory": {
+                        "self": "https://atlassian.net/rest/api/3/statuscategory/3",
+                        "id": 3,
+                        "key": "done",
+                        "colorName": "green",
+                        "name": "Done"
+                    }
+                },
+                "priority": {
+                    "self": "https://atlassian.net/rest/api/3/priority/1",
+                    "iconUrl": "https://atlassian.net/images/icons/priorities/critical.svg",
+                    "name": "Highest",
+                    "id": "1"
+                },
+                "issuetype": {
+                    "self": "https://atlassian.net/rest/api/3/issuetype/10001",
+                    "id": "10001",
+                    "description": "A user story. Created by JIRA Software - do not edit or delete.",
+                    "iconUrl": "https://amagsymmetry.atlassian.net/secure/viewavatar?size=xsmall&avatarId=10315&avatarType=issuetype",
+                    "name": "Story",
+                    "subtask": false,
+                    "avatarId": 10315
+                }
+            }
+        },
+        "timespent": 252000,
+        "created": "2018-08-06T09:21:20.745-0500",
+        "timeoriginalestimate": 75600,
+        "aggregateprogress": {
+            "progress": 252000,
+            "total": 252000,
+            "percent": 100
+        },
+        "aggregatetimespent": 252000,
+        "priority": {
+            "self": "https://atlassian.net/rest/api/3/priority/4",
+            "iconUrl": "https://atlassian.net/images/icons/priorities/minor.svg",
+            "name": "Low",
+            "id": "4"
+        },
+        "timetracking": {
+            "originalEstimate": "3d",
+            "remainingEstimate": "0m",
+            "timeSpent": "2w",
+            "originalEstimateSeconds": 75600,
+            "remainingEstimateSeconds": 0,
+            "timeSpentSeconds": 252000
+        },
+        "resolutiondate": null,
+        "progress": {
+            "progress": 252000,
+            "total": 252000,
+            "percent": 100
+        },
+        "status": {
+            "self": "https://atlassian.net/rest/api/3/status/11402",
+            "description": "These are items that the development work is complete on but are waiting to be deployed for testing.\nUnit testing has been completed.",
+            "iconUrl": "https://atlassian.net/images/icons/statuses/generic.png",
+            "name": "Code Complete",
+            "id": "11402",
+            "statusCategory": {
+                "self": "https://atlassian.net/rest/api/3/statuscategory/4",
+                "id": 4,
+                "key": "indeterminate",
+                "colorName": "yellow",
+                "name": "In Progress"
+            }
+        }
+    }
+}`
+
+var issue6002 = `
+{
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "6002",
+    "self": "https://atlassian.net/rest/api/3/issue/54462",
+    "key": "ABC-1236",
+    "fields": {
+        "summary": "Parent Summary",
+        "statuscategorychangedate": "2019-05-13T09:09:08.237-0500",
+        "issuetype": {
+            "self": "https://atlassian.net/rest/api/3/issuetype/10001",
+            "id": "10001",
+            "description": "A user story. Created by JIRA Software - do not edit or delete.",
+            "iconUrl": "https://atlassian.net/secure/viewavatar?size=xsmall&avatarId=10315&avatarType=issuetype",
+            "name": "Story",
+            "subtask": false,
+            "avatarId": 10315
+        },
+        "timespent": null,
+        "created": "2018-08-06T09:14:40.627-0500",
+        "timeoriginalestimate": null,
+        "aggregateprogress": {
+            "progress": 504000,
+            "total": 504000,
+            "percent": 100
+        },
+        "priority": {
+            "self": "https://atlassian.net/rest/api/3/priority/1",
+            "iconUrl": "https://atlassian.net/images/icons/priorities/critical.svg",
+            "name": "Highest",
+            "id": "1"
+        },
+        "aggregatetimespent": 504000,
+        "timetracking": {},
+        "resolutiondate": null,
+        "progress": {
+            "progress": 0,
+            "total": 0
+        },
+        "status": {
+            "self": "https://atlassian.net/rest/api/3/status/6",
+            "description": "The issue is considered finished, the resolution is correct. Issues which are closed can be reopened.",
+            "iconUrl": "https://atlassian.net/images/icons/statuses/closed.png",
+            "name": "Closed",
+            "id": "6",
+            "statusCategory": {
+                "self": "https://atlassian.net/rest/api/3/statuscategory/3",
+                "id": 3,
+                "key": "done",
+                "colorName": "green",
+                "name": "Done"
+            }
+        }
+    }
+}
+`

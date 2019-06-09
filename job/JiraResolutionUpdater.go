@@ -2,9 +2,10 @@ package job
 
 import (
 	"github.com/mkobaly/jiraworklog"
-	"github.com/mkobaly/jiraworklog/writers"
+	"github.com/mkobaly/jiraworklog/repository"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"math/rand"
 	"strings"
 	"time"
 )
@@ -14,11 +15,11 @@ import (
 type JiraResolutionUpdater struct {
 	cfg    *jiraworklog.Config
 	jira   jiraworklog.JiraReader
-	writer writers.Writer
+	writer repository.Repo
 	logger *log.Entry
 }
 
-func NewJiraCheckResolution(cfg *jiraworklog.Config, jira jiraworklog.JiraReader, writer writers.Writer, logger *log.Entry) *JiraResolutionUpdater {
+func NewJiraCheckResolution(cfg *jiraworklog.Config, jira jiraworklog.JiraReader, writer repository.Repo, logger *log.Entry) *JiraResolutionUpdater {
 	return &JiraResolutionUpdater{
 		cfg:    cfg,
 		jira:   jira,
@@ -28,11 +29,11 @@ func NewJiraCheckResolution(cfg *jiraworklog.Config, jira jiraworklog.JiraReader
 }
 
 func (j *JiraResolutionUpdater) GetName() string {
-	return "JiraCheckResolution"
+	return "JiraResolutionUpdater"
 }
 
 func (j *JiraResolutionUpdater) GetInterval() time.Duration {
-	return time.Second * 90
+	return time.Second * 600
 }
 
 func (j *JiraResolutionUpdater) Run() error {
@@ -45,7 +46,8 @@ func (j *JiraResolutionUpdater) Run() error {
 	j.logger.Info("fetching all non resolved issues")
 
 	for _, issueKey := range unresolvedIssues {
-		time.Sleep(400 * time.Millisecond)
+		delay := getDelay()
+		time.Sleep(time.Duration(delay) * time.Millisecond)
 		issue, err := j.jira.Issue(issueKey)
 		if err != nil {
 			return errors.Wrap(err, "unknown error getting issue details from jira. id="+issueKey)
@@ -86,4 +88,11 @@ func (j *JiraResolutionUpdater) isIssueResolved(cfg *jiraworklog.Config, issue j
 		}
 	}
 	return false
+}
+
+func getDelay() int {
+	rand.Seed(time.Now().UnixNano())
+	min := 100
+	max := 900
+	return rand.Intn(max-min) + min
 }

@@ -58,9 +58,10 @@ func (j *Jira) WorklogsUpdated(timestamp int64) (UpdatedWorklogs, error) {
 }
 
 func (j *Jira) WorklogDetails(ids []int) ([]Worklog, error) {
-
-	ids = []int{47136, 47137}
-	b, err := json.Marshal(ids)
+	worklogList := WorklogList{
+		IDs: ids,
+	}
+	b, err := json.Marshal(worklogList)
 	if err != nil {
 		return nil, err
 	}
@@ -168,6 +169,10 @@ type Worklog struct {
 	TimeSpentSeconds int    `json:"timeSpentSeconds"`
 	ID               string `json:"id"`
 	IssueID          string `json:"issueId"`
+}
+
+type WorklogList struct {
+	IDs []int `json:"ids"`
 }
 
 type Issue struct {

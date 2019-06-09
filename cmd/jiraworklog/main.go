@@ -3,10 +3,12 @@ package main
 import (
 	"errors"
 	"github.com/mkobaly/jiraworklog/job"
+	"net/http"
 	"os"
 	"os/signal"
 	"time"
 
+	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/fatih/color"
 	cmdline "github.com/galdor/go-cmdline"
 	"github.com/jmoiron/sqlx"
@@ -14,12 +16,14 @@ import (
 	"github.com/mkobaly/jiraworklog"
 	//wl "github.com/mkobaly/jiraworklog"
 	//"github.com/mkobaly/jiraworklog/workers"
-	"github.com/mkobaly/jiraworklog/writers"
+	"github.com/mkobaly/jiraworklog/repository"
 	//log "github.com/sirupsen/logrus"
 )
 
 var db *sqlx.DB
-var ErrUnknownWriter = errors.New("unkown Writer")
+
+//ErrUnknownRepo is error for unknown writer
+var ErrUnknownRepo = errors.New("unkown repo")
 
 func main() {
 
@@ -29,7 +33,8 @@ func main() {
 	//Define command line params and parse input
 	cmdline := cmdline.New()
 	cmdline.AddOption("c", "config", "config.yaml", "path to configuration file")
-	cmdline.AddOption("w", "writer", "MSSQL", "specific writer to use")
+	cmdline.AddOption("r", "repo", "BOLTDB", "specific repo to use (MSSQL, BOLTDB)")
+	cmdline.SetOptionDefault("r", "BOLTDB")
 	cmdline.AddFlag("v", "verbose", "verbose logging")
 	cmdline.Parse(os.Args)
 
@@ -59,49 +64,51 @@ func main() {
 		}
 	}
 
-	//Writer Settings
-	writerType := "MSSQL"
-	if cmdline.IsOptionSet("w") {
-		writerType = cmdline.OptionValue("w")
+	//Repo Settings
+	repoType := "BOLTDB"
+	if cmdline.IsOptionSet("r") {
+		repoType = cmdline.OptionValue("r")
 	}
 
-	//load writer
-	writer, err := loadWriter(writerType, cfg)
+	//load repo
+	repo, err := loadRepo(repoType, cfg)
 	if err != nil {
 		logger.Fatal(err)
 	}
-	logger.Info(writer)
 
+	//jira := &test.FakeJira{}
 	jira := jiraworklog.NewJira(cfg)
 	//List out all jobs we need here to run
-	j1 := job.NewJiraDownloadWorklogs(cfg, jira, writer, logger)
-	//j2 := job.NewJiraCheckResolution(cfg, jira, writer, logger)
-	worker := jiraworklog.NewWorker2(logger, j1) //, j2)
+	j1 := job.NewJiraDownloadWorklogs(cfg, jira, repo, logger)
+	j2 := job.NewJiraCheckResolution(cfg, jira, repo, logger)
+	worker := jiraworklog.NewWorker(logger, j1, j2)
 	go worker.Start()
+
+	//HTTP server stuff
+	server := &HttpServer{repo: repo}
+	mux := http.NewServeMux()
+	mux.Handle("/worklogs", http.HandlerFunc(server.GetWorkLogs))
+	mux.Handle("/issues", http.HandlerFunc(server.GetIssues))
+	go http.ListenAndServe(":8180", mux)
 
 	select {
 	case sig := <-c:
 		logger.WithField("signal", sig).Warn("Shutting down due to signal")
 		worker.Shutdown()
+		repo.Close()
 		time.Sleep(1 * time.Second)
 	}
 }
 
-func loadWriter(writerType string, cfg *jiraworklog.Config) (writers.Writer, error) {
-	switch writerType {
+func loadRepo(repoType string, cfg *jiraworklog.Config) (repository.Repo, error) {
+	switch repoType {
 	case "MSSQL":
-		db, err := sqlx.Connect("sqlserver", cfg.SQLConnection)
-		if err != nil {
-			return nil, err
-		}
-		writer := &writers.SQLWriter{DB: db}
-		return writer, nil
+		return repository.NewSQLRepo(cfg)
 	case "BOLTDB":
-
+		return repository.NewBoltDBRepo("worklog.db")
 	case "GOOGLESHEET":
-		return nil, ErrUnknownWriter
+		return nil, ErrUnknownRepo
 	default:
-		return nil, ErrUnknownWriter
+		return nil, ErrUnknownRepo
 	}
-	return nil, ErrUnknownWriter
 }
