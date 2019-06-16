@@ -3,9 +3,11 @@ package main
 import (
 	"errors"
 	"github.com/mkobaly/jiraworklog/job"
+	"github.com/mkobaly/jiraworklog/test"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 
 	_ "github.com/denisenkom/go-mssqldb"
@@ -22,7 +24,7 @@ import (
 
 var db *sqlx.DB
 
-//ErrUnknownRepo is error for unknown writer
+//ErrUnknownRepo is error for unknown repository
 var ErrUnknownRepo = errors.New("unkown repo")
 
 func main() {
@@ -76,8 +78,8 @@ func main() {
 		logger.Fatal(err)
 	}
 
-	//jira := &test.FakeJira{}
-	jira := jiraworklog.NewJira(cfg)
+	jira := &test.FakeJira{}
+	//jira := jiraworklog.NewJira(cfg)
 	//List out all jobs we need here to run
 	j1 := job.NewJiraDownloadWorklogs(cfg, jira, repo, logger)
 	j2 := job.NewJiraCheckResolution(cfg, jira, repo, logger)
@@ -85,10 +87,13 @@ func main() {
 	go worker.Start()
 
 	//HTTP server stuff
-	server := &HttpServer{repo: repo}
+	fileServer := http.FileServer(FileSystem{http.Dir("../web")})
+	server := NewHttpServer(repo, logger)
 	mux := http.NewServeMux()
 	mux.Handle("/worklogs", http.HandlerFunc(server.GetWorkLogs))
 	mux.Handle("/issues", http.HandlerFunc(server.GetIssues))
+	mux.Handle("/issues/groupby", http.HandlerFunc(server.GetIssuesGroupedBy))
+	mux.Handle("/", http.StripPrefix(strings.TrimRight("/dashboard/", "/"), fileServer))
 	go http.ListenAndServe(":8180", mux)
 
 	select {

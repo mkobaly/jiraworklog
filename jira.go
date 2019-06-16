@@ -90,7 +90,7 @@ func (j *Jira) WorklogDetails(ids []int) ([]Worklog, error) {
 
 func (j *Jira) Issue(idOrKey string) (Issue, error) {
 	issue := Issue{}
-	req, err := http.NewRequest("GET", j.Config.Jira.URL+"/issue/"+idOrKey+"?fields=priority,summary,parent,status,aggregateprogress,progress,issuetype,timespent,aggregatetimespent,timeoriginalestimate,timetracking,resolutiondate,created,statuscategorychangedate", nil)
+	req, err := http.NewRequest("GET", j.Config.Jira.URL+"/issue/"+idOrKey+"?fields=priority,summary,parent,status,aggregateprogress,progress,issuetype,timespent,aggregatetimespent,timeoriginalestimate,aggregatetimeoriginalestimate,timetracking,resolutiondate,created,statuscategorychangedate", nil)
 	req.SetBasicAuth(j.Config.Jira.Username, j.Config.Jira.Password)
 	resp, err := j.client.Do(req)
 	defer resp.Body.Close()
@@ -254,8 +254,9 @@ type Issue struct {
 			Total    int `json:"total"`
 			Percent  int `json:"percent"`
 		} `json:"aggregateprogress"`
-		Aggregatetimespent int `json:"aggregatetimespent"`
-		Priority           struct {
+		Aggregatetimespent            int `json:"aggregatetimespent"`
+		Aggregatetimeoriginalestimate int `json:"aggregatetimeoriginalestimate"`
+		Priority                      struct {
 			Self    string `json:"self"`
 			IconURL string `json:"iconUrl"`
 			Name    string `json:"name"`

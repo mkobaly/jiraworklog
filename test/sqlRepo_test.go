@@ -43,11 +43,11 @@ func TestInsert(t *testing.T) {
 	defer db.Close()
 	repo := &repository.SQL{DB: db}
 
-	worklog := types.WorklogItem{
+	worklog := &types.WorklogItem{
 		ID:               1000,
 		Author:           "bob.smith",
 		TimeSpentSeconds: 456,
-		Started:          time.Now(),
+		Date:             time.Now(),
 		IssueID:          444,
 		IssueKey:         "ABC-123",
 		IssuePriority:    "high",
@@ -55,7 +55,7 @@ func TestInsert(t *testing.T) {
 		IssueSummary:     "Test ticket",
 	}
 
-	repo.Write(worklog)
+	repo.Write(worklog, nil)
 	if err != nil {
 		t.Error("Error executing repository.Fetch()", err.Error())
 	}

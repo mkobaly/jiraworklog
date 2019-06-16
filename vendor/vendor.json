@@ -159,6 +159,12 @@
 			"revisionTime": "2019-03-04T09:57:49Z"
 		},
 		{
+			"checksumSHA1": "SEohUSZaauLd+9YyC4+6RDZ8/pk=",
+			"path": "github.com/timshannon/bolthold",
+			"revision": "eed35b7556710c9108bd536193dae1ecb91f16fa",
+			"revisionTime": "2019-03-15T15:29:03Z"
+		},
+		{
 			"checksumSHA1": "7uLtnRlZqKRoI6ZJifUqHhPLYoE=",
 			"path": "go.etcd.io/bbolt",
 			"revision": "2eb7227adea1d5cf85f0bc2a82b7059b13c2fa68",

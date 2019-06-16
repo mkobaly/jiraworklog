@@ -12,6 +12,9 @@ time spent by developers is difficult to report on. This utility is looking to c
 This utility will query the Jira REST API and extract all of the worklogs updated and log them. For every worklog it will then pull in the issue details and if that issue has a parent (say: Sub Task => Story) then the parent issue will also be pulled.
 
 
+## Queries
+
+- IssueCountByDeveloper
 
 It will default going back 60 days but you can configure that to go back to the start of your Jira usage by using a timestamp of 0
 
@@ -22,11 +25,14 @@ Jira writers handle the persistance of the Jira data pulled. The goal is to have
 ```sql
 create table worklog
 (
-	worklogId int NOT NULL PRIMARY KEY,
+	id int NOT NULL PRIMARY KEY,
 	author varchar(50) NOT NULL,
 	[date] datetime NOT NULL,
+
+	weekNumber       int NOT NULL,
+	weekDay          varchar(10) NOT NULL,
 	timeSpentSeconds int NOT NULL,
-	originalEstimateSeconds int NOT NULL,
+	timeSpentHours   numeric(5,2) NOT NULL,
 	project varchar(10) NOT NULL,
 	issueId int NOT NULL,
 	issueKey varchar(20) NOT NULL,
@@ -52,9 +58,13 @@ create table issue
 	priority varchar(20) NOT NULL,
 	status varchar(50) NOT NULL,
 	project varchar(10) NOT NULL,
+	developer varchar(50) NOT NULL,
 	createDate datetime NOT NULL,
 	resolvedDate datetime NULL,
+	daysToResolve int NOT NULL,
 	isResolved bit NOT NULL DEFAULT(0),
+	aggregateTimeSpent int NOT NULL DEFAULT(0),
+	aggregateTimeOriginalEstimate int NOT NULL DEFAULT(0),
 	dateInserted datetime NOT NULL default(getutcdate())
 )
 ```

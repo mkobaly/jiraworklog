@@ -19,14 +19,20 @@ func (j *FakeJira) WorklogsUpdated(timestamp int64) (jiraworklog.UpdatedWorklogs
 				"properties": []
 			},        
 			{
-			"worklogId": 1112,
-			"updatedTime": 1559600429921,
-			"properties": []
-			}
+                "worklogId": 1112,
+                "updatedTime": 1559600429921,
+                "properties": []
+            },
+            {
+                "worklogId": 1113,
+                "updatedTime": 1559600429929,
+                "properties": []
+            }
+            
 		],
-		"since": 1556683200000,
-		"until": 1559600637162,
-		"self": "https://atlassian.net/rest/api/3/worklog/updated?since=1556683200000",
+		"since": 1556697267172,
+		"until": 1559600429929,
+		"self": "https://atlassian.net/rest/api/3/worklog/updated?since=1556697267172",
 		"lastPage": true
 	}`
 	err := json.Unmarshal([]byte(jsonStr), &result)
@@ -61,8 +67,8 @@ func (j *FakeJira) WorklogDetails(ids []int) ([]jiraworklog.Worklog, error) {
 			"updated": "2019-05-09T17:05:02.339-0500",
 			"started": "2019-05-09T17:04:00.000-0500",
 			"timeSpent": "45m",
-			"timeSpentSeconds": 2700,
-			"id": "46666",
+			"timeSpentSeconds": 2000,
+			"id": "1111",
 			"issueId": "6000"
 		},
 		{
@@ -89,8 +95,35 @@ func (j *FakeJira) WorklogDetails(ids []int) ([]jiraworklog.Worklog, error) {
 			"started": "2019-05-10T17:04:00.000-0500",
 			"timeSpent": "45m",
 			"timeSpentSeconds": 2700,
-			"id": "46667",
+			"id": "1112",
 			"issueId": "6001"
+        },
+        {
+			"self": "https://atlassian.net/rest/api/3/issue/60025/worklog/1112",
+			"author": {
+				"self": "https://atlassian.net/rest/api/3/user?accountId=117058%3Aad714362-0c30-4ad3-ba5b-70a84f2ab3f3",
+				"name": "big.bird",
+				"key": "big.bird",
+				"accountId": "111111:ad714362-0c30-4ad3-ba5b-70a84f2ab3f3",
+				"emailAddress": "big.bird@example.com",
+				"avatarUrls": {
+					"48x48": "https://avatar-cdn.atlassian.com/xxxxxx",
+					"24x24": "https://avatar-cdn.atlassian.com/yyyyyy",
+					"16x16": "https://avatar-cdn.atlassian.com/zzzzzz",
+					"32x32": "https://avatar-cdn.atlassian.com/zxzxzx"
+				},
+				"displayName": "Big Bird",
+				"active": true,
+				"timeZone": "America/Chicago",
+				"accountType": "atlassian"
+			},
+			"created": "2019-05-10T17:05:02.339-0500",
+			"updated": "2019-05-10T17:05:02.339-0500",
+			"started": "2019-05-10T17:04:00.000-0500",
+			"timeSpent": "45m",
+			"timeSpentSeconds": 2700,
+			"id": "1113",
+			"issueId": "6003"
 		}
 	]`
 	err := json.Unmarshal([]byte(jsonStr), &result)
@@ -107,6 +140,8 @@ func (j *FakeJira) Issue(idOrKey string) (jiraworklog.Issue, error) {
 		jsonStr = issue6001
 	case "6002", "ABC-1236":
 		jsonStr = issue6002
+	case "6003", "ABC-1237":
+		jsonStr = issue6003
 	}
 	err := json.Unmarshal([]byte(jsonStr), &result)
 	return result, err
@@ -131,14 +166,15 @@ var issue6000 = `
 			"avatarId": 10315
 		},
 		"timespent": null,
-		"created": "2018-08-06T09:14:40.627-0500",
+		"created": "2019-05-12T09:08:40.627-0500",
 		"timeoriginalestimate": null,
 		"aggregateprogress": {
 			"progress": 504000,
 			"total": 504000,
 			"percent": 100
 		},
-		"aggregatetimespent": 504000,
+        "aggregatetimespent": 504000,
+        "aggregatetimeoriginalestimate": 500000,
 		"priority": {
 			"self": "https://atlassian.net/rest/api/3/priority/1",
 			"iconUrl": "https://atlassian.net/images/icons/priorities/critical.svg",
@@ -232,6 +268,7 @@ var issue6001 = `
             "percent": 100
         },
         "aggregatetimespent": 252000,
+        "aggregatetimeoriginalestimate": 400000,
         "priority": {
             "self": "https://atlassian.net/rest/api/3/priority/4",
             "iconUrl": "https://atlassian.net/images/icons/priorities/minor.svg",
@@ -302,8 +339,9 @@ var issue6002 = `
             "id": "1"
         },
         "aggregatetimespent": 504000,
+        "aggregatetimeoriginalestimate": 500000,
         "timetracking": {},
-        "resolutiondate": null,
+        "resolutiondate": "2018-08-07T09:20:00.000-0500",
         "progress": {
             "progress": 0,
             "total": 0
@@ -320,6 +358,63 @@ var issue6002 = `
                 "key": "done",
                 "colorName": "green",
                 "name": "Done"
+            }
+        }
+    }
+}
+`
+
+var issue6003 = `
+{
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "6003",
+    "self": "https://atlassian.net/rest/api/3/issue/50916",
+    "key": "ABC-1237",
+    "fields": {
+        "summary": "Story without time estimate",
+        "statuscategorychangedate": "2018-03-05T13:10:29.812-0600",
+        "issuetype": {
+            "self": "https://atlassian.net/rest/api/3/issuetype/10001",
+            "id": "10001",
+            "description": "A user story. Created by JIRA Software - do not edit or delete.",
+            "iconUrl": "https://atlassian.net/secure/viewavatar?size=xsmall&avatarId=10315&avatarType=issuetype",
+            "name": "Story",
+            "subtask": false,
+            "avatarId": 10315
+        },
+        "timespent": null,
+        "created": "2018-03-05T13:10:29.812-0600",
+        "timeoriginalestimate": null,
+        "aggregateprogress": {
+            "progress": 0,
+            "total": 0
+        },
+        "priority": {
+            "self": "https://atlassian.net/rest/api/3/priority/3",
+            "iconUrl": "https://atlassian.net/images/icons/priorities/major.svg",
+            "name": "Medium",
+            "id": "3"
+        },
+        "aggregatetimespent": null,
+        "timetracking": {},
+        "aggregatetimeoriginalestimate": null,
+        "resolutiondate": null,
+        "progress": {
+            "progress": 0,
+            "total": 0
+        },
+        "status": {
+            "self": "https://atlassian.net/rest/api/3/status/11000",
+            "description": "Items in this status are awaiting further refinement to get them to a development ready state.",
+            "iconUrl": "https://atlassian.net/images/icons/statuses/generic.png",
+            "name": "Awaiting Refinement",
+            "id": "11000",
+            "statusCategory": {
+                "self": "https://atlassian.net/rest/api/3/statuscategory/2",
+                "id": 2,
+                "key": "new",
+                "colorName": "blue-gray",
+                "name": "To Do"
             }
         }
     }

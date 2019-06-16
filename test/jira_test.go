@@ -1,21 +1,21 @@
 package test
 
 import (
-	"github.com/mkobaly/jiraworklog"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
-func Test(t *testing.T) {
-	cfg := &jiraworklog.Config{
-		Jira: jiraworklog.JiraSettings{
-			URL:      "https://amagsymmetry.atlassian.net/rest/api/3",
-			Username: "michael.kobaly@usa.g4s.com",
-			Password: "VFVYMGaOfmMLPfoh2ft7A71F",
-		},
-	}
-	jira := jiraworklog.NewJira(cfg)
-	result, err := jira.WorklogDetails([]int{47136, 47137})
+func TestWorklogsUpdated(t *testing.T) {
+	fj := &FakeJira{}
+	wl, err := fj.WorklogsUpdated(12121212)
 	require.NoError(t, err)
-	require.Equal(t, 2, len(result))
+	require.Equal(t, 3, len(wl.Values))
+}
+
+func TestGetIssueWihoutAggTimesDefaultsToZero(t *testing.T) {
+	fj := &FakeJira{}
+	issue, err := fj.Issue("6003")
+	require.NoError(t, err)
+	require.Equal(t, 0, issue.Fields.Aggregatetimespent)
+	require.Equal(t, 0, issue.Fields.Aggregatetimeoriginalestimate)
 }

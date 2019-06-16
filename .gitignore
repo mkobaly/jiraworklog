@@ -1,6 +1,7 @@
 debug
 .vscode
 *.exe
+*.db
 config.yaml
 
 # external packages folder

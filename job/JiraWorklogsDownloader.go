@@ -14,15 +14,15 @@ import (
 type JiraWorklogsDownloader struct {
 	cfg    *jiraworklog.Config
 	jira   jiraworklog.JiraReader
-	writer repository.Repo
+	repo   repository.Repo
 	logger *log.Entry
 }
 
-func NewJiraDownloadWorklogs(cfg *jiraworklog.Config, jira jiraworklog.JiraReader, writer repository.Repo, logger *log.Entry) *JiraWorklogsDownloader {
+func NewJiraDownloadWorklogs(cfg *jiraworklog.Config, jira jiraworklog.JiraReader, repo repository.Repo, logger *log.Entry) *JiraWorklogsDownloader {
 	return &JiraWorklogsDownloader{
 		cfg:    cfg,
 		jira:   jira,
-		writer: writer,
+		repo:   repo,
 		logger: logger,
 	}
 }
@@ -92,8 +92,8 @@ func (j *JiraWorklogsDownloader) Run() error {
 			issueParent, err = j.jira.Issue(issue.ParentID())
 		}
 
-		workItem := types.NewWorklogItem(wd, issue, issueParent)
-		err = j.writer.Write(workItem)
+		workItem, parentIssue := types.ConvertToModels(wd, issue, issueParent)
+		err = j.repo.Write(workItem, parentIssue)
 		if err != nil {
 			return errors.Wrap(err, "error writting issue "+workItem.IssueKey)
 		}
