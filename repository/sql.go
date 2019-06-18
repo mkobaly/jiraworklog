@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"time"
 
@@ -176,16 +177,16 @@ func (s *SQL) AllIssues() ([]types.ParentIssue, error) {
 func (s *SQL) IssuesGroupedBy(groupBy string, daysBack int) ([]types.IssueChartData, error) {
 
 	result := []types.IssueChartData{}
-	err := s.DB.Select(&result, `
-	select [type],
+	err := s.DB.Select(&result, fmt.Sprintf(`
+	select [%s] [groupBy],
 		sum(case when isResolved = 1 then 1 else 0 end) [resolved],
 		sum(case when isResolved = 0 then 1 else 0 end) [nonResolved],
-		sum(daystoResolve) / sum(case when isResolved = 1 then 1 else 0 end)  [daysToResolve],
-		sum(aggregateTimeSpent / 3600.00)  [timeSpent],
-		sum(aggregateTimeOriginalEstimate / 3600.00)  [timeSpent]
+		ISNULL(sum(daystoResolve) / NULLIF(sum(case when isResolved = 1 then 1 else 0 end),0),0)  [daysToResolve],
+		CONVERT(DECIMAL(10,2),sum(aggregateTimeSpent / 3600.00))  [timeSpent],
+		sum(aggregateTimeOriginalEstimate / 3600.00)  [timeEstimate]
 	FROM issue
 	WHERE createDate >= dateadd(day,-1 * @p1, getdate())
-	group by [type]`, daysBack)
+	group by [%s]`, groupBy, groupBy), daysBack)
 	if err != nil {
 		return nil, err
 	}

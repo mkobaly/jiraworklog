@@ -7,12 +7,12 @@ import (
 
 //IssueChartData represents ussue data that will be charted
 type IssueChartData struct {
-	GroupBy        string
-	NonResolved    int
-	Resolved       int
-	DaysToComplete int
-	TimeSpent      float64
-	TimeEstimate   float64
+	GroupBy       string  `db:"groupBy"`
+	NonResolved   int     `db:"nonResolved"`
+	Resolved      int     `db:"resolved"`
+	DaysToResolve int     `db:"daysToResolve"`
+	TimeSpent     float64 `db:"timeSpent"`
+	TimeEstimate  float64 `db:"timeEstimate"`
 }
 
 //ErrUnknownGroupBy is error when there is an unknown group by value

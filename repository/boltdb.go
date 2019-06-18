@@ -92,7 +92,7 @@ func (r *BoltDB) IssuesGroupedBy(groupBy string, daysBack int) ([]types.IssueCha
 
 		if isResolved {
 			results[group].Resolved = agg[i].Count()
-			results[group].DaysToComplete = int(agg[i].Avg("DaysToResolve"))
+			results[group].DaysToResolve = int(agg[i].Avg("DaysToResolve"))
 			results[group].TimeSpent = agg[i].Sum("AggregateTimeSpent") / 3600
 			results[group].TimeEstimate = agg[i].Sum("AggregateTimeOriginalEstimate") / 3600
 		} else {
