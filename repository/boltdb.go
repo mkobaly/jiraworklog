@@ -1,9 +1,10 @@
 package repository
 
 import (
+	"time"
+
 	"github.com/mkobaly/jiraworklog/types"
 	"github.com/timshannon/bolthold"
-	"time"
 )
 
 //BoltDB is a repository with BoltDB as the backend
@@ -14,24 +15,10 @@ type BoltDB struct {
 
 //NewBoltDBRepo will create a new BoltDB repository
 func NewBoltDBRepo(dbfile string) (*BoltDB, error) {
-	//db, err := storm.Open(dbfile)
 	db, err := bolthold.Open(dbfile, 0666, nil)
 	if err != nil {
 		return nil, err
-		//panic("Unable to open boltdb")
 	}
-
-	// err = db.Init(&types.ParentIssue{})
-	// if err != nil {
-	// 	return nil, err
-	// 	//panic("Unable to initialize bucket")
-	// }
-
-	// err = db.Init(&types.WorklogItem{})
-	// if err != nil {
-	// 	return nil, err
-	// 	//panic("Unable to initialize bucket")
-	// }
 	return &BoltDB{
 		db: db,
 	}, nil
@@ -40,23 +27,8 @@ func NewBoltDBRepo(dbfile string) (*BoltDB, error) {
 //NonResolvedIssues gets all issue keys that are not resolved yet
 func (r *BoltDB) NonResolvedIssues() ([]types.ParentIssue, error) {
 	var issues []types.ParentIssue
-	//var results []string
-
 	err := r.db.Find(&issues, bolthold.Where("IsResolved").Eq(false))
 	return issues, err
-
-	// if err != nil && err.Error() != "not found" {
-	// 	return nil, err
-	// }
-	// // query := w.db.Select(q.Eq("IsResolved", false))
-	// // err := query.Find(&issues)
-	// // if err != nil && err.Error() != "not found" {
-	// // 	return nil, err
-	// // }
-	// for _, i := range issues {
-	// 	results = append(results, i.Key)
-	// }
-	// return results, nil
 }
 
 //Write will add the worklogItem to BoltDB
@@ -66,33 +38,15 @@ func (r *BoltDB) Write(wi *types.WorklogItem, pi *types.ParentIssue) error {
 	if err != nil {
 		return err
 	}
+	pi.UpdateDate = wi.Date
 	//parent := wi.GetParent()
 	err = r.db.Upsert(pi.ID, &pi)
 	return err
-
-	// tx, err := w.db.Begin(true)
-	// err = tx.Save(&wi)
-	// if err != nil {
-	// 	return err
-	// }
-	// err = tx.Save(wi.GetParent())
-	// if err != nil {
-	// 	return err
-	// }
-	// return tx.Commit()
 }
 
-func (w *BoltDB) UpdateIssue(issue *types.ParentIssue) error {
-	return w.db.Upsert(issue.ID, &issue)
-
-	// err := w.db.Update(&types.ParentIssue{
-	// 	ID:                            issue.ID,
-	// 	ResolvedDate:                  issue.ResolvedDate,
-	// 	IsResolved:                    true,
-	// 	AggregateTimeOriginalEstimate: issue.AggregateTimeOriginalEstimate,
-	// 	AggregateTimeSpent:            issue.AggregateTimeSpent,
-	// })
-	// return err
+//UpdateIssue will update the resolved information for the given issue
+func (r *BoltDB) UpdateIssue(issue *types.ParentIssue) error {
+	return r.db.Upsert(issue.ID, &issue)
 }
 
 //Close will close the boltDB connection
@@ -100,37 +54,22 @@ func (r *BoltDB) Close() {
 	r.db.Close()
 }
 
+//AllWorkLogs will return all of the work logs from boltDB
 func (r *BoltDB) AllWorkLogs() ([]types.WorklogItem, error) {
 	var worklogs []types.WorklogItem
-	// err := w.db.All(&worklogs)
 	err := r.db.Find(&worklogs, nil)
 	return worklogs, err
 }
 
+//AllIssues will return all of the issues from boltDB
 func (r *BoltDB) AllIssues() ([]types.ParentIssue, error) {
 	var issues []types.ParentIssue
 	err := r.db.Find(&issues, nil)
-	//err := w.db.All(&issues)
 	return issues, err
 }
 
-// func (r *BoltDB) IssueCountByDeveloper(daysBack int) (map[string]int, error) {
-// 	results := make(map[string]int)
-// 	y, m, d := time.Now().AddDate(0, 0, -1*daysBack).Date()
-// 	date := time.Date(y, m, d, 0, 0, 0, 0, time.Local)
-// 	query := bolthold.Where("CreateDate").Ge(date)
-// 	agg, err := r.db.FindAggregate(&types.ParentIssue{}, query, "Developer")
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	for i := range agg {
-// 		var developer string
-// 		agg[i].Group(&developer)
-// 		results[developer] = agg[i].Count()
-// 	}
-// 	return results, nil
-// }
-
+//IssuesGroupedBy will return issues group by the given groupBy value going
+//back daysBack. This data will be used for charting
 func (r *BoltDB) IssuesGroupedBy(groupBy string, daysBack int) ([]types.IssueChartData, error) {
 	y, m, d := time.Now().AddDate(0, 0, -1*daysBack).Date()
 	date := time.Date(y, m, d, 0, 0, 0, 0, time.Local)

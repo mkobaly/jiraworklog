@@ -1,11 +1,12 @@
 package types
 
 import (
-	"github.com/mkobaly/jiraworklog"
 	"math"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/mkobaly/jiraworklog"
 )
 
 //WorklogItem represents the finalized worklog. This includes the issue the worklog
@@ -101,6 +102,7 @@ func ConvertToModels(w jiraworklog.Worklog, i jiraworklog.Issue, parentIssue jir
 		Priority:                      pi.Fields.Priority.Name,
 		Status:                        pi.Fields.Status.Name,
 		CreateDate:                    created,
+		UpdateDate:                    started, //always update issue's updateDate when a worklog item is entered
 		ResolvedDate:                  &resolvedDate,
 		IsResolved:                    isResolved,
 		DaysToResolve:                 daysToResolve,

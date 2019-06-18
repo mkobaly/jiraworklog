@@ -17,128 +17,167 @@
 </head>
 
 <body>
-        <nav class="navbar navbar-expand-md navbar-dark bg-dark mb-3">
-                <div class="container-fluid">
-                    <a href="#" class="navbar-brand mr-3">Tutorial Republic</a>
-                    <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-                    <div class="collapse navbar-collapse" id="navbarCollapse">
-                        <div class="navbar-nav">
-                            <a href="#" class="nav-item nav-link active">Home</a>
-                            <a href="#" class="nav-item nav-link">Services</a>
-                            <a href="#" class="nav-item nav-link">About</a>
-                            <a href="#" class="nav-item nav-link">Contact</a>
-                        </div>
-                        <div class="navbar-nav ml-auto">
-                            <a href="#" class="nav-item nav-link">Register</a>
-                            <a href="#" class="nav-item nav-link">Login</a>
-                        </div>
-                    </div>
-                </div>    
-            </nav>
-            <div class="container-fluid">
-                <div class="row">
-                    <div class="col-md-4">
-                        <h2>HTML</h2>
-                    </div>
-                    <div class="col-md-4">
-                            <h2 class="text-center">By Priority</h2>
-                            <div id="chart2"></div>
-                    </div>
-                    <div class="col-md-4">
-                        <h2 class="text-center">By Issue Type</h2>
-                        <div id="chart3"></div>
-                    </div>
+    <nav class="navbar navbar-expand-md navbar-dark bg-dark mb-3">
+        <div class="container-fluid">
+            <h2>Jira Dashboard</h2>
+            
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+                <div class="navbar-nav">
+                    <a href="#" class="nav-item nav-link active">Home</a>
+                    <a href="#" class="nav-item nav-link">Worklogs</a>
+                    <a href="#" class="nav-item nav-link">Issues</a>
+                    <a href="#" class="nav-item nav-link">Details</a>
                 </div>
-                <hr>
-                <footer>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p>Copyright &copy; 2019 Tutorial Republic</p>
-                        </div>
-                        <div class="col-md-6 text-md-right">
-                            <a href="#" class="text-dark">Terms of Use</a> 
-                            <span class="text-muted mx-2">|</span> 
-                            <a href="#" class="text-dark">Privacy Policy</a>
-                        </div>
-                    </div>
-                </footer>
+                
             </div>
+        </div>
+    </nav>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-4">
+                <h4 class="text-center">By Developer</h4>
+                <div id="chart1"></div>
+            </div>
+            <div class="col-md-4">
+                <h4 class="text-center">By Priority</h4>
+                <div id="chart2"></div>
+            </div>
+            <div class="col-md-4">
+                <h4 class="text-center">By Issue Type</h4>
+                <div id="chart3"></div>
+            </div>
+        </div>
+        <hr>
+        <footer>
+            <div class="row page-footer">
+                <div class="col-md-6">
+                    <p>Footer goes here</p>
+                </div>
+                <div class="col-md-6 text-md-right">
+                    <a href="https://github.com/mkobaly/jiraworklog" target="_blank">
 
-            <script>
-                    var chart2 = c3.generate({
-                        data: {
-                            url: 'http://localhost:8180/test',
-                            mimeType: 'json',
-                            type: 'bar',
-                            labels: true,
-                            keys: {
-                                x: 'Issue', // it's possible to specify 'x' when category axis
-                                value: ['NonResolved', 'Resolved', 'DaysToComplete', 'TimeSpent']
-                            },
-                            names: {
-                                NonResolved: 'Not Resolved',
-                                DaysToComplete: 'Avg Days to resolve'
-                            },
-                            types: {
-                                DaysToComplete: 'line',
-                                TimeSpent: 'line',
-                            },
-                            axes: {
-                                DaysToComplete: 'y2',
-                                TimeSpent: 'y2'
-                            },
-                            groups: [
-                                ['Resolved', 'NonResolved']
-                            ]
-                        },
-                        bindto: '#chart2',
-                        axis: {
-                            x: {
-                                type: 'category'
-                            },
-                            y2: {
-                                show: "true"
-                            }
-                        }
-                    });
+                            <img src="/dashboard/GitHub-Mark-32px.png" alt="git repository" >
+                    </a>
+                </div>
+            </div>
+        </footer>
+    </div>
 
-                    var chart3 = c3.generate({
-                        data: {
-                            url: 'http://localhost:8180/test',
-                            mimeType: 'json',
-                            type: 'bar',
-                            labels: true,
-                            keys: {
-                                x: 'Issue', // it's possible to specify 'x' when category axis
-                                value: ['NonResolved', 'Resolved', 'DaysToComplete']
-                            },
-                            names: {
-                                NonResolved: 'Not Resolved',
-                                DaysToComplete: 'Avg Days to resolve'
-                            },
-                            types: {
-                                DaysToComplete: 'line'
-                            },
-                            axes: {
-                                DaysToComplete: 'y2'
-                            },
-                            groups: [
-                                ['Resolved', 'NonResolved']
-                            ]
-                        },
-                        bindto: '#chart3',
-                        axis: {
-                            x: {
-                                type: 'category'
-                            },
-                            y2: {
-                                show: "true"
-                            }
-                        }
-                    });
-                </script>
+    <script>
+        var chart1 = c3.generate({
+            data: {
+                url: 'http://localhost:8180/issues/groupby?group=developer&daysback=500',
+                mimeType: 'json',
+                type: 'bar',
+                labels: true,
+                keys: {
+                    x: 'GroupBy', // it's possible to specify 'x' when category axis
+                    value: ['NonResolved', 'Resolved', 'DaysToComplete', 'TimeSpent']
+                },
+                names: {
+                    NonResolved: 'Not Resolved',
+                    DaysToComplete: 'Avg Days to resolve',
+                    TimeSpent: 'Time Spent (Hrs)'
+
+                },
+                types: {
+                    DaysToComplete: 'line',
+                    TimeSpent: 'line',
+                },
+                axes: {
+                    DaysToComplete: 'y2',
+                    TimeSpent: 'y2'
+                },
+                groups: [
+                    ['Resolved', 'NonResolved']
+                ]
+            },
+            bindto: '#chart1',
+            axis: {
+                x: {
+                    type: 'category'
+                },
+                y2: {
+                    show: "true"
+                }
+            }
+        });
+
+        var chart2 = c3.generate({
+            data: {
+                url: 'http://localhost:8180/issues/groupby?group=priority&daysback=500',
+                mimeType: 'json',
+                type: 'bar',
+                labels: true,
+                keys: {
+                    x: 'GroupBy', // it's possible to specify 'x' when category axis
+                    value: ['NonResolved', 'Resolved', 'DaysToComplete', 'TimeSpent']
+                },
+                names: {
+                    NonResolved: 'Not Resolved',
+                    DaysToComplete: 'Avg Days to resolve',
+                    TimeSpent: 'Time Spent (Hrs)'
+
+                },
+                types: {
+                    DaysToComplete: 'line',
+                    TimeSpent: 'line',
+                },
+                axes: {
+                    DaysToComplete: 'y2',
+                    TimeSpent: 'y2'
+                },
+                groups: [
+                    ['Resolved', 'NonResolved']
+                ]
+            },
+            bindto: '#chart2',
+            axis: {
+                x: {
+                    type: 'category'
+                },
+                y2: {
+                    show: "true"
+                }
+            }
+        });
+
+        var chart3 = c3.generate({
+            data: {
+                url: 'http://localhost:8180/issues/groupby?group=type&daysback=500',
+                mimeType: 'json',
+                type: 'bar',
+                labels: true,
+                keys: {
+                    x: 'GroupBy', // it's possible to specify 'x' when category axis
+                    value: ['NonResolved', 'Resolved', 'DaysToComplete']
+                },
+                names: {
+                    NonResolved: 'Not Resolved',
+                    DaysToComplete: 'Avg Days to resolve',
+                    TimeSpent: 'Time Spent (Hrs)'
+                },
+                types: {
+                    DaysToComplete: 'line'
+                },
+                axes: {
+                    DaysToComplete: 'y2'
+                },
+                groups: [
+                    ['Resolved', 'NonResolved']
+                ]
+            },
+            bindto: '#chart3',
+            axis: {
+                x: {
+                    type: 'category'
+                },
+                y2: {
+                    show: "true"
+                }
+            }
+        });
+    </script>
 
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->

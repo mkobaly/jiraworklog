@@ -2,12 +2,13 @@ package repository
 
 import (
 	"database/sql"
+	"log"
+	"time"
+
 	mssql "github.com/denisenkom/go-mssqldb"
 	"github.com/jmoiron/sqlx"
 	"github.com/mkobaly/jiraworklog"
 	"github.com/mkobaly/jiraworklog/types"
-	"log"
-	"time"
 )
 
 //SQL is the SQL Server repository
@@ -61,12 +62,14 @@ func (s *SQL) Write(w *types.WorklogItem, pi *types.ParentIssue) error {
 		VALUES(@p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12, @p13, @p14, @p15, @p16, @p17, @p18, @p19, @p20)
 		
 		IF NOT EXISTS (SELECT * FROM issue WHERE [id] = @p15)
-		INSERT INTO issue
-		(
-			[id], [key], [type], summary, priority, status, project, developer, createDate, 
-			resolvedDate, isResolved, daysToResolve, aggregateTimeSpent, aggregateTimeOriginalEstimate
-		)
-		VALUES(@p15, @p16, @p17, @p18, @p19, @p20, @p21, @p22, @p23, @p24, @p25, @p26, @p27, @p28)`)
+			INSERT INTO issue
+			(
+				[id], [key], [type], summary, priority, status, project, developer, createDate, updateDate,
+				resolvedDate, isResolved, daysToResolve, aggregateTimeSpent, aggregateTimeOriginalEstimate
+			)
+			VALUES(@p15, @p16, @p17, @p18, @p19, @p20, @p21, @p22, @p23, @p24, @p25, @p26, @p27, @p28, @p29)
+		ELSE
+			UPDATE issue SET updateDate = @p24 WHERE [id] = @p15`)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -74,8 +77,8 @@ func (s *SQL) Write(w *types.WorklogItem, pi *types.ParentIssue) error {
 	_, err = stmt.Exec(w.ID, w.Author, mssql.DateTime1(w.Date), w.WeekNumber, w.WeekDay, w.TimeSpentSeconds, w.TimeSpentHours,
 		w.Project, w.IssueID, w.IssueKey, w.IssueType, w.IssueSummary, w.IssuePriority, w.IssueStatus,
 		w.ParentIssueID, w.ParentIssueKey, w.ParentIssueType, w.ParentIssueSummary, w.ParentIssuePriority,
-		w.ParentIssueStatus, pi.Project, pi.Developer, sqlDate(&pi.CreateDate), sqlDate(pi.ResolvedDate), pi.IsResolved,
-		pi.DaysToResolve, pi.AggregateTimeSpent, pi.AggregateTimeOriginalEstimate)
+		w.ParentIssueStatus, pi.Project, pi.Developer, mssql.DateTime1(pi.CreateDate), mssql.DateTime1(pi.UpdateDate),
+		sqlDate(pi.ResolvedDate), pi.IsResolved, pi.DaysToResolve, pi.AggregateTimeSpent, pi.AggregateTimeOriginalEstimate)
 
 	if err != nil {
 		switch err := err.(type) {
@@ -91,6 +94,7 @@ func (s *SQL) Write(w *types.WorklogItem, pi *types.ParentIssue) error {
 	return nil
 }
 
+//UpdateIssue will update the resolved information for the given issue
 func (s *SQL) UpdateIssue(issue *types.ParentIssue) error {
 	stmt, err := s.DB.Prepare(`
 		UPDATE issue 
@@ -111,26 +115,12 @@ func (s *SQL) UpdateIssue(issue *types.ParentIssue) error {
 	return nil
 }
 
-//UpdateResolutionDate will update the resolution date for a jira issue
-// func (s *SQL) UpdateResolutionDate(issueKey string, resolvedDate time.Time) error {
-// 	stmt, err := s.DB.Prepare(`
-// 		UPDATE issue
-// 			SET resolvedDate = @p2, isResolved = 1
-// 		WHERE [key] = @p1`)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	_, err = stmt.Exec(issueKey, sqlDate(&resolvedDate))
-// 	if err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
-
+//Close will close the database connection
 func (s *SQL) Close() {
 	s.DB.Close()
 }
 
+//AllWorkLogs will return all of the work logs from SQL server
 func (s *SQL) AllWorkLogs() ([]types.WorklogItem, error) {
 	result := []types.WorklogItem{}
 	err := s.DB.Select(&result, `		
@@ -158,6 +148,7 @@ func (s *SQL) AllWorkLogs() ([]types.WorklogItem, error) {
 	return result, err
 }
 
+//AllIssues will return all issues from SQL server
 func (s *SQL) AllIssues() ([]types.ParentIssue, error) {
 	result := []types.ParentIssue{}
 	err := s.DB.Select(&result, `	
@@ -180,6 +171,8 @@ func (s *SQL) AllIssues() ([]types.ParentIssue, error) {
 	return result, err
 }
 
+//IssuesGroupedBy will return issues group by the given groupBy value going
+//back daysBack. This data will be used for charting
 func (s *SQL) IssuesGroupedBy(groupBy string, daysBack int) ([]types.IssueChartData, error) {
 
 	result := []types.IssueChartData{}

@@ -1,8 +1,9 @@
 package jiraworklog
 
 import (
-	log "github.com/sirupsen/logrus"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // Worker will do its Action once every interval, making up for lost time that
@@ -14,6 +15,7 @@ type Worker struct {
 	stopChan chan struct{}
 }
 
+//Job represents a job that needs to run at the given interval
 type Job interface {
 	Run() error
 	GetInterval() time.Duration
@@ -31,7 +33,7 @@ func NewWorker(logger *log.Entry, jobs ...Job) *Worker {
 	}
 }
 
-// Run starts the worker and listens for a shutdown call.
+//Start will start the worker and listens for a shutdown call.
 func (w *Worker) Start() {
 
 	for _, job := range w.Jobs {
@@ -39,6 +41,7 @@ func (w *Worker) Start() {
 	}
 }
 
+//Run will execute the given job
 func (w *Worker) Run(job Job) {
 	for {
 		started := time.Now()
@@ -66,9 +69,4 @@ func (w *Worker) Run(job Job) {
 func (w *Worker) Shutdown() {
 	w.Stopped = true
 	close(w.stopChan)
-
-	//w.ShutdownChannel <- "Down"
-	//<-w.ShutdownChannel
-
-	//close(w.ShutdownChannel)
 }

@@ -1,10 +1,11 @@
 package types
 
 import (
-	"github.com/mkobaly/jiraworklog"
 	"math"
 	"strings"
 	"time"
+
+	"github.com/mkobaly/jiraworklog"
 )
 
 //ParentIssue represents a top level issue that a work log
@@ -17,6 +18,7 @@ type ParentIssue struct {
 	Priority                      string     `db:"priority" boltholdIndex:"Priority"`
 	Status                        string     `db:"status" boltholdIndex:"Status"`
 	CreateDate                    time.Time  `db:"createDate" boltholdIndex:"CreateDate"`
+	UpdateDate                    time.Time  `db:"updateDate" boltholdIndex:"UpdateDate"`
 	ResolvedDate                  *time.Time `db:"resolvedDate" boltholdIndex:"ResolvedDate"`
 	IsResolved                    bool       `db:"isResolved" boltholdIndex:"IsResolved"`
 	DaysToResolve                 int        `db:"daysToResolve" boltholdIndex:"DaysToResolve"`
@@ -39,6 +41,7 @@ func MergeIssue(parentIssue *ParentIssue, i jiraworklog.Issue) {
 
 	parentIssue.IsResolved = true
 	parentIssue.ResolvedDate = &resolvedDate
+	parentIssue.UpdateDate = resolvedDate
 	parentIssue.DaysToResolve = daysToResolve
 	parentIssue.Type = i.Fields.Issuetype.Name
 	parentIssue.Priority = i.Fields.Priority.Name
