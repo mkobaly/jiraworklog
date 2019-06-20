@@ -12,7 +12,11 @@ type Repo interface {
 	UpdateIssue(*types.ParentIssue) error
 	Close()
 
-	AllWorkLogs() ([]types.WorklogItem, error)
 	AllIssues() ([]types.ParentIssue, error)
-	IssuesGroupedBy(groupBy string, daysBack int) ([]types.IssueChartData, error)
+	IssuesGroupedBy(groupBy string, weeksBack int) ([]types.IssueChartData, error)
+
+	AllWorkLogs() ([]types.WorklogItem, error)
+	WorklogsPerDay() ([]types.WorklogsPerDay, error)
+	WorklogsPerDevDay() ([]types.WorklogsPerDevDay, error)
+	WorklogsPerDevWeek() ([]types.WorklogsPerDevWeek, error)
 }

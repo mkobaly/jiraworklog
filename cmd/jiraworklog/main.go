@@ -91,6 +91,10 @@ func main() {
 	server := NewHttpServer(repo, logger)
 	mux := http.NewServeMux()
 	mux.Handle("/worklogs", http.HandlerFunc(server.GetWorkLogs))
+	mux.Handle("/worklogs/perday", http.HandlerFunc(server.GetWorklogsPerDay))
+	mux.Handle("/worklogs/perdevday", http.HandlerFunc(server.GetWorklogsPerDevDay))
+	mux.Handle("/worklogs/perdevweek", http.HandlerFunc(server.GetWorklogsPerDevWeek))
+
 	mux.Handle("/issues", http.HandlerFunc(server.GetIssues))
 	mux.Handle("/issues/groupby", http.HandlerFunc(server.GetIssuesGroupedBy))
 	//mux.Handle("/", http.StripPrefix(strings.TrimRight("/dashboard/", "/"), fileServer))

@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="./main.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.1/c3.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.9.2/d3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.1/c3.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+    <script>
+        $(function () {
+            var selected = getQueryString("weeksBack", window.location.href);
+            $('#timespan').val(selected);
+        });
+    </script>
+
+    <title>Jira Dashboard</title>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-md navbar-dark bg-dark mb-3">
+        <div class="container-fluid">
+            <h2>Jira Dashboard</h2>
+
+
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+
+                <div class="dropdown">
+                    <select id="timespan" class="custom-select">
+                        <option value="1" selected>Last Week</option>
+                        <option value="2">Last two weeks</option>
+                        <option value="4">Last Month</option>
+                        <option value="8">Last Two Months</option>
+                    </select>
+                </div>
+
+
+
+                <div class="navbar-nav">
+                    <a href="worklogs.html" class="nav-item nav-link">Worklogs</a>
+                    <a href="issues.html" class="nav-item nav-link active">Issues</a>
+                </div>
+
+            </div>
+        </div>
+    </nav>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-4">
+                <h4 class="text-center">By Project</h4>
+                <div id="chart4"></div>
+            </div>
+            <div class="col-md-4">
+                <h4 class="text-center">By Priority</h4>
+                <div id="chart2"></div>
+            </div>
+            <div class="col-md-4">
+                <h4 class="text-center">By Issue Type</h4>
+                <div id="chart3"></div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <h4 class="text-center">Per Developer</h4>
+                <div id="chart1"></div>
+            </div>
+        </div>
+        <hr>
+        <footer>
+            <div class="row page-footer">
+                <div class="col-md-6">
+                    <p>Footer goes here</p>
+                </div>
+                <div class="col-md-6 text-md-right">
+                    <a href="https://github.com/mkobaly/jiraworklog" target="_blank">
+
+                        <img src="./GitHub-Mark-32px.png" alt="git repository">
+                    </a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+
+        var getQueryString = function (field, url) {
+            var href = url ? url : window.location.href;
+            var reg = new RegExp('[?&]' + field + '=([^&#]*)', 'i');
+            var string = reg.exec(href);
+            return string ? string[1] : null;
+        };
+
+        var chart1 = c3.generate({
+            data: {
+                url: './issues/groupby?group=developer&weeksBack=' + getQueryString("weeksBack", window.location.href),
+                mimeType: 'json',
+                type: 'bar',
+                labels: true,
+                keys: {
+                    x: 'GroupBy', // it's possible to specify 'x' when category axis
+                    value: ['NonResolved', 'Resolved', 'DaysToComplete', 'TimeSpent']
+                },
+                names: {
+                    NonResolved: 'Not Resolved',
+                    DaysToComplete: 'Avg Days to resolve',
+                    TimeSpent: 'Time Spent (Hrs)'
+
+                },
+                types: {
+                    DaysToComplete: 'line',
+                    TimeSpent: 'line',
+                },
+                axes: {
+                    DaysToComplete: 'y2',
+                    TimeSpent: 'y2'
+                },
+                groups: [
+                    ['Resolved', 'NonResolved']
+                ]
+            },
+            bindto: '#chart1',
+            axis: {
+                x: {
+                    type: 'category'
+                },
+                y2: {
+                    show: "true"
+                }
+            }
+        });
+
+        var chart2 = c3.generate({
+            data: {
+                url: './issues/groupby?group=priority&weeksBack=' + getQueryString("weeksBack", window.location.href),
+                mimeType: 'json',
+                type: 'bar',
+                labels: true,
+                keys: {
+                    x: 'GroupBy', // it's possible to specify 'x' when category axis
+                    value: ['NonResolved', 'Resolved', 'DaysToComplete', 'TimeSpent']
+                },
+                names: {
+                    NonResolved: 'Not Resolved',
+                    DaysToComplete: 'Avg Days to resolve',
+                    TimeSpent: 'Time Spent (Hrs)'
+
+                },
+                types: {
+                    DaysToComplete: 'line',
+                    TimeSpent: 'line',
+                },
+                axes: {
+                    DaysToComplete: 'y2',
+                    TimeSpent: 'y2'
+                },
+                groups: [
+                    ['Resolved', 'NonResolved']
+                ]
+            },
+            bindto: '#chart2',
+            axis: {
+                x: {
+                    type: 'category'
+                },
+                y2: {
+                    show: "true"
+                }
+            }
+        });
+
+        var chart3 = c3.generate({
+            data: {
+                url: './issues/groupby?group=type&weeksBack=' + getQueryString("weeksBack", window.location.href),
+                mimeType: 'json',
+                type: 'bar',
+                labels: true,
+                keys: {
+                    x: 'GroupBy', // it's possible to specify 'x' when category axis
+                    value: ['NonResolved', 'Resolved', 'DaysToComplete']
+                },
+                names: {
+                    NonResolved: 'Not Resolved',
+                    DaysToComplete: 'Avg Days to resolve',
+                    TimeSpent: 'Time Spent (Hrs)'
+                },
+                types: {
+                    DaysToComplete: 'line'
+                },
+                axes: {
+                    DaysToComplete: 'y2'
+                },
+                groups: [
+                    ['Resolved', 'NonResolved']
+                ]
+            },
+            bindto: '#chart3',
+            axis: {
+                x: {
+                    type: 'category'
+                },
+                y2: {
+                    show: "true"
+                }
+            }
+        });
+
+        var chart4 = c3.generate({
+            data: {
+                url: './issues/groupby?group=project&weeksBack=' + + getQueryString("weeksBack", window.location.href),
+                mimeType: 'json',
+                type: 'bar',
+                labels: true,
+                keys: {
+                    x: 'GroupBy', // it's possible to specify 'x' when category axis
+                    value: ['NonResolved', 'Resolved', 'DaysToComplete']
+                },
+                names: {
+                    NonResolved: 'Not Resolved',
+                    DaysToComplete: 'Avg Days to resolve',
+                    TimeSpent: 'Time Spent (Hrs)'
+                },
+                types: {
+                    DaysToComplete: 'line'
+                },
+                axes: {
+                    DaysToComplete: 'y2'
+                },
+                groups: [
+                    ['Resolved', 'NonResolved']
+                ]
+            },
+            bindto: '#chart4',
+            axis: {
+                x: {
+                    type: 'category'
+                },
+                y2: {
+                    show: "true"
+                }
+            }
+        });
+    </script>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+        crossorigin="anonymous"></script>
+
+    <script>
+
+        $('#timespan').on(
+            {
+                // "focus": function () {
+                //     // var selected = getQueryString("weeksBack", window.location.href);
+                //     // this.val(selected);
+                //     //console.log('clicked!', this, this.value);
+                //     this.selectedIndex = -1;
+                // }
+                 "change": function () {
+                    choice = $(this).val();
+                    window.location.href = "./issues.html?weeksBack=" + choice;
+                    //console.log('changed!', this, choice);
+                    this.blur();
+                    //setTimeout(function () { alert('Chose ' + choice); }, 0);
+                }
+            });
+    </script>
+</body>
+
+</html>

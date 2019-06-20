@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"strconv"
+	"strings"
 	"time"
 
 	mssql "github.com/denisenkom/go-mssqldb"
@@ -174,7 +176,7 @@ func (s *SQL) AllIssues() ([]types.ParentIssue, error) {
 
 //IssuesGroupedBy will return issues group by the given groupBy value going
 //back daysBack. This data will be used for charting
-func (s *SQL) IssuesGroupedBy(groupBy string, daysBack int) ([]types.IssueChartData, error) {
+func (s *SQL) IssuesGroupedBy(groupBy string, weeksBack int) ([]types.IssueChartData, error) {
 
 	result := []types.IssueChartData{}
 	err := s.DB.Select(&result, fmt.Sprintf(`
@@ -185,13 +187,153 @@ func (s *SQL) IssuesGroupedBy(groupBy string, daysBack int) ([]types.IssueChartD
 		CONVERT(DECIMAL(10,2),sum(aggregateTimeSpent / 3600.00))  [timeSpent],
 		sum(aggregateTimeOriginalEstimate / 3600.00)  [timeEstimate]
 	FROM issue
-	WHERE createDate >= dateadd(day,-1 * @p1, getdate())
-	group by [%s]`, groupBy, groupBy), daysBack)
+	WHERE datepart(week,updateDate) >= datepart(week,getutcdate()) - @p1
+	group by [%s]`, groupBy, groupBy), weeksBack)
 	if err != nil {
 		return nil, err
 	}
 	return result, nil
+}
 
+// func (s *SQL) WorklogsPerDevPerWeek(weeksBack int) ([]types.IssueChartData, error) {
+
+// 	var _, weekNumber = time.Now().ISOWeek()
+
+// 	result := []types.IssueChartData{}
+// 	err := s.DB.Select(&result, fmt.Sprintf(`
+// 	SELECT author, weekNumber, sum(timeSpentHours) [timeSpentHours]
+// 	FROM weekNumber >= datepart(WEEK, getdate()) - 4
+// 	GROUP BY author, weekNumber
+// 	ORDER BY author, weekNumber`, groupBy, groupBy), daysBack)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return result, nil
+// }
+
+func (s *SQL) WorklogsPerDay() ([]types.WorklogsPerDay, error) {
+	finalResults := []types.WorklogsPerDay{
+		types.WorklogsPerDay{Day: "Sunday", TimeSpentHrs: 0},
+		types.WorklogsPerDay{Day: "Monday", TimeSpentHrs: 0},
+		types.WorklogsPerDay{Day: "Tuesday", TimeSpentHrs: 0},
+		types.WorklogsPerDay{Day: "Wednesday", TimeSpentHrs: 0},
+		types.WorklogsPerDay{Day: "Thursday", TimeSpentHrs: 0},
+		types.WorklogsPerDay{Day: "Friday", TimeSpentHrs: 0},
+		types.WorklogsPerDay{Day: "Saturday", TimeSpentHrs: 0},
+	}
+
+	qr := []types.WorklogsPerDay{}
+	err := s.DB.Select(&qr, `
+		SELECT weekDay [day], sum(timeSpentHours) [timeSpentHrs]
+		FROM worklog
+		WHERE weekNumber = datepart(WEEK, dateadd(day, -7, getdate()))
+		GROUP BY weekDay
+		ORDER BY weekDay`)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range finalResults {
+		for _, w := range qr {
+			if strings.ToLower(finalResults[i].Day) == strings.ToLower(w.Day) {
+				finalResults[i].TimeSpentHrs = w.TimeSpentHrs
+				continue
+			}
+		}
+	}
+
+	// for _, wd := range finalResults {
+	// 	for _, w := range qr {
+	// 		if strings.ToLower(wd.Day) == strings.ToLower(w.Day) {
+	// 			wd.TimeSpentHrs = w.TimeSpentHrs
+	// 			continue
+	// 		}
+	// 	}
+	// }
+	return finalResults, nil
+}
+
+func (s *SQL) WorklogsPerDevDay() ([]types.WorklogsPerDevDay, error) {
+	results := make(map[string]*types.WorklogsPerDevDay)
+	final := []types.WorklogsPerDevDay{}
+
+	qr := []types.WorklogsPerDay{}
+	err := s.DB.Select(&qr, `
+	SELECT author [developer], weekDay [day], sum(timeSpentHours) [timeSpentHrs]
+	FROM worklog
+	WHERE weekNumber = datepart(WEEK, dateadd(day, -7, getdate()))
+	GROUP BY author, weekDay
+	ORDER BY author, weekDay`)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, item := range qr {
+		if _, ok := results[item.Developer]; !ok {
+			results[item.Developer] = &types.WorklogsPerDevDay{Developer: item.Developer}
+		}
+
+		switch item.Day {
+		case "Monday":
+			results[item.Developer].Monday = item.TimeSpentHrs
+		case "Tuesday":
+			results[item.Developer].Tuesday = item.TimeSpentHrs
+		case "Wednesday":
+			results[item.Developer].Wednesday = item.TimeSpentHrs
+		case "Thursday":
+			results[item.Developer].Thursday = item.TimeSpentHrs
+		case "Friday":
+			results[item.Developer].Friday = item.TimeSpentHrs
+		}
+	}
+
+	for _, v := range results {
+		final = append(final, *v)
+	}
+	return final, nil
+}
+
+func (s *SQL) WorklogsPerDevWeek() ([]types.WorklogsPerDevWeek, error) {
+	results := make(map[string]*types.WorklogsPerDevWeek)
+	final := []types.WorklogsPerDevWeek{}
+
+	_, week := time.Now().ISOWeek()
+
+	qr := []types.WorklogsAggQueryResult{}
+	err := s.DB.Select(&qr, `
+	SELECT author [developer], weekNumber [group], sum(timeSpentHours) [timeSpentHrs]
+	FROM worklog
+	WHERE weekNumber >= datepart(WEEK, getdate()) - 4
+	GROUP BY author, weekNumber
+	ORDER BY author`)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, item := range qr {
+		if _, ok := results[item.Developer]; !ok {
+			results[item.Developer] = &types.WorklogsPerDevWeek{Developer: item.Developer}
+		}
+		w, _ := strconv.Atoi(item.Group)
+
+		switch week - w {
+		case 0:
+			results[item.Developer].ThisWeek = item.TimeSpentHrs
+		case 1:
+			results[item.Developer].LastWeek = item.TimeSpentHrs
+		case 2:
+			results[item.Developer].TwoWeeks = item.TimeSpentHrs
+		case 3:
+			results[item.Developer].ThreeWeeks = item.TimeSpentHrs
+		case 4:
+			results[item.Developer].FourWeeks = item.TimeSpentHrs
+		}
+	}
+
+	for _, v := range results {
+		final = append(final, *v)
+	}
+	return final, nil
 }
 
 func sqlDate(t *time.Time) interface{} {

@@ -60,7 +60,9 @@ Jira should be easy to use but its not. Here we are assuming 1 simple rule. Deve
   - The days to complete by type line chart below could fit here
   - Pivot result of per developer past 6 weeks, hours worked per week
 
-- Issues
+----------------------------------------------------------------------------
+Issues
+----------------------------------------------------------------------------
 
 TODO: Think need lastUpdated property on the Issues. Can't just use create date or resolvedDate
  - Any time developer adds time update issue / parent issue last updated
@@ -76,12 +78,22 @@ TODO: Think need lastUpdated property on the Issues. Can't just use create date 
 | By Priority |  | By Issue |  | By Developer |
 ---------------  ------------  ----------------
 
+issues by type: avg days to resolve (ones that are closed)
+
+per developer: %accuracy on estimate
+
+all developers: %accuracy (guage)
+
 List - Issues not closed and older than x days
 
 Days to complete by type
  - line chart going back 6 weeks. Each week point
 
-- Worklogs
+------------------------------------------------------
+Worklogs
+------------------------------------------------------
+
+Who hasn't logged any hours for today
 
 By Weekday
 --------------

@@ -69,9 +69,9 @@ func (r *BoltDB) AllIssues() ([]types.ParentIssue, error) {
 }
 
 //IssuesGroupedBy will return issues group by the given groupBy value going
-//back daysBack. This data will be used for charting
-func (r *BoltDB) IssuesGroupedBy(groupBy string, daysBack int) ([]types.IssueChartData, error) {
-	y, m, d := time.Now().AddDate(0, 0, -1*daysBack).Date()
+//back weeksBack. This data will be used for charting
+func (r *BoltDB) IssuesGroupedBy(groupBy string, weeksBack int) ([]types.IssueChartData, error) {
+	y, m, d := time.Now().AddDate(0, 0, -1*weeksBack).Date()
 	date := time.Date(y, m, d, 0, 0, 0, 0, time.Local)
 	query := bolthold.Where("CreateDate").Ge(date)
 	agg, err := r.db.FindAggregate(&types.ParentIssue{}, query, groupBy, "IsResolved")
@@ -105,4 +105,16 @@ func (r *BoltDB) IssuesGroupedBy(groupBy string, daysBack int) ([]types.IssueCha
 		values = append(values, *v)
 	}
 	return values, nil
+}
+
+func (r *BoltDB) WorklogsPerDay() ([]types.WorklogsPerDay, error) {
+	return nil, nil
+}
+
+func (r *BoltDB) WorklogsPerDevDay() ([]types.WorklogsPerDevDay, error) {
+	return nil, nil
+}
+
+func (r *BoltDB) WorklogsPerDevWeek() ([]types.WorklogsPerDevWeek, error) {
+	return nil, nil
 }

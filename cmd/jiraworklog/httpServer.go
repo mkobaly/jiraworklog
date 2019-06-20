@@ -74,20 +74,20 @@ func (s *HttpServer) GetIssuesGroupedBy(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	daysBack := 7 //default to 7 days back
-	daysBackUrl, ok := r.URL.Query()["daysback"]
-	if ok && len(daysBackUrl) == 1 {
-		i, err := strconv.Atoi(daysBackUrl[0])
+	weeksBack := 7 //default to 7 days back
+	weeksBackUrl, ok := r.URL.Query()["weeksBack"]
+	if ok && len(weeksBackUrl) == 1 {
+		i, err := strconv.Atoi(weeksBackUrl[0])
 		if err != nil {
-			errMsg := "Url Param 'daysback' must be an integer"
+			errMsg := "Url Param 'weeksBack' must be an integer"
 			s.logger.Error(errMsg)
 			http.Error(w, http.StatusText(400)+":"+errMsg, 400)
 			return
 		}
-		daysBack = i
+		weeksBack = i
 	}
 
-	issues, err := s.repo.IssuesGroupedBy(group, daysBack)
+	issues, err := s.repo.IssuesGroupedBy(group, weeksBack)
 	if err != nil {
 		s.logger.WithError(err).Error("error fetching records")
 		http.Error(w, http.StatusText(500), 500)
@@ -97,6 +97,60 @@ func (s *HttpServer) GetIssuesGroupedBy(w http.ResponseWriter, r *http.Request) 
 	jsn, err := json.Marshal(issues)
 	if err != nil {
 		s.logger.WithError(err).Error("error marshalling results")
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jsn)
+}
+
+func (s *HttpServer) GetWorklogsPerDay(w http.ResponseWriter, r *http.Request) {
+	wl, err := s.repo.WorklogsPerDay()
+	if err != nil {
+		s.logger.WithError(err).Error("error fetching worklogs per day")
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	jsn, err := json.Marshal(wl)
+	if err != nil {
+		s.logger.WithError(err).Error("error marshalling worklogs per day")
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jsn)
+}
+
+func (s *HttpServer) GetWorklogsPerDevDay(w http.ResponseWriter, r *http.Request) {
+	wl, err := s.repo.WorklogsPerDevDay()
+	if err != nil {
+		s.logger.WithError(err).Error("error fetching worklogs per dev day")
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	jsn, err := json.Marshal(wl)
+	if err != nil {
+		s.logger.WithError(err).Error("error marshalling worklogs per dev day")
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jsn)
+}
+
+func (s *HttpServer) GetWorklogsPerDevWeek(w http.ResponseWriter, r *http.Request) {
+	wl, err := s.repo.WorklogsPerDevWeek()
+	if err != nil {
+		s.logger.WithError(err).Error("error fetching worklogs per dev week")
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	jsn, err := json.Marshal(wl)
+	if err != nil {
+		s.logger.WithError(err).Error("error marshalling worklogs per dev week")
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
