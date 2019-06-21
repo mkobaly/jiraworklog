@@ -176,8 +176,7 @@ func (s *SQL) AllIssues() ([]types.ParentIssue, error) {
 
 //IssuesGroupedBy will return issues group by the given groupBy value going
 //back daysBack. This data will be used for charting
-func (s *SQL) IssuesGroupedBy(groupBy string, weeksBack int) ([]types.IssueChartData, error) {
-
+func (s *SQL) IssuesGroupedBy(groupBy string, start time.Time, stop time.Time) ([]types.IssueChartData, error) {
 	result := []types.IssueChartData{}
 	err := s.DB.Select(&result, fmt.Sprintf(`
 	select [%s] [groupBy],
@@ -187,8 +186,40 @@ func (s *SQL) IssuesGroupedBy(groupBy string, weeksBack int) ([]types.IssueChart
 		CONVERT(DECIMAL(10,2),sum(aggregateTimeSpent / 3600.00))  [timeSpent],
 		sum(aggregateTimeOriginalEstimate / 3600.00)  [timeEstimate]
 	FROM issue
-	WHERE datepart(week,updateDate) >= datepart(week,getutcdate()) - @p1
-	group by [%s]`, groupBy, groupBy), weeksBack)
+	WHERE updateDate >= @p1
+	AND updateDate <= @p2
+	group by [%s]`, groupBy, groupBy), start, stop)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+//IssueAccuracy will return how accurate a developers estimate is vs actual time logged
+func (s *SQL) IssueAccuracy(start time.Time, stop time.Time) ([]types.IssueAccuracy, error) {
+	result := []types.IssueAccuracy{}
+	err := s.DB.Select(&result, `
+	SELECT developer, count(*) [count], 
+		CAST(100 - abs(((sum(aggregateTimeOriginalEstimate) - sum(aggregateTimeSpent)) / 
+		cast(sum(aggregateTimeOriginalEstimate) as decimal(18,2))) * 100.00) as decimal(5,2)) [accuracy]
+	FROM issue
+	WHERE updateDate >= @p1 and updateDate <= @p2
+	and isResolved = 1
+	and aggregateTimeOriginalEstimate > 0
+	GROUP BY developer`, start, stop)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (s *SQL) WorklogsGroupBy(groupBy string) ([]types.WorklogGroupByChart, error) {
+	result := []types.WorklogGroupByChart{}
+	err := s.DB.Select(&result, fmt.Sprintf(`
+	SELECT %s [groupBy], sum(timeSpentHours) [timeSpentHrs]
+	FROM worklog
+	WHERE weekNumber = datepart(WEEK, dateadd(day, -7, getdate()))
+	GROUP BY %s`, groupBy, groupBy))
 	if err != nil {
 		return nil, err
 	}

@@ -6,20 +6,71 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
+    <!-- CUSTOM CSS -->
+    <link rel="stylesheet" type="text/css" href="./main.css">
+
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
         integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-    <link rel="stylesheet" type="text/css" href="./main.css">
+
+    <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"
+        integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+
+    <!-- C3 Charting -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.1/c3.min.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.9.2/d3.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.1/c3.min.js"></script>
+
+
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
-        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
-        crossorigin="anonymous"></script>
+        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous">
+        </script>
+
+    <!-- Tabulator -->
+    <link href="https://unpkg.com/tabulator-tables@4.2.7/dist/css/tabulator.min.css" rel="stylesheet">
+    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@4.2.7/dist/js/tabulator.min.js"></script>
+
+    <!-- DateRangePicker -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+
     <script>
         $(function () {
-            var selected = getQueryString("weeksBack", window.location.href);
-            $('#timespan').val(selected);
+            //var selected = getQueryString("weeksBack", window.location.href);
+            //$('#timespan').val(selected);
+
+            var start = moment().subtract(29, 'days');
+            var end = moment();
+
+            function cb(start, end) {
+                $('#reportrange span').html(start.format('YYYY-MM-DD') + ' - ' + end.format('YYYY-MM-DD'));
+
+                st = start.format('YYYYMMDD');
+                stop = end.format('YYYYMMDD');
+                chartIssuesGroupBy("#chart1", "developer", st, stop);
+                chartIssuesGroupBy("#chart2", "priority", st, stop);
+                chartIssuesGroupBy("#chart3", "type", st, stop);
+                chartIssuesGroupBy("#chart4", "project", st, stop);
+                loadIssueAccuracy("#accuracy-table", st, stop);
+            }
+
+            $('#reportrange').daterangepicker({
+                startDate: start,
+                endDate: end,
+                ranges: {
+                    //'Today': [moment(), moment()],
+                    //'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                    'This Week': [moment().startOf('isoWeek'), moment().endOf('isoWeek')],
+                    'Last Week': [moment().subtract(1, 'weeks').startOf('isoWeek'), moment().subtract(1, 'weeks').endOf('isoWeek')],
+                    //'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+                    //'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+                    'This Month': [moment().startOf('month'), moment().endOf('month')],
+                    'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+                }
+            }, cb);
+
+            cb(start, end);
         });
     </script>
 
@@ -29,20 +80,23 @@
 <body>
     <nav class="navbar navbar-expand-md navbar-dark bg-dark mb-3">
         <div class="container-fluid">
-            <h2>Jira Dashboard</h2>
+            <a class="navbar-brand" href="#">
+                <img src="jira-logo.png" width="30" height="30" class="d-inline-block align-top" alt="">
+                Jira Dashboard : Issues
+            </a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse"
+                aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
 
             <div class="collapse navbar-collapse" id="navbarCollapse">
 
-                <div class="dropdown">
-                    <select id="timespan" class="custom-select">
-                        <option value="1" selected>Last Week</option>
-                        <option value="2">Last two weeks</option>
-                        <option value="4">Last Month</option>
-                        <option value="8">Last Two Months</option>
-                    </select>
+                <div id="reportrange"
+                    style="background: #fff; cursor: pointer; padding: 5px 10px; margin: 0px 40px; border: 1px solid #ccc; width: 250px">
+                    <i class="fa fa-calendar"></i>&nbsp
+                    <span></span> <i class="fa fa-caret-down"></i>
                 </div>
-
 
 
                 <div class="navbar-nav">
@@ -56,38 +110,30 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col-md-4">
-                <h4 class="text-center">By Project</h4>
+                <h4 class="text-center">Issue Count Per Project</h4>
                 <div id="chart4"></div>
             </div>
             <div class="col-md-4">
-                <h4 class="text-center">By Priority</h4>
+                <h4 class="text-center">Issue Count Per Priority</h4>
                 <div id="chart2"></div>
             </div>
             <div class="col-md-4">
-                <h4 class="text-center">By Issue Type</h4>
+                <h4 class="text-center">Issue Count Per Type</h4>
                 <div id="chart3"></div>
             </div>
         </div>
+        <hr>
         <div class="row">
-            <div class="col-md-12">
-                <h4 class="text-center">Per Developer</h4>
+            <div class="col-md-8">
+                <h4 class="text-center">Issue Count Per Developer</h4>
                 <div id="chart1"></div>
+            </div>
+            <div class="col-md-4">
+                <h4 class="text-center">Developer Issue Estimate Accuracy</h4>
+                <div id="accuracy-table"></div>
             </div>
         </div>
         <hr>
-        <footer>
-            <div class="row page-footer">
-                <div class="col-md-6">
-                    <p>Footer goes here</p>
-                </div>
-                <div class="col-md-6 text-md-right">
-                    <a href="https://github.com/mkobaly/jiraworklog" target="_blank">
-
-                        <img src="./GitHub-Mark-32px.png" alt="git repository">
-                    </a>
-                </div>
-            </div>
-        </footer>
     </div>
 
     <script>
@@ -99,155 +145,108 @@
             return string ? string[1] : null;
         };
 
-        var chart1 = c3.generate({
-            data: {
-                url: './issues/groupby?group=developer&weeksBack=' + getQueryString("weeksBack", window.location.href),
-                mimeType: 'json',
-                type: 'bar',
-                labels: true,
-                keys: {
-                    x: 'GroupBy', // it's possible to specify 'x' when category axis
-                    value: ['NonResolved', 'Resolved', 'DaysToComplete', 'TimeSpent']
-                },
-                names: {
-                    NonResolved: 'Not Resolved',
-                    DaysToComplete: 'Avg Days to resolve',
-                    TimeSpent: 'Time Spent (Hrs)'
-
-                },
-                types: {
-                    DaysToComplete: 'line',
-                    TimeSpent: 'line',
-                },
-                axes: {
-                    DaysToComplete: 'y2',
-                    TimeSpent: 'y2'
-                },
-                groups: [
-                    ['Resolved', 'NonResolved']
-                ]
-            },
-            bindto: '#chart1',
-            axis: {
-                x: {
-                    type: 'category'
-                },
-                y2: {
-                    show: "true"
-                }
+        var chartIssuesGroupBy = function (bindTo, group, start, stop) {
+            var chart = $(this).data('c3-chart');
+            if (chart != undefined) {
+                chart = chart.destroy();
             }
+            chart = c3.generate({
+                data: {
+                    url: './issues/groupby?group=' + group + '&start=' + start + '&stop=' + stop,
+                    mimeType: 'json',
+                    type: 'bar',
+                    labels: true,
+                    keys: {
+                        x: 'GroupBy', // it's possible to specify 'x' when category axis
+                        value: ['NonResolved', 'Resolved', 'DaysToResolve']
+                    },
+                    names: {
+                        NonResolved: 'Not Resolved',
+                        DaysToResolve: 'Avg Days to resolve',
+                        //TimeSpent: 'Time Spent (Hrs)'
+
+                    },
+                    colors: {
+                        NonResolved: '#EE6868',
+                        Resolved: '#19A979',
+                        DaysToResolve: '#5899DA'
+                    },
+                    types: {
+                        DaysToResolve: 'line',
+                        //TimeSpent: 'line',
+                    },
+                    axes: {
+                        DaysToResolve: 'y2',
+                        //TimeSpent: 'y2'
+                    },
+                    groups: [
+                        ['Resolved', 'NonResolved']
+                    ]
+                },
+                bindto: bindTo,
+                axis: {
+                    x: {
+                        type: 'category'
+                    },
+                    y2: {
+                        show: "true"
+                    }
+                }
+            });
+            $(bindTo).data('c3-chart', chart);
+        }
+
+        var loadIssueAccuracy = function (bindTo, start, stop) {
+            let url = "./issues/accuracy?start=" + start + "&stop=" + stop;
+            if (accuracyTable == null) {
+                var accuracyTable = new Tabulator(bindTo, {
+                    columns: [
+                        { title: "Developer", field: "Developer" },
+                        { title: "Issue Count", field: "Count" },
+                        {
+                            title: "% Accuracy", field: "Accuracy", align: "center", formatter: "progress", tooltip: false, sorter: "number", bottomCalc: "avg", formatterParams: {
+                                min: 0,
+                                max: 100,
+                                color: ["#EE6868", "#E8743B", "#5899DA", "#19A979"],
+                                legendColor: "#000000",
+                                legendAlign: "center",
+                                legend: function (value) { return value + "%" }
+                            }, bottomCalcFormatter: function (cell, formatterParams, onRendered) {
+                                return cell.getValue() + "%";
+                            }
+                        },
+                    ],
+                    initialSort: [
+                        { column: "Developer", dir: "asc" }
+                    ],
+                    layout: "fitColumns",
+                    theme: "Modern",
+                    ajaxURL: url, //ajax URL
+                });
+            } else {
+                accuracyTable.setData(url);
+            }
+        }
+
+        var accuracyTable = new Tabulator("#accuracy-table", {
+            columns: [
+                { title: "Developer", field: "Developer" },
+                { title: "Issue Count", field: "Count" },
+                {
+                    title: "Accuracy", field: "Accuracy", formatter: "progress", tooltip: true, sorter: "number", bottomCalc: "avg", formatterParams: {
+                        min: 0,
+                        max: 100,
+                        color: ["red", "orange", "blue", "green"],
+                        legendColor: "#000000",
+                        legendAlign: "center",
+                    }
+                },
+            ],
+            layout: "fitColumns",
+            ajaxURL: "./issues/accuracy", //ajax URL
         });
 
-        var chart2 = c3.generate({
-            data: {
-                url: './issues/groupby?group=priority&weeksBack=' + getQueryString("weeksBack", window.location.href),
-                mimeType: 'json',
-                type: 'bar',
-                labels: true,
-                keys: {
-                    x: 'GroupBy', // it's possible to specify 'x' when category axis
-                    value: ['NonResolved', 'Resolved', 'DaysToComplete', 'TimeSpent']
-                },
-                names: {
-                    NonResolved: 'Not Resolved',
-                    DaysToComplete: 'Avg Days to resolve',
-                    TimeSpent: 'Time Spent (Hrs)'
 
-                },
-                types: {
-                    DaysToComplete: 'line',
-                    TimeSpent: 'line',
-                },
-                axes: {
-                    DaysToComplete: 'y2',
-                    TimeSpent: 'y2'
-                },
-                groups: [
-                    ['Resolved', 'NonResolved']
-                ]
-            },
-            bindto: '#chart2',
-            axis: {
-                x: {
-                    type: 'category'
-                },
-                y2: {
-                    show: "true"
-                }
-            }
-        });
-
-        var chart3 = c3.generate({
-            data: {
-                url: './issues/groupby?group=type&weeksBack=' + getQueryString("weeksBack", window.location.href),
-                mimeType: 'json',
-                type: 'bar',
-                labels: true,
-                keys: {
-                    x: 'GroupBy', // it's possible to specify 'x' when category axis
-                    value: ['NonResolved', 'Resolved', 'DaysToComplete']
-                },
-                names: {
-                    NonResolved: 'Not Resolved',
-                    DaysToComplete: 'Avg Days to resolve',
-                    TimeSpent: 'Time Spent (Hrs)'
-                },
-                types: {
-                    DaysToComplete: 'line'
-                },
-                axes: {
-                    DaysToComplete: 'y2'
-                },
-                groups: [
-                    ['Resolved', 'NonResolved']
-                ]
-            },
-            bindto: '#chart3',
-            axis: {
-                x: {
-                    type: 'category'
-                },
-                y2: {
-                    show: "true"
-                }
-            }
-        });
-
-        var chart4 = c3.generate({
-            data: {
-                url: './issues/groupby?group=project&weeksBack=' + + getQueryString("weeksBack", window.location.href),
-                mimeType: 'json',
-                type: 'bar',
-                labels: true,
-                keys: {
-                    x: 'GroupBy', // it's possible to specify 'x' when category axis
-                    value: ['NonResolved', 'Resolved', 'DaysToComplete']
-                },
-                names: {
-                    NonResolved: 'Not Resolved',
-                    DaysToComplete: 'Avg Days to resolve',
-                    TimeSpent: 'Time Spent (Hrs)'
-                },
-                types: {
-                    DaysToComplete: 'line'
-                },
-                axes: {
-                    DaysToComplete: 'y2'
-                },
-                groups: [
-                    ['Resolved', 'NonResolved']
-                ]
-            },
-            bindto: '#chart4',
-            axis: {
-                x: {
-                    type: 'category'
-                },
-                y2: {
-                    show: "true"
-                }
-            }
-        });
     </script>
 
     <!-- Optional JavaScript -->
@@ -260,7 +259,7 @@
         integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
         crossorigin="anonymous"></script>
 
-    <script>
+    <!-- <script>
 
         $('#timespan').on(
             {
@@ -270,7 +269,7 @@
                 //     //console.log('clicked!', this, this.value);
                 //     this.selectedIndex = -1;
                 // }
-                 "change": function () {
+                "change": function () {
                     choice = $(this).val();
                     window.location.href = "./issues.html?weeksBack=" + choice;
                     //console.log('changed!', this, choice);
@@ -278,7 +277,7 @@
                     //setTimeout(function () { alert('Chose ' + choice); }, 0);
                 }
             });
-    </script>
+    </script> -->
 </body>
 
 </html>

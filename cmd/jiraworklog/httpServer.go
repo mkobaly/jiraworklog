@@ -6,7 +6,7 @@ import (
 	"github.com/mkobaly/jiraworklog/types"
 	"github.com/sirupsen/logrus"
 	"net/http"
-	"strconv"
+	"time"
 )
 
 func NewHttpServer(r repository.Repo, l *logrus.Entry) *HttpServer {
@@ -73,21 +73,33 @@ func (s *HttpServer) GetIssuesGroupedBy(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, http.StatusText(400)+":"+err.Error(), 400)
 		return
 	}
+	y, m, d := time.Now().AddDate(0, 0, -7).Date()
+	start := time.Date(y, m, d, 0, 0, 0, 0, time.Local)
+	stop := time.Date(y, m, d+8, 0, 0, 0, 0, time.Local)
 
-	weeksBack := 7 //default to 7 days back
-	weeksBackUrl, ok := r.URL.Query()["weeksBack"]
-	if ok && len(weeksBackUrl) == 1 {
-		i, err := strconv.Atoi(weeksBackUrl[0])
+	startParam, ok := r.URL.Query()["start"]
+	if ok && len(startParam) == 1 {
+		start, err = time.Parse("20060102", startParam[0])
 		if err != nil {
-			errMsg := "Url Param 'weeksBack' must be an integer"
+			errMsg := "Url Param 'start' must be a date in format YYYYMMDD"
 			s.logger.Error(errMsg)
 			http.Error(w, http.StatusText(400)+":"+errMsg, 400)
 			return
 		}
-		weeksBack = i
 	}
 
-	issues, err := s.repo.IssuesGroupedBy(group, weeksBack)
+	stopParam, ok := r.URL.Query()["stop"]
+	if ok && len(stopParam) == 1 {
+		stop, err = time.Parse("20060102", stopParam[0])
+		if err != nil {
+			errMsg := "Url Param 'stop' must be a date in format YYYYMMDD"
+			s.logger.Error(errMsg)
+			http.Error(w, http.StatusText(400)+":"+errMsg, 400)
+			return
+		}
+	}
+
+	issues, err := s.repo.IssuesGroupedBy(group, start, stop)
 	if err != nil {
 		s.logger.WithError(err).Error("error fetching records")
 		http.Error(w, http.StatusText(500), 500)
@@ -97,6 +109,87 @@ func (s *HttpServer) GetIssuesGroupedBy(w http.ResponseWriter, r *http.Request) 
 	jsn, err := json.Marshal(issues)
 	if err != nil {
 		s.logger.WithError(err).Error("error marshalling results")
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jsn)
+}
+
+func (s *HttpServer) GetIssueAccuracy(w http.ResponseWriter, r *http.Request) {
+
+	y, m, d := time.Now().AddDate(0, 0, -7).Date()
+	start := time.Date(y, m, d, 0, 0, 0, 0, time.Local)
+	stop := time.Date(y, m, d+8, 0, 0, 0, 0, time.Local)
+
+	startParam, ok := r.URL.Query()["start"]
+	if ok && len(startParam) == 1 {
+		st, err := time.Parse("20060102", startParam[0])
+		if err != nil {
+			errMsg := "Url Param 'start' must be a date in format YYYYMMDD"
+			s.logger.Error(errMsg)
+			http.Error(w, http.StatusText(400)+":"+errMsg, 400)
+			return
+		}
+		start = st
+	}
+
+	stopParam, ok := r.URL.Query()["stop"]
+	if ok && len(stopParam) == 1 {
+		st, err := time.Parse("20060102", stopParam[0])
+		if err != nil {
+			errMsg := "Url Param 'stop' must be a date in format YYYYMMDD"
+			s.logger.Error(errMsg)
+			http.Error(w, http.StatusText(400)+":"+errMsg, 400)
+			return
+		}
+		stop = st
+	}
+
+	issues, err := s.repo.IssueAccuracy(start, stop)
+	if err != nil {
+		s.logger.WithError(err).Error("error fetching records")
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	jsn, err := json.Marshal(issues)
+	if err != nil {
+		s.logger.WithError(err).Error("error marshalling results")
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jsn)
+}
+
+func (s *HttpServer) GetWorklogsGroupBy(w http.ResponseWriter, r *http.Request) {
+	groupUrl, ok := r.URL.Query()["group"]
+	if !ok || len(groupUrl[0]) < 1 {
+		errMsg := "Url Param 'group' is required"
+		s.logger.Error(errMsg)
+		http.Error(w, http.StatusText(400)+":"+errMsg, 400)
+		return
+	}
+	group := groupUrl[0]
+	group, err := types.ValidateWorklogsGroupBy(group)
+	if err != nil {
+
+		s.logger.WithError(err).Error("invalid group by value")
+		http.Error(w, http.StatusText(400)+":"+err.Error(), 400)
+		return
+	}
+
+	wl, err := s.repo.WorklogsGroupBy(group)
+	if err != nil {
+		s.logger.WithError(err).Error("error fetching worklogs grouped by")
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	jsn, err := json.Marshal(wl)
+	if err != nil {
+		s.logger.WithError(err).Error("error marshalling worklogs grouped by")
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}

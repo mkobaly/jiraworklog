@@ -6,14 +6,19 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
+    <!-- CUSTOM CSS -->
+    <link rel="stylesheet" type="text/css" href="./main.css">
+
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
         integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-    <link rel="stylesheet" type="text/css" href="./main.css">
+
+    <!-- C3 Charting -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.1/c3.min.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.9.2/d3.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.1/c3.min.js"></script>
 
+    <!-- Tabulator -->
     <link href="https://unpkg.com/tabulator-tables@4.2.7/dist/css/tabulator.min.css" rel="stylesheet">
     <script type="text/javascript" src="https://unpkg.com/tabulator-tables@4.2.7/dist/js/tabulator.min.js"></script>
 
@@ -23,12 +28,19 @@
 <body>
     <nav class="navbar navbar-expand-md navbar-dark bg-dark mb-3">
         <div class="container-fluid">
-            <h2>Worklogs</h2>
+            <a class="navbar-brand" href="#">
+                <img src="jira-logo.png" width="30" height="30" class="d-inline-block align-top" alt="">
+                Jira Dashboard : Worklogs - Last Week
+            </a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse"
+                aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
             <div class="collapse navbar-collapse" id="navbarCollapse">
-                <div class="navbar-nav">            
+                <div class="navbar-nav">
                     <a href="./worklogs.html" class="nav-item nav-link active">Worklogs</a>
-                    <a href="./issues.html?weeksBack=1" class="nav-item nav-link">Issues</a>
+                    <a href="./issues.html" class="nav-item nav-link">Issues</a>
                 </div>
 
             </div>
@@ -36,51 +48,43 @@
     </nav>
     <div class="container-fluid">
         <div class="row">
-            <div class="col-md-4">
-                <h4 class="text-center">Hours Logged Last Week Per Day</h4>
-                <div id="chart1"></div>
-            </div>
-            <div class="col-md-4">
-                <h4 class="text-center">By Priority</h4>
-                <div id="chart2"></div>
-            </div>
-            <div class="col-md-4">
-                <h4 class="text-center">By Issue Type</h4>
+            <div class="col-md-3">
+                <h4 class="text-center">Hours Logged Per Project</h4>
                 <div id="chart5"></div>
             </div>
+            <div class="col-md-3">
+                <h4 class="text-center">Hours Logged Per Priority</h4>
+                <div id="chart2"></div>
+            </div>
+            <div class="col-md-3">
+                <h4 class="text-center">Hours Logged Per Type</h4>
+                <div id="chart4"></div>
+            </div>
+            <div class="col-md-3">
+                <h4 class="text-center">Hours Logged per Day</h4>
+                <div id="chart1"></div>
+            </div>
         </div>
+        <hr>
         <div class="row">
             <div class="col-md-12">
-                <h4 class="text-center">Last weeks Hours worked per day</h4>
+                <h4 class="text-center">Developer: Hours Worked Per Day</h4>
                 <div id="chart3"></div>
             </div>
         </div>
-        <div class="row">
+        <hr>
+        <!-- <div class="row">
             <div class="col-md-12">
                 <h4 class="text-center">Historical Hours Worked per Week</h4>
                 <div id="chart4"></div>
             </div>
-        </div>
+        </div> -->
         <div class="row">
             <div class="col-md-12">
                 <h4 class="text-center">Historical Hours Worked per Week</h4>
                 <div id="example-table"></div>
             </div>
         </div>
-        <hr>
-        <footer>
-            <div class="row page-footer">
-                <div class="col-md-6">
-                    <p>Footer goes here</p>
-                </div>
-                <div class="col-md-6 text-md-right">
-                    <a href="https://github.com/mkobaly/jiraworklog" target="_blank">
-
-                        <img src="./GitHub-Mark-32px.png" alt="git repository">
-                    </a>
-                </div>
-            </div>
-        </footer>
     </div>
 
     <script>
@@ -96,7 +100,9 @@
                 },
                 names: {
                     TimeSpentHrs: 'Time Spent (Hrs)'
-
+                },
+                colors: {
+                    TimeSpentHrs: '#5899DA',
                 }
             },
             bindto: '#chart1',
@@ -109,21 +115,19 @@
 
         var chart2 = c3.generate({
             data: {
-                json: [
-                    { developer: 'andrew', day: 'Monday', timeSpentHrs: 6 },
-                    { developer: 'andrew', day: 'Tuesday', timeSpentHrs: 7 },
-                    { developer: 'andrew', day: 'Wednesday', timeSpentHrs: 8 },
-                    { developer: 'andrew', day: 'Thursday', timeSpentHrs: 7.5 },
-                    { developer: 'bob', day: 'Monday', timeSpentHrs: 6.5 },
-                    { developer: 'bob', day: 'Tuesday', timeSpentHrs: 8 },
-                    { developer: 'bob', day: 'Wednesday', timeSpentHrs: 7 },
-                    { developer: 'bob', day: 'Thursday', timeSpentHrs: 7 },
-                ],
+                url: './worklogs/groupby?group=priority',
+                mimeType: 'json',
                 type: 'bar',
                 labels: true,
                 keys: {
-                    x: 'day', // it's possible to specify 'x' when category axis
-                    value: ['developer', 'timeSpentHrs'],
+                    x: 'GroupBy', // it's possible to specify 'x' when category axis
+                    value: ['TimeSpentHrs']
+                },
+                names: {
+                    TimeSpentHrs: 'Time Spent (Hrs)'
+                },
+                colors: {
+                    TimeSpentHrs: '#19A979',
                 }
             },
             bindto: '#chart2',
@@ -133,6 +137,83 @@
                 }
             }
         });
+
+        var chart4 = c3.generate({
+            data: {
+                url: './worklogs/groupby?group=type',
+                mimeType: 'json',
+                type: 'bar',
+                labels: true,
+                keys: {
+                    x: 'GroupBy', // it's possible to specify 'x' when category axis
+                    value: ['TimeSpentHrs']
+                },
+                names: {
+                    TimeSpentHrs: 'Time Spent (Hrs)'
+                },
+                colors: {
+                    TimeSpentHrs: '#E8743B',
+                }
+            },
+            bindto: '#chart4',
+            axis: {
+                x: {
+                    type: 'category'
+                }
+            }
+        });
+
+        var chart5 = c3.generate({
+            data: {
+                url: './worklogs/groupby?group=project',
+                mimeType: 'json',
+                type: 'bar',
+                labels: true,
+                keys: {
+                    x: 'GroupBy', // it's possible to specify 'x' when category axis
+                    value: ['TimeSpentHrs']
+                },
+                names: {
+                    TimeSpentHrs: 'Time Spent (Hrs)'
+                },
+                colors: {
+                    TimeSpentHrs: '#945ECF',
+                }
+            },
+            bindto: '#chart5',
+            axis: {
+                x: {
+                    type: 'category'
+                }
+            }
+        });
+
+        // var chart2 = c3.generate({
+        //     data: {
+        //         json: [
+        //             { developer: 'andrew', day: 'Monday', timeSpentHrs: 6 },
+        //             { developer: 'andrew', day: 'Tuesday', timeSpentHrs: 7 },
+        //             { developer: 'andrew', day: 'Wednesday', timeSpentHrs: 8 },
+        //             { developer: 'andrew', day: 'Thursday', timeSpentHrs: 7.5 },
+        //             { developer: 'bob', day: 'Monday', timeSpentHrs: 6.5 },
+        //             { developer: 'bob', day: 'Tuesday', timeSpentHrs: 8 },
+        //             { developer: 'bob', day: 'Wednesday', timeSpentHrs: 7 },
+        //             { developer: 'bob', day: 'Thursday', timeSpentHrs: 7 },
+        //         ],
+        //         type: 'bar',
+        //         labels: true,
+        //         keys: {
+        //             x: 'day', // it's possible to specify 'x' when category axis
+        //             value: ['developer', 'timeSpentHrs'],
+        //         }
+        //     },
+        //     bindto: '#chart2',
+        //     axis: {
+        //         x: {
+        //             type: 'category'
+        //         }
+        //     }
+        // });
 
         var chart3 = c3.generate({
             data: {
@@ -144,6 +225,13 @@
                 keys: {
                     x: 'Developer', // it's possible to specify 'x' when category axis
                     value: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+                },
+                colors: {
+                    Monday: '#EE6868',
+                    Tuesday: '#19A979',
+                    Wednesday: '#5899DA',
+                    Thursday: '#E8743B',
+                    Friday: '#945ECF'
                 }
             },
             tooltip: {
@@ -165,106 +253,129 @@
             }
         });
 
-        var chart4 = c3.generate({
-            data: {
-                order: null,
-                url: './worklogs/perdevweek',
-                mimeType: 'json',
-                type: 'bar',
-                labels: true,
-                keys: {
-                    x: 'Developer', // it's possible to specify 'x' when category axis
-                    value: ['ThisWeek', 'LastWeek', 'TwoWeeks', 'ThreeWeeks', 'FourWeeks'],
-                },
-                names: {
-                    ThisWeek: 'This Week',
-                    LastWeek: 'Last Week',
-                    TwoWeeks: 'Two Weeks Ago',
-                    ThreeWeeks: 'Three Weeks Ago',
-                    FourWeeks: 'Four Weeks Ago'
-                },
-            },
-            tooltip: {
-                show: true,
-                grouped: true,
-                // contents: function (d, defaultTitleFormat, defaultValueFormat, color) {
-                //     return "test" // formatted html as you want
-                // },
-                // format: {
-                //     title: function (x, index) { return 'Data ' + x; },
-                //     name: function (name, ratio, id, index) { return index + '-' + id + '-' + name; }
-                // }
-            },
-            bindto: '#chart4',
-            axis: {
-                x: {
-                    type: 'category'
-                }
-            }
-        });
+        // var chart4 = c3.generate({
+        //     data: {
+        //         order: null,
+        //         url: './worklogs/perdevweek',
+        //         mimeType: 'json',
+        //         type: 'bar',
+        //         labels: true,
+        //         keys: {
+        //             x: 'Developer', // it's possible to specify 'x' when category axis
+        //             value: ['ThisWeek', 'LastWeek', 'TwoWeeks', 'ThreeWeeks', 'FourWeeks'],
+        //         },
+        //         names: {
+        //             ThisWeek: 'This Week',
+        //             LastWeek: 'Last Week',
+        //             TwoWeeks: 'Two Weeks Ago',
+        //             ThreeWeeks: 'Three Weeks Ago',
+        //             FourWeeks: 'Four Weeks Ago'
+        //         },
+        //     },
+        //     tooltip: {
+        //         show: true,
+        //         grouped: true,
+        //         // contents: function (d, defaultTitleFormat, defaultValueFormat, color) {
+        //         //     return "test" // formatted html as you want
+        //         // },
+        //         // format: {
+        //         //     title: function (x, index) { return 'Data ' + x; },
+        //         //     name: function (name, ratio, id, index) { return index + '-' + id + '-' + name; }
+        //         // }
+        //     },
+        //     bindto: '#chart4',
+        //     axis: {
+        //         x: {
+        //             type: 'category'
+        //         }
+        //     }
+        // });
 
 
         //define custom mutator
-        var customMutator = function (value, data, type, params, component) {
-            //value - original value of the cell
-            //data - the data for the row
-            //type - the type of mutation occurring  (data|edit)
-            //params - the mutatorParams object from the column definition
-            //component - when the "type" argument is "edit", this contains the cell component for the edited cell, otherwise it is the column component for the column
+        // var customMutator = function (value, data, type, params, component) {
+        //     //value - original value of the cell
+        //     //data - the data for the row
+        //     //type - the type of mutation occurring  (data|edit)
+        //     //params - the mutatorParams object from the column definition
+        //     //component - when the "type" argument is "edit", this contains the cell component for the edited cell, otherwise it is the column component for the column
 
-            return (value / 40) * 100.00; //return the new value for the cell data.
-        }
+        //     return (value / 40) * 100.00; //return the new value for the cell data.
+        // }
 
         var table = new Tabulator("#example-table", {
 
             columns: [
                 { title: "Developer", field: "Developer" },
                 {
-                    title: "This Week", field: "ThisWeek", formatter: "progress", tooltip: true, sorter: "number", bottomCalc: "avg", formatterParams: {
+                    title: "This Week", field: "ThisWeek", align: "center", formatter: "progress", tooltip: true, sorter: "number", bottomCalc: "avg", formatterParams: {
                         min: 0,
                         max: 40,
-                        color: ["red", "orange", "blue", "green"],
+                        color: ["#EE6868", "#E8743B", "#5899DA", "#19A979"],
+                        legend: function (value) { return value + " hrs" },
                         legendColor: "#000000",
                         legendAlign: "center",
+                    },
+                    bottomCalcFormatter: function (cell, formatterParams, onRendered) {
+                        return "Avg: " + cell.getValue() + " hrs";
                     }
                 },
                 {
-                    title: "Last Week", field: "LastWeek", formatter: "progress", tooltip: true, sorter: "number", bottomCalc: "avg", formatterParams: {
+                    title: "Last Week", field: "LastWeek", align: "center", formatter: "progress", tooltip: true, sorter: "number", bottomCalc: "avg", formatterParams: {
                         min: 0,
                         max: 40,
-                        color: ["red", "orange", "blue", "green"],
+                        color: ["#EE6868", "#E8743B", "#5899DA", "#19A979"],
+                        legend: function (value) { return value + " hrs" },
                         legendColor: "#000000",
                         legendAlign: "center",
+                    },
+                    bottomCalcFormatter: function (cell, formatterParams, onRendered) {
+                        return "Avg: " + cell.getValue() + " hrs";
                     }
                 },
                 {
-                    title: "Two Weeks Ago", field: "TwoWeeks", formatter: "progress", tooltip: true, sorter: "number", bottomCalc: "avg", formatterParams: {
+                    title: "Two Weeks Ago", field: "TwoWeeks", align: "center", formatter: "progress", tooltip: true, sorter: "number", bottomCalc: "avg", formatterParams: {
                         min: 0,
                         max: 40,
-                        color: ["red", "orange", "blue", "green"],
+                        color: ["#EE6868", "#E8743B", "#5899DA", "#19A979"],
+                        legend: function (value) { return value + " hrs" },
                         legendColor: "#000000",
                         legendAlign: "center",
+                    },
+                    bottomCalcFormatter: function (cell, formatterParams, onRendered) {
+                        return "Avg: " + cell.getValue() + " hrs";
                     }
                 },
                 {
-                    title: "Three Weeks Ago", field: "ThreeWeeks", formatter: "progress", tooltip: true, sorter: "number", bottomCalc: "avg", formatterParams: {
+                    title: "Three Weeks Ago", field: "ThreeWeeks", align: "center", formatter: "progress", tooltip: true, sorter: "number", bottomCalc: "avg", formatterParams: {
                         min: 0,
                         max: 40,
-                        color: ["red", "orange", "blue", "green"],
+                        color: ["#EE6868", "#E8743B", "#5899DA", "#19A979"],
+                        legend: function (value) { return value + " hrs" },
                         legendColor: "#000000",
                         legendAlign: "center",
+                    },
+                    bottomCalcFormatter: function (cell, formatterParams, onRendered) {
+                        return "Avg: " + cell.getValue() + " hrs";
                     }
                 },
                 {
-                    title: "Four Weeks Ago", field: "FourWeeks", formatter: "progress", tooltip: true, sorter: "number", bottomCalc: "avg", formatterParams: {
+                    title: "Four Weeks Ago", field: "FourWeeks", align: "center", formatter: "progress", tooltip: true, sorter: "number", bottomCalc: "avg", formatterParams: {
                         min: 0,
                         max: 40,
-                        color: ["red", "orange", "blue", "green"],
+                        color: ["#EE6868", "#E8743B", "#5899DA", "#19A979"],
+                        legend: function (value) { return value + " hrs" },
                         legendColor: "#000000",
                         legendAlign: "center",
+                    },
+                    bottomCalcFormatter: function (cell, formatterParams, onRendered) {
+                        return "Avg: " + cell.getValue() + " hrs";
                     }
                 },
 
+            ],
+            initialSort: [
+                { column: "Developer", dir: "asc" }
             ],
             layout: "fitColumns",
             ajaxURL: "./worklogs/perdevweek", //ajax URL

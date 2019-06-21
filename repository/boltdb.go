@@ -70,10 +70,10 @@ func (r *BoltDB) AllIssues() ([]types.ParentIssue, error) {
 
 //IssuesGroupedBy will return issues group by the given groupBy value going
 //back weeksBack. This data will be used for charting
-func (r *BoltDB) IssuesGroupedBy(groupBy string, weeksBack int) ([]types.IssueChartData, error) {
-	y, m, d := time.Now().AddDate(0, 0, -1*weeksBack).Date()
-	date := time.Date(y, m, d, 0, 0, 0, 0, time.Local)
-	query := bolthold.Where("CreateDate").Ge(date)
+func (r *BoltDB) IssuesGroupedBy(groupBy string, start time.Time, stop time.Time) ([]types.IssueChartData, error) {
+	//y, m, d := time.Now().AddDate(0, 0, -1*weeksBack).Date()
+	//date := time.Date(y, m, d, 0, 0, 0, 0, time.Local)
+	query := bolthold.Where("UpdateDate").Ge(start).And("UpdateDate").Le(stop)
 	agg, err := r.db.FindAggregate(&types.ParentIssue{}, query, groupBy, "IsResolved")
 	if err != nil {
 		return nil, err
@@ -105,6 +105,14 @@ func (r *BoltDB) IssuesGroupedBy(groupBy string, weeksBack int) ([]types.IssueCh
 		values = append(values, *v)
 	}
 	return values, nil
+}
+
+func (r *BoltDB) IssueAccuracy(start time.Time, stop time.Time) ([]types.IssueAccuracy, error) {
+	return nil, nil
+}
+
+func (r *BoltDB) WorklogsGroupBy(groupBy string) ([]types.WorklogGroupByChart, error) {
+	return nil, nil
 }
 
 func (r *BoltDB) WorklogsPerDay() ([]types.WorklogsPerDay, error) {

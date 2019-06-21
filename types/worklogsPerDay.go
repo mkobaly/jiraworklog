@@ -8,6 +8,11 @@ type WorklogsPerDay struct {
 	TimeSpentHrs float64 `db:"timeSpentHrs"`
 }
 
+type WorklogGroupByChart struct {
+	GroupBy      string  `db:"groupBy"`
+	TimeSpentHrs float64 `db:"timeSpentHrs"`
+}
+
 type WorklogsAggQueryResult struct {
 	Developer    string  `db:"developer"`
 	Group        string  `db:"group"`
