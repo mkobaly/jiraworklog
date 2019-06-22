@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"github.com/mkobaly/jiraworklog/job"
+	"strconv"
 	//"github.com/mkobaly/jiraworklog/test"
 	"net/http"
 	"os"
@@ -37,6 +38,8 @@ func main() {
 	cmdline.AddOption("c", "config", "config.yaml", "path to configuration file")
 	cmdline.AddOption("r", "repo", "BOLTDB", "specific repo to use (MSSQL, BOLTDB)")
 	cmdline.SetOptionDefault("r", "BOLTDB")
+	cmdline.AddOption("p", "port", "8180", "default port to serve rest API from")
+	cmdline.SetOptionDefault("p", "8180")
 	cmdline.AddFlag("v", "verbose", "verbose logging")
 	cmdline.Parse(os.Args)
 
@@ -63,6 +66,15 @@ func main() {
 			os.Exit(0)
 		default:
 			logger.WithError(err).Fatal("failed to load config file")
+		}
+	}
+
+	//Port
+	port := 8180
+	if cmdline.IsOptionSet("p") {
+		port, err = strconv.Atoi(cmdline.OptionValue("p"))
+		if err != nil {
+			logger.WithError(err).Fatal("port must be numeric")
 		}
 	}
 
@@ -101,7 +113,7 @@ func main() {
 	mux.Handle("/issues/accuracy", http.HandlerFunc(server.GetIssueAccuracy))
 	//mux.Handle("/", http.StripPrefix(strings.TrimRight("/dashboard/", "/"), fileServer))
 	mux.Handle("/", fileServer)
-	go http.ListenAndServe(":8180", mux)
+	go http.ListenAndServe(":"+strconv.Itoa(port), mux)
 
 	select {
 	case sig := <-c:
