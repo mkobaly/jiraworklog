@@ -117,7 +117,7 @@ func loadRepo(repoType string, cfg *jiraworklog.Config) (repository.Repo, error)
 	case "MSSQL":
 		return repository.NewSQLRepo(cfg)
 	case "BOLTDB":
-		return repository.NewBoltDBRepo("worklog.db")
+		return repository.NewBoltDBRepo("jira.db")
 	case "GOOGLESHEET":
 		return nil, ErrUnknownRepo
 	default:

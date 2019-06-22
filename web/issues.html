@@ -146,7 +146,7 @@
         };
 
         var chartIssuesGroupBy = function (bindTo, group, start, stop) {
-            var chart = $(this).data('c3-chart');
+            var chart = $(bindTo).data('c3-chart');
             if (chart != undefined) {
                 chart = chart.destroy();
             }
@@ -156,6 +156,10 @@
                     mimeType: 'json',
                     type: 'bar',
                     labels: true,
+                    // onclick: function (d, element) {
+                    //     console.log("d: " + JSON.stringify(d))
+                    //     //console.log("element: " + JSON.stringify(element))
+                    // },
                     keys: {
                         x: 'GroupBy', // it's possible to specify 'x' when category axis
                         value: ['NonResolved', 'Resolved', 'DaysToResolve']
@@ -181,7 +185,7 @@
                     },
                     groups: [
                         ['Resolved', 'NonResolved']
-                    ]
+                    ],
                 },
                 bindto: bindTo,
                 axis: {
@@ -194,6 +198,9 @@
                 }
             });
             $(bindTo).data('c3-chart', chart);
+            $(bindTo).data('group', group);
+            $(bindTo).data('start', start);
+            $(bindTo).data('stop', stop);
         }
 
         var loadIssueAccuracy = function (bindTo, start, stop) {
