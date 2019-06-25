@@ -84,7 +84,7 @@ OPTIONS
 - Ensure you have created your config.yaml file
 
 ```sh
-docker run 
+docker run --name jiraworklog --mount type=bind,source="$(pwd)"/config.yaml,target=/app/config.yaml mkobaly/jiraworklogs 
 ```
 
 Once service has slowed down in importing worklogs and issues you can navigate to http://localhost:8180/issues.html to see the dashboard
