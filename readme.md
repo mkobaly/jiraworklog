@@ -1,10 +1,6 @@
 # JiraWorklog   
 
-This is a WIP. Its not complete yet
-
-Simple utility to extract all Jira Worklogs and record them so they can be easily reported on. 
-This is a self contained solution that will collect all of the worklogs and provide a simple
-dashboard to present the data
+Simple utility to extract all Jira Worklogs and record them into a database so they can be easily reported on. This is a self contained solution that will collect all of the worklogs and present a simple dashboard as the presentation layer
 
 Currently two databases are supported. BoltDB and MS SQL Server. This is configured via the command line with boltDB being the default option.
 
@@ -16,67 +12,112 @@ Jira does not provide a good way to see developers productivity across all proje
 
 Time tracking is typically done at the lowest issue level. For a bug that makes sense. For a 
 story many times the time tracking is logged against the sub-task. From a management level we care more
-about the "parent issues" when it comes to seeing what was completed
+about the "parent issues" when it comes to seeing what was completed / worked on
 
-The assignee gets changed over time so you really don't know what developer worked on what "parent issue"
-unless you dig into the history of an issue. 
+The assignee gets changed over time (QA for example) so you really don't know what developer worked on what issue unless you dig into the history of an issue. 
 
 The existing reports in Jira don't provide good insight into productivity of developers unless you use
 a jira plug-in that costs money and could change the standard jira time tracking functionality. I wanted
-this to work with out of the box jira time tracking (work logs)
+this to work with the default jira time tracking solution (work logs)
 
 The current reporting options in Jira Cloud are somewhat limiting and unless you purchase an add-on the
 time spent by developers is difficult to report on. This utility is looking to change that
 
-## How to run
+## Configuration
 
- Execute the jiraworklog executable. The first time you run this it will warn you that a 
- configuration file was not present but one has been created for you. Edit the config.yaml file
- accordingly
+- jira: all values are required to pull worklogs from Jira
+- sqlconnection: (optinal) only needed if you are using SQL Server as database
+- maxworklogid: As the service runs this will be automatically updated tracking the last worklog processed (don't modify unless you want to reset and process all worklogs again)
+- lasttimestamp: last timestamp pulled from Jira for the max worklog processed (don't modify unless you want to reset and process all worklogs agian)
+- userlist: (Optional) If userlist populated it will only pull worklogs for the given users
+- donestatus: If Jira is misconfigured and resolution dates are not always populated this provides a simple way to ensure the issue is marked as "resolved" based off these statuses. This is only used when the resolution date is not being populated
 
- - jira section (required): this must point to your cloud Jira URL. Ensure username and password are set correctly. Its recommended to use an api_token vs an individual password
+```sh
+jira:
+  url: https://yoursubdomain.atlassian.net/rest/api/3
+  username: your.username@example.com
+  password: ideally_use_api_token
+sqlconnection: Server=server;Database=jira;User Id=sa;Password=password
+maxworklogid: 0
+lasttimestamp: 0
+userlist:
+- big.bird
+- donald.duck
+donestatus:
+- done
+- closed
+```
 
- - sqlconnection (optional): If you want to use SQL server as the backend repository this is required
+## Command line help
 
- - userlist: (optional) - If you want to filter the worklogs to a subset of users
+```sh
+$ ./jiraworklog.exe --help
+Usage: jiraworklog.exe OPTIONS
 
- - donestatus: (required) - Due to the way jira works with status transitions you can sometimes transition to a done status BUT the resolution date / reason could be missing. If we know the done statuses then we can ensure we mark the issue resolved when it reaches this status. Only used when the resolution date is not being populated
+OPTIONS
+
+-c, --config <config.yaml>  path to configuration file
+-h, --help                  print help and exit
+-p, --port <8180>           default port to serve rest API from (default: 8180)
+-r, --repo <BOLTDB>         specific repo to use (MSSQL, BOLTDB) (default: BOLTDB)
+-v, --verbose               verbose logging
+```
+
+## Running for the first time
+
+### Linux or Windows
+ 
+ - Execute the jiraworklog executable without any parameters. Note: The first time you run this it will warn you that a configuration file was not present but one has been created for you. 
+ 
+ - Edit the config.yaml file accordingly
+
+ ```sh
+ # BoltDB database
+ ./jiraworklog -v
+
+ # SQL Server database
+ ./jiraworklog -v -r MSSQL
+ ```
+
+### Docker
+
+- Ensure you have created your config.yaml file
+
+```sh
+docker run 
+```
+
+Once service has slowed down in importing worklogs and issues you can navigate to http://localhost:8180/issues.html to see the dashboard
 
 ## Workflow
 
-Jira should be easy to use but its not. Here we are assuming 1 simple rule. Developers log their time on tickets they work on. Given that we can pull all work log entries and from those entries get the issue and parent issue (ex: sub-task => story) developers work on we now know all of the "parent issues" being worked on and we can track when those parent issues are resolved
+Jira should be easy to use but its not. Here we are assuming 1 simple rule. 
+
+1) Developers log their time on tickets they work on. 
+
+Given that we can pull all work log entries and from those entries get the issue and the parent issue (ex: sub-task => story), we now know all of the "parent issues" being worked on and can track when those parent issues are resolved
 
 
 ## Rest API
 
 - /worklogs - get all worklogs (todo: add paging)
+- /worklogs/groupby 
+- /worklogs/perday
+- /worklogs/perdevday
+- /worklogs/perdevweek
+
 - /issues - get all issues (todo: add paging)
 - /issues/groupby - issue data going back x days group by given value
-- /dashboard/
+- /issues/accuracy
 
-## dashboard
+## dashboard Thoughts (WIP)
+
+### Issues
 
 - Historical page?
   - The days to complete by type line chart below could fit here
   - Pivot result of per developer past 6 weeks, hours worked per week
 
-----------------------------------------------------------------------------
-Issues
-----------------------------------------------------------------------------
-
-TODO: Think need lastUpdated property on the Issues. Can't just use create date or resolvedDate
- - Any time developer adds time update issue / parent issue last updated
- - Any time issue resolved update last updated
- - Now can query on last updated
-
- Ex:
- 1) created 5/1/19, logged time 5/5, 5/7 and closed on 5/10 
- 2) created 5/3/19, logged time 5/6, never closed
-     - This should stay on list I would imagine
-
----------------  ------------  ----------------
-| By Priority |  | By Issue |  | By Developer |
----------------  ------------  ----------------
 
 issues by type: avg days to resolve (ones that are closed)
 
@@ -89,18 +130,11 @@ List - Issues not closed and older than x days
 Days to complete by type
  - line chart going back 6 weeks. Each week point
 
-------------------------------------------------------
-Worklogs
-------------------------------------------------------
+### Worklogs
 
 Who hasn't logged any hours for today
 
 By Weekday
---------------
-  | | |
-| | | | | | |
-S M T W T F S
----------------
 
 % of workweek 60% (circle with % inside. < 40% red, 40-60% yellow, 60%+ green)
 
