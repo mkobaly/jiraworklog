@@ -6,6 +6,10 @@ Currently two databases are supported. BoltDB and MS SQL Server. This is configu
 
 For SQL Server its expected that the database and tables already exist. See below for table schema
 
+![](./issues.png)
+
+![](./worklogs.png)
+
 ## Reasons why this is needed
 
 Jira does not provide a good way to see developers productivity across all projects
