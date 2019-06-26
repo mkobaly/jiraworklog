@@ -99,7 +99,7 @@ func main() {
 	go worker.Start()
 
 	//HTTP server stuff
-	fileServer := http.FileServer(FileSystem{http.Dir("../web")})
+	fileServer := http.FileServer(FileSystem{http.Dir("./web")})
 	server := NewHttpServer(repo, logger)
 	mux := http.NewServeMux()
 	mux.Handle("/worklogs", http.HandlerFunc(server.GetWorkLogs))
