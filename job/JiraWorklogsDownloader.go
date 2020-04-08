@@ -1,13 +1,14 @@
 package job
 
 import (
+	"strings"
+	"time"
+
 	"github.com/mkobaly/jiraworklog"
 	"github.com/mkobaly/jiraworklog/repository"
 	"github.com/mkobaly/jiraworklog/types"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"strings"
-	"time"
 )
 
 //JiraWorklogsDownloader is a background job that will download all worklogs from Jira
@@ -115,7 +116,7 @@ func (j *JiraWorklogsDownloader) okToProcess(w jiraworklog.Worklog, userNames []
 	}
 
 	for _, u := range userNames {
-		if strings.ToLower(w.Author.Key) == strings.ToLower(u) {
+		if strings.ToLower(w.Author.DisplayName) == strings.ToLower(u) {
 			return true
 		}
 	}

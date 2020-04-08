@@ -129,12 +129,12 @@ type UpdatedWorklogs struct {
 type Worklog struct {
 	Self   string `json:"self"`
 	Author struct {
-		Self         string `json:"self"`
-		Name         string `json:"name"`
-		Key          string `json:"key"`
-		AccountID    string `json:"accountId"`
-		EmailAddress string `json:"emailAddress"`
-		AvatarUrls   struct {
+		Self string `json:"self"`
+		//Name         string `json:"name"`
+		//Key          string `json:"key"`
+		AccountID string `json:"accountId"`
+		//EmailAddress string `json:"emailAddress"`
+		AvatarUrls struct {
 			Four8X48  string `json:"48x48"`
 			Two4X24   string `json:"24x24"`
 			One6X16   string `json:"16x16"`

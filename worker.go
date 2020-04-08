@@ -44,15 +44,18 @@ func (w *Worker) Start() {
 //Run will execute the given job
 func (w *Worker) Run(job Job) {
 	for {
+		hasError := false
 		started := time.Now()
 		err := job.Run()
 		if err != nil {
 			w.logger.WithError(err).WithField("job", job.GetName()).Error("job run failed")
-			return
+			hasError = true
 		}
-		finished := time.Now()
-		duration := finished.Sub(started)
-		w.logger.WithField("duration", duration).WithField("job", job.GetName()).Info("job run complete")
+		if !hasError {
+			finished := time.Now()
+			duration := finished.Sub(started)
+			w.logger.WithField("duration", duration).WithField("job", job.GetName()).Info("job run complete")
+		}
 
 		select {
 		case <-w.stopChan:

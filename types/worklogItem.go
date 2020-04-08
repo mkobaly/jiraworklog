@@ -47,7 +47,7 @@ func ConvertToModels(w jiraworklog.Worklog, i jiraworklog.Issue, parentIssue jir
 
 	worklogResult := &WorklogItem{
 		ID:            id,
-		Author:        w.Author.Key,
+		Author:        w.Author.DisplayName,
 		Project:       strings.Split(i.Key, "-")[0],
 		IssueID:       issueID,
 		IssueKey:      i.Key,
