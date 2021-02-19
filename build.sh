@@ -1,6 +1,4 @@
 #build tagit (runs on build server..windows)
-go get -u github.com/kardianos/govendor
-govendor sync
 mkdir -p ./bin/web
 cp ./web/* ./bin/web
 env GOOS=windows GOARCH=386 go build -ldflags "-X main.Version=$(cat VERSION)" -o ./bin/jiraworklog.exe ./cmd/jiraworklog
