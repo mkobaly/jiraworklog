@@ -32,7 +32,7 @@ func NewSQLRepo(cfg *jiraworklog.Config) (*SQL, error) {
 //NonResolvedIssues gets all issue keys that are not resolved yet
 func (s *SQL) NonResolvedIssues() ([]types.ParentIssue, error) {
 	result := []types.ParentIssue{}
-	err := s.DB.Select(&result, `	
+	err := s.DB.Select(&result, `
 	SELECT [id]
 		,[key]
 		,[type]
@@ -54,16 +54,16 @@ func (s *SQL) NonResolvedIssues() ([]types.ParentIssue, error) {
 //Write will add the worklogItem to SQL server
 func (s *SQL) Write(w *types.WorklogItem, pi *types.ParentIssue) error {
 	//p := w.GetParent()
-	stmt, err := s.DB.Prepare(`	
+	stmt, err := s.DB.Prepare(`
 		IF NOT EXISTS (SELECT * FROM worklog WHERE id = @p1)
-		INSERT INTO worklog 
+		INSERT INTO worklog
 		(
-			id, author, date, weekNumber, weekDay, timeSpentSeconds, timeSpentHours, project, 
+			id, author, date, weekNumber, weekDay, timeSpentSeconds, timeSpentHours, project,
 			issueId, issueKey, issueType, issueSummary, issuePriority, issueStatus,
 			parentIssueId, parentIssueKey, parentIssueType, parentIssueSummary, parentIssuePriority, parentIssueStatus
-		) 
+		)
 		VALUES(@p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12, @p13, @p14, @p15, @p16, @p17, @p18, @p19, @p20)
-		
+
 		IF NOT EXISTS (SELECT * FROM issue WHERE [id] = @p15)
 			INSERT INTO issue
 			(
@@ -100,9 +100,9 @@ func (s *SQL) Write(w *types.WorklogItem, pi *types.ParentIssue) error {
 //UpdateIssue will update the resolved information for the given issue
 func (s *SQL) UpdateIssue(issue *types.ParentIssue) error {
 	stmt, err := s.DB.Prepare(`
-		UPDATE issue 
-			SET resolvedDate = @p2, 
-			isResolved = 1, 
+		UPDATE issue
+			SET resolvedDate = @p2,
+			isResolved = 1,
 			aggregateTimeSpent = @p3,
 			aggregateTimeOriginalEstimate = @p4,
 			daysToResolve = @p5
@@ -126,7 +126,7 @@ func (s *SQL) Close() {
 //AllWorkLogs will return all of the work logs from SQL server
 func (s *SQL) AllWorkLogs() ([]types.WorklogItem, error) {
 	result := []types.WorklogItem{}
-	err := s.DB.Select(&result, `		
+	err := s.DB.Select(&result, `
 		SELECT  [id]
 		,[author]
 		,[date]
@@ -154,8 +154,8 @@ func (s *SQL) AllWorkLogs() ([]types.WorklogItem, error) {
 //AllIssues will return all issues from SQL server
 func (s *SQL) AllIssues() ([]types.ParentIssue, error) {
 	result := []types.ParentIssue{}
-	err := s.DB.Select(&result, `	
-	SELECT 
+	err := s.DB.Select(&result, `
+	SELECT
 		[id]
 		,[key]
 		,[type]
@@ -199,8 +199,8 @@ func (s *SQL) IssuesGroupedBy(groupBy string, start time.Time, stop time.Time) (
 func (s *SQL) IssueAccuracy(start time.Time, stop time.Time) ([]types.IssueAccuracy, error) {
 	result := []types.IssueAccuracy{}
 	err := s.DB.Select(&result, `
-	SELECT developer, count(*) [count], 
-		CAST(100 - abs(((sum(aggregateTimeOriginalEstimate) - sum(aggregateTimeSpent)) / 
+	SELECT developer, count(*) [count],
+		CAST(100 - abs(((sum(aggregateTimeOriginalEstimate) - sum(aggregateTimeSpent)) /
 		cast(sum(aggregateTimeOriginalEstimate) as decimal(18,2))) * 100.00) as decimal(5,2)) [accuracy]
 	FROM issue
 	WHERE updateDate >= @p1 and updateDate <= @p2
@@ -215,32 +215,18 @@ func (s *SQL) IssueAccuracy(start time.Time, stop time.Time) ([]types.IssueAccur
 
 func (s *SQL) WorklogsGroupBy(groupBy string) ([]types.WorklogGroupByChart, error) {
 	result := []types.WorklogGroupByChart{}
+	date := time.Now().AddDate(0, 0, -7)
 	err := s.DB.Select(&result, fmt.Sprintf(`
 	SELECT %s [groupBy], sum(timeSpentHours) [timeSpentHrs]
 	FROM worklog
-	WHERE weekNumber = datepart(WEEK, dateadd(day, -7, getdate()))
-	GROUP BY %s`, groupBy, groupBy))
+	WHERE weekNumber = datepart(WEEK, @p1)
+	AND year(date) = year(@p1)
+	GROUP BY %s`, groupBy, groupBy), date)
 	if err != nil {
 		return nil, err
 	}
 	return result, nil
 }
-
-// func (s *SQL) WorklogsPerDevPerWeek(weeksBack int) ([]types.IssueChartData, error) {
-
-// 	var _, weekNumber = time.Now().ISOWeek()
-
-// 	result := []types.IssueChartData{}
-// 	err := s.DB.Select(&result, fmt.Sprintf(`
-// 	SELECT author, weekNumber, sum(timeSpentHours) [timeSpentHours]
-// 	FROM weekNumber >= datepart(WEEK, getdate()) - 4
-// 	GROUP BY author, weekNumber
-// 	ORDER BY author, weekNumber`, groupBy, groupBy), daysBack)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return result, nil
-// }
 
 func (s *SQL) WorklogsPerDay() ([]types.WorklogsPerDay, error) {
 	finalResults := []types.WorklogsPerDay{
@@ -253,13 +239,15 @@ func (s *SQL) WorklogsPerDay() ([]types.WorklogsPerDay, error) {
 		types.WorklogsPerDay{Day: "Saturday", TimeSpentHrs: 0},
 	}
 
+	date := time.Now().AddDate(0, 0, -7)
 	qr := []types.WorklogsPerDay{}
 	err := s.DB.Select(&qr, `
 		SELECT weekDay [day], sum(timeSpentHours) [timeSpentHrs]
 		FROM worklog
-		WHERE weekNumber = datepart(WEEK, dateadd(day, -7, getdate()))
+		WHERE weekNumber = datepart(WEEK, @p1)
+		AND year(date) = year(@p1)
 		GROUP BY weekDay
-		ORDER BY weekDay`)
+		ORDER BY weekDay`, date)
 	if err != nil {
 		return nil, err
 	}
@@ -272,15 +260,6 @@ func (s *SQL) WorklogsPerDay() ([]types.WorklogsPerDay, error) {
 			}
 		}
 	}
-
-	// for _, wd := range finalResults {
-	// 	for _, w := range qr {
-	// 		if strings.ToLower(wd.Day) == strings.ToLower(w.Day) {
-	// 			wd.TimeSpentHrs = w.TimeSpentHrs
-	// 			continue
-	// 		}
-	// 	}
-	// }
 	return finalResults, nil
 }
 
@@ -288,13 +267,15 @@ func (s *SQL) WorklogsPerDevDay() ([]types.WorklogsPerDevDay, error) {
 	results := make(map[string]*types.WorklogsPerDevDay)
 	final := []types.WorklogsPerDevDay{}
 
+	date := time.Now().AddDate(0, 0, -7)
 	qr := []types.WorklogsPerDay{}
 	err := s.DB.Select(&qr, `
 	SELECT author [developer], weekDay [day], sum(timeSpentHours) [timeSpentHrs]
 	FROM worklog
-	WHERE weekNumber = datepart(WEEK, dateadd(day, -7, getdate()))
+	WHERE weekNumber = datepart(WEEK, @p1)
+	AND year(date) = year(@p1)
 	GROUP BY author, weekDay
-	ORDER BY author, weekDay`)
+	ORDER BY author, weekDay`, date)
 	if err != nil {
 		return nil, err
 	}
@@ -330,11 +311,13 @@ func (s *SQL) WorklogsPerDevWeek() ([]types.WorklogsPerDevWeek, error) {
 
 	_, week := time.Now().ISOWeek()
 
+	//TODO: need to account for new year so weeks could be (3,2,1,52)
 	qr := []types.WorklogsAggQueryResult{}
 	err := s.DB.Select(&qr, `
 	SELECT author [developer], weekNumber [group], sum(timeSpentHours) [timeSpentHrs]
 	FROM worklog
 	WHERE weekNumber >= datepart(WEEK, getdate()) - 4
+	AND year(date) = year(getdate())
 	GROUP BY author, weekNumber
 	ORDER BY author`)
 	if err != nil {
