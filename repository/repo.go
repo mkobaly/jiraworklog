@@ -1,8 +1,9 @@
 package repository
 
 import (
-	"github.com/mkobaly/jiraworklog/types"
 	"time"
+
+	"github.com/mkobaly/jiraworklog/types"
 )
 
 //Repo is the interface that handles writing Jira Worklog items
@@ -18,8 +19,11 @@ type Repo interface {
 	IssueAccuracy(start time.Time, stop time.Time) ([]types.IssueAccuracy, error)
 
 	AllWorkLogs() ([]types.WorklogItem, error)
-	WorklogsGroupBy(groupBy string) ([]types.WorklogGroupByChart, error)
-	WorklogsPerDay() ([]types.WorklogsPerDay, error)
-	WorklogsPerDevDay() ([]types.WorklogsPerDevDay, error)
+	WorklogsGroupBy(groupBy string, start time.Time, stop time.Time) ([]types.WorklogGroupByChart, error)
+	WorklogsPerDev(start time.Time, stop time.Time) ([]map[string]string, error)
 	WorklogsPerDevWeek() ([]types.WorklogsPerDevWeek, error)
+
+	//WorklogsPerDay() ([]types.WorklogsPerDay, error)
+	//WorklogsPerDevDay() ([]types.WorklogsPerDevDay, error)
+
 }

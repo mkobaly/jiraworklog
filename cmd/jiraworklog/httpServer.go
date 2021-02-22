@@ -2,11 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"net/http"
+	"time"
+
 	"github.com/mkobaly/jiraworklog/repository"
 	"github.com/mkobaly/jiraworklog/types"
 	"github.com/sirupsen/logrus"
-	"net/http"
-	"time"
 )
 
 func NewHttpServer(r repository.Repo, l *logrus.Entry) *HttpServer {
@@ -180,7 +181,35 @@ func (s *HttpServer) GetWorklogsGroupBy(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	wl, err := s.repo.WorklogsGroupBy(group)
+	y, m, d := time.Now().AddDate(0, 0, -7).Date()
+	start := time.Date(y, m, d, 0, 0, 0, 0, time.Local)
+	stop := time.Date(y, m, d+8, 0, 0, 0, 0, time.Local)
+
+	startParam, ok := r.URL.Query()["start"]
+	if ok && len(startParam) == 1 {
+		st, err := time.Parse("20060102", startParam[0])
+		if err != nil {
+			errMsg := "Url Param 'start' must be a date in format YYYYMMDD"
+			s.logger.Error(errMsg)
+			http.Error(w, http.StatusText(400)+":"+errMsg, 400)
+			return
+		}
+		start = st
+	}
+
+	stopParam, ok := r.URL.Query()["stop"]
+	if ok && len(stopParam) == 1 {
+		st, err := time.Parse("20060102", stopParam[0])
+		if err != nil {
+			errMsg := "Url Param 'stop' must be a date in format YYYYMMDD"
+			s.logger.Error(errMsg)
+			http.Error(w, http.StatusText(400)+":"+errMsg, 400)
+			return
+		}
+		stop = st
+	}
+
+	wl, err := s.repo.WorklogsGroupBy(group, start, stop)
 	if err != nil {
 		s.logger.WithError(err).Error("error fetching worklogs grouped by")
 		http.Error(w, http.StatusText(500), 500)
@@ -197,10 +226,39 @@ func (s *HttpServer) GetWorklogsGroupBy(w http.ResponseWriter, r *http.Request) 
 	w.Write(jsn)
 }
 
-func (s *HttpServer) GetWorklogsPerDay(w http.ResponseWriter, r *http.Request) {
-	wl, err := s.repo.WorklogsPerDay()
+func (s *HttpServer) GetWorklogsPerDev(w http.ResponseWriter, r *http.Request) {
+
+	y, m, d := time.Now().AddDate(0, 0, -7).Date()
+	start := time.Date(y, m, d, 0, 0, 0, 0, time.Local)
+	stop := time.Date(y, m, d+8, 0, 0, 0, 0, time.Local)
+
+	startParam, ok := r.URL.Query()["start"]
+	if ok && len(startParam) == 1 {
+		st, err := time.Parse("20060102", startParam[0])
+		if err != nil {
+			errMsg := "Url Param 'start' must be a date in format YYYYMMDD"
+			s.logger.Error(errMsg)
+			http.Error(w, http.StatusText(400)+":"+errMsg, 400)
+			return
+		}
+		start = st
+	}
+
+	stopParam, ok := r.URL.Query()["stop"]
+	if ok && len(stopParam) == 1 {
+		st, err := time.Parse("20060102", stopParam[0])
+		if err != nil {
+			errMsg := "Url Param 'stop' must be a date in format YYYYMMDD"
+			s.logger.Error(errMsg)
+			http.Error(w, http.StatusText(400)+":"+errMsg, 400)
+			return
+		}
+		stop = st
+	}
+
+	wl, err := s.repo.WorklogsPerDev(start, stop)
 	if err != nil {
-		s.logger.WithError(err).Error("error fetching worklogs per day")
+		s.logger.WithError(err).Error("error fetching worklogs per dev")
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
@@ -215,23 +273,41 @@ func (s *HttpServer) GetWorklogsPerDay(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsn)
 }
 
-func (s *HttpServer) GetWorklogsPerDevDay(w http.ResponseWriter, r *http.Request) {
-	wl, err := s.repo.WorklogsPerDevDay()
-	if err != nil {
-		s.logger.WithError(err).Error("error fetching worklogs per dev day")
-		http.Error(w, http.StatusText(500), 500)
-		return
-	}
+// func (s *HttpServer) GetWorklogsPerDay(w http.ResponseWriter, r *http.Request) {
+// 	wl, err := s.repo.WorklogsPerDay()
+// 	if err != nil {
+// 		s.logger.WithError(err).Error("error fetching worklogs per day")
+// 		http.Error(w, http.StatusText(500), 500)
+// 		return
+// 	}
 
-	jsn, err := json.Marshal(wl)
-	if err != nil {
-		s.logger.WithError(err).Error("error marshalling worklogs per dev day")
-		http.Error(w, http.StatusText(500), 500)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(jsn)
-}
+// 	jsn, err := json.Marshal(wl)
+// 	if err != nil {
+// 		s.logger.WithError(err).Error("error marshalling worklogs per day")
+// 		http.Error(w, http.StatusText(500), 500)
+// 		return
+// 	}
+// 	w.Header().Set("Content-Type", "application/json")
+// 	w.Write(jsn)
+// }
+
+// func (s *HttpServer) GetWorklogsPerDevDay(w http.ResponseWriter, r *http.Request) {
+// 	wl, err := s.repo.WorklogsPerDevDay()
+// 	if err != nil {
+// 		s.logger.WithError(err).Error("error fetching worklogs per dev day")
+// 		http.Error(w, http.StatusText(500), 500)
+// 		return
+// 	}
+
+// 	jsn, err := json.Marshal(wl)
+// 	if err != nil {
+// 		s.logger.WithError(err).Error("error marshalling worklogs per dev day")
+// 		http.Error(w, http.StatusText(500), 500)
+// 		return
+// 	}
+// 	w.Header().Set("Content-Type", "application/json")
+// 	w.Write(jsn)
+// }
 
 func (s *HttpServer) GetWorklogsPerDevWeek(w http.ResponseWriter, r *http.Request) {
 	wl, err := s.repo.WorklogsPerDevWeek()

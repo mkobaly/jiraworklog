@@ -56,6 +56,8 @@ func ValidateWorklogsGroupBy(group string) (string, error) {
 		return "ParentIssuePriority", nil
 	case "project":
 		return "Project", nil
+	case "weekday":
+		return "WeekDay", nil
 	default:
 		return "", ErrUnknownWorklogsGroupBy
 	}

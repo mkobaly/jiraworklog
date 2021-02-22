@@ -22,9 +22,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.1/c3.min.js"></script>
 
 
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
-        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous">
-        </script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha256-4+XzXVhsDmqanXGHaHvgh1gMQKX40OUvDEBTu8JcmNs=" crossorigin="anonymous"></script>
 
     <!-- Tabulator -->
     <link href="https://unpkg.com/tabulator-tables@4.2.7/dist/css/tabulator.min.css" rel="stylesheet">
@@ -40,8 +38,8 @@
             //var selected = getQueryString("weeksBack", window.location.href);
             //$('#timespan').val(selected);
 
-            var start = moment().subtract(29, 'days');
-            var end = moment();
+            var start = moment().subtract(1, 'weeks').startOf('isoWeek');
+            var end =moment().subtract(1, 'weeks').endOf('isoWeek');
 
             function cb(start, end) {
                 $('#reportrange span').html(start.format('YYYY-MM-DD') + ' - ' + end.format('YYYY-MM-DD'));
@@ -60,7 +58,7 @@
                 endDate: end,
                 ranges: {
                     //'Today': [moment(), moment()],
-                    //'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                    'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
                     'This Week': [moment().startOf('isoWeek'), moment().endOf('isoWeek')],
                     'Last Week': [moment().subtract(1, 'weeks').startOf('isoWeek'), moment().subtract(1, 'weeks').endOf('isoWeek')],
                     //'Last 7 Days': [moment().subtract(6, 'days'), moment()],

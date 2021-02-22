@@ -1,5 +1,7 @@
 package types
 
+import "time"
+
 //WorklogsPerDay is agg result data representing the number
 //of hours worked per day
 type WorklogsPerDay struct {
@@ -17,6 +19,27 @@ type WorklogsAggQueryResult struct {
 	Developer    string  `db:"developer"`
 	Group        string  `db:"group"`
 	TimeSpentHrs float64 `db:"timeSpentHrs"`
+}
+
+// type WorklogsPerDev struct {
+// 	Developer    string
+// 	Date         time.Time
+// 	TimeSpentHrs float64
+// }
+
+type WorklogsPerDev struct {
+	Developer string
+	TimeSpent []HoursPerDay
+}
+
+type DeveloperDateKey struct {
+	Date      int
+	Developer string
+}
+
+type HoursPerDay struct {
+	Date         time.Time
+	TimeSpentHrs float64
 }
 
 type WorklogsPerDevDay struct {

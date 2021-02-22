@@ -2,12 +2,15 @@ package main
 
 import (
 	"errors"
-	"github.com/mkobaly/jiraworklog/job"
 	"strconv"
+
+	"github.com/mkobaly/jiraworklog/job"
+
 	//"github.com/mkobaly/jiraworklog/test"
 	"net/http"
 	"os"
 	"os/signal"
+
 	//"strings"
 	"time"
 
@@ -104,8 +107,9 @@ func main() {
 	mux := http.NewServeMux()
 	mux.Handle("/worklogs", http.HandlerFunc(server.GetWorkLogs))
 	mux.Handle("/worklogs/groupby", http.HandlerFunc(server.GetWorklogsGroupBy))
-	mux.Handle("/worklogs/perday", http.HandlerFunc(server.GetWorklogsPerDay))
-	mux.Handle("/worklogs/perdevday", http.HandlerFunc(server.GetWorklogsPerDevDay))
+	//mux.Handle("/worklogs/perday", http.HandlerFunc(server.GetWorklogsPerDay))
+	mux.Handle("/worklogs/perdev", http.HandlerFunc(server.GetWorklogsPerDev))
+	//mux.Handle("/worklogs/perdevday", http.HandlerFunc(server.GetWorklogsPerDevDay))
 	mux.Handle("/worklogs/perdevweek", http.HandlerFunc(server.GetWorklogsPerDevWeek))
 
 	mux.Handle("/issues", http.HandlerFunc(server.GetIssues))

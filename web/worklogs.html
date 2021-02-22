@@ -18,9 +18,62 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.9.2/d3.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.1/c3.min.js"></script>
 
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha256-4+XzXVhsDmqanXGHaHvgh1gMQKX40OUvDEBTu8JcmNs=" crossorigin="anonymous"></script>
+
     <!-- Tabulator -->
     <link href="https://unpkg.com/tabulator-tables@4.2.7/dist/css/tabulator.min.css" rel="stylesheet">
     <script type="text/javascript" src="https://unpkg.com/tabulator-tables@4.2.7/dist/js/tabulator.min.js"></script>
+
+    <!-- DateRangePicker -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+
+
+    <script>
+        $(function () {
+
+            var start = moment().subtract(1, 'weeks').startOf('isoWeek');
+            var end =moment().subtract(1, 'weeks').endOf('isoWeek');
+
+            function cb(start, end) {
+                $('#reportrange span').html(start.format('YYYY-MM-DD') + ' - ' + end.format('YYYY-MM-DD'));
+
+                st = start.format('YYYYMMDD');
+                stop = end.format('YYYYMMDD');
+
+                loadDevTimesheet("#dev-hours-day",st, stop);
+                worklogsGroupBy("#chart2","priority", st, stop);
+                worklogsGroupBy("#chart5","project", st, stop);
+                worklogsGroupBy("#chart4","type", st, stop);
+                worklogsGroupBy("#chart1","weekDay", st, stop);
+
+
+                // chartIssuesGroupBy("#chart1", "developer", st, stop);
+                // chartIssuesGroupBy("#chart2", "priority", st, stop);
+                // chartIssuesGroupBy("#chart3", "type", st, stop);
+                // chartIssuesGroupBy("#chart4", "project", st, stop);
+                // loadIssueAccuracy("#accuracy-table", st, stop);
+            }
+
+            $('#reportrange').daterangepicker({
+                startDate: start,
+                endDate: end,
+                ranges: {
+                    //'Today': [moment(), moment()],
+                    'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                    'This Week': [moment().startOf('isoWeek'), moment().endOf('isoWeek')],
+                    'Last Week': [moment().subtract(1, 'weeks').startOf('isoWeek'), moment().subtract(1, 'weeks').endOf('isoWeek')],
+                    //'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+                    //'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+                    'This Month': [moment().startOf('month'), moment().endOf('month')],
+                    'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+                }
+            }, cb);
+
+            cb(start, end);
+        });
+    </script>
 
     <title>Jira Dashboard</title>
 </head>
@@ -30,7 +83,7 @@
         <div class="container-fluid">
             <a class="navbar-brand" href="#">
                 <img src="jira-logo.png" width="30" height="30" class="d-inline-block align-top" alt="">
-                Jira Dashboard : Worklogs - Last Week
+                Jira Dashboard : Worklogs
             </a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse"
                 aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,6 +91,13 @@
             </button>
 
             <div class="collapse navbar-collapse" id="navbarCollapse">
+
+                <div id="reportrange"
+                    style="background: #fff; cursor: pointer; padding: 5px 10px; margin: 0px 40px; border: 1px solid #ccc; width: 250px">
+                    <i class="fa fa-calendar"></i>&nbsp
+                    <span></span> <i class="fa fa-caret-down"></i>
+                </div>
+
                 <div class="navbar-nav">
                     <a href="./worklogs.html" class="nav-item nav-link active">Worklogs</a>
                     <a href="./issues.html" class="nav-item nav-link">Issues</a>
@@ -66,13 +126,13 @@
             </div>
         </div>
         <hr>
-        <div class="row">
+        <!-- <div class="row">
             <div class="col-md-12">
                 <h4 class="text-center">Developer: Hours Worked Per Day</h4>
                 <div id="chart3"></div>
             </div>
         </div>
-        <hr>
+        <hr> -->
         <!-- <div class="row">
             <div class="col-md-12">
                 <h4 class="text-center">Historical Hours Worked per Week</h4>
@@ -81,152 +141,194 @@
         </div> -->
         <div class="row">
             <div class="col-md-12">
+                <h4 class="text-center">Developer Hours per day</h4>
+                <div id="dev-hours-day"></div>
+            </div>
+        </div>
+        <hr>
+        <div class="row">
+            <div class="col-md-12">
                 <h4 class="text-center">Historical Hours Worked per Week</h4>
                 <div id="example-table"></div>
             </div>
         </div>
+
+
     </div>
 
     <script>
-        var chart1 = c3.generate({
-            data: {
-                url: './worklogs/perday',
-                mimeType: 'json',
-                type: 'bar',
-                labels: true,
-                keys: {
-                    x: 'Day', // it's possible to specify 'x' when category axis
-                    value: ['TimeSpentHrs']
-                },
-                names: {
-                    TimeSpentHrs: 'Time Spent (Hrs)'
-                },
-                colors: {
-                    TimeSpentHrs: '#5899DA',
-                }
-            },
-            bindto: '#chart1',
-            axis: {
-                x: {
-                    type: 'category'
-                }
-            }
-        });
 
-        var chart2 = c3.generate({
-            data: {
-                url: './worklogs/groupby?group=priority',
-                mimeType: 'json',
-                type: 'bar',
-                labels: true,
-                keys: {
-                    x: 'GroupBy', // it's possible to specify 'x' when category axis
-                    value: ['TimeSpentHrs']
-                },
-                names: {
-                    TimeSpentHrs: 'Time Spent (Hrs)'
-                },
-                colors: {
-                    TimeSpentHrs: '#19A979',
-                }
-            },
-            bindto: '#chart2',
-            axis: {
-                x: {
-                    type: 'category'
-                }
+        var worklogsGroupBy = function (bindTo, group, start, stop) {
+            var chart = $(bindTo).data('c3-chart');
+            if (chart != undefined) {
+                chart = chart.destroy();
             }
-        });
 
-        var chart4 = c3.generate({
-            data: {
-                url: './worklogs/groupby?group=type',
-                mimeType: 'json',
-                type: 'bar',
-                labels: true,
-                keys: {
-                    x: 'GroupBy', // it's possible to specify 'x' when category axis
-                    value: ['TimeSpentHrs']
+            chart = c3.generate({
+                data: {
+                    url: './worklogs/groupby?group=' + group + '&start=' + start + '&stop=' + stop,
+                    mimeType: 'json',
+                    type: 'bar',
+                    labels: true,
+                    keys: {
+                        x: 'GroupBy', // it's possible to specify 'x' when category axis
+                        value: ['TimeSpentHrs']
+                    },
+                    names: {
+                        TimeSpentHrs: 'Time Spent (Hrs)'
+                    },
+                    colors: {
+                        TimeSpentHrs: '#19A979',
+                    }
                 },
-                names: {
-                    TimeSpentHrs: 'Time Spent (Hrs)'
-                },
-                colors: {
-                    TimeSpentHrs: '#E8743B',
+                bindto: bindTo,
+                axis: {
+                    x: {
+                        type: 'category'
+                    }
                 }
-            },
-            bindto: '#chart4',
-            axis: {
-                x: {
-                    type: 'category'
-                }
-            }
-        });
+            });
+        }
 
-        var chart5 = c3.generate({
-            data: {
-                url: './worklogs/groupby?group=project',
-                mimeType: 'json',
-                type: 'bar',
-                labels: true,
-                keys: {
-                    x: 'GroupBy', // it's possible to specify 'x' when category axis
-                    value: ['TimeSpentHrs']
-                },
-                names: {
-                    TimeSpentHrs: 'Time Spent (Hrs)'
-                },
-                colors: {
-                    TimeSpentHrs: '#945ECF',
-                }
-            },
-            bindto: '#chart5',
-            axis: {
-                x: {
-                    type: 'category'
-                }
-            }
-        });
+        // var chart1 = c3.generate({
+        //     data: {
+        //         url: './worklogs/perday',
+        //         mimeType: 'json',
+        //         type: 'bar',
+        //         labels: true,
+        //         keys: {
+        //             x: 'Day', // it's possible to specify 'x' when category axis
+        //             value: ['TimeSpentHrs']
+        //         },
+        //         names: {
+        //             TimeSpentHrs: 'Time Spent (Hrs)'
+        //         },
+        //         colors: {
+        //             TimeSpentHrs: '#5899DA',
+        //         }
+        //     },
+        //     bindto: '#chart1',
+        //     axis: {
+        //         x: {
+        //             type: 'category'
+        //         }
+        //     }
+        // });
 
-    
+        // var chart2 = c3.generate({
+        //     data: {
+        //         url: './worklogs/groupby?group=priority',
+        //         mimeType: 'json',
+        //         type: 'bar',
+        //         labels: true,
+        //         keys: {
+        //             x: 'GroupBy', // it's possible to specify 'x' when category axis
+        //             value: ['TimeSpentHrs']
+        //         },
+        //         names: {
+        //             TimeSpentHrs: 'Time Spent (Hrs)'
+        //         },
+        //         colors: {
+        //             TimeSpentHrs: '#19A979',
+        //         }
+        //     },
+        //     bindto: '#chart2',
+        //     axis: {
+        //         x: {
+        //             type: 'category'
+        //         }
+        //     }
+        // });
 
-        var chart3 = c3.generate({
-            data: {
-                order: null,
-                url: './worklogs/perdevday',
-                mimeType: 'json',
-                type: 'bar',
-                labels: true,
-                keys: {
-                    x: 'Developer', // it's possible to specify 'x' when category axis
-                    value: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-                },
-                colors: {
-                    Monday: '#EE6868',
-                    Tuesday: '#19A979',
-                    Wednesday: '#5899DA',
-                    Thursday: '#E8743B',
-                    Friday: '#945ECF'
-                }
-            },
-            tooltip: {
-                show: true,
-                grouped: true,
-                // contents: function (d, defaultTitleFormat, defaultValueFormat, color) {
-                //     return "test" // formatted html as you want
-                // },
-                // format: {
-                //     title: function (x, index) { return 'Data ' + x; },
-                //     name: function (name, ratio, id, index) { return index + '-' + id + '-' + name; }
-                // }
-            },
-            bindto: '#chart3',
-            axis: {
-                x: {
-                    type: 'category'
-                }
-            }
-        });
+        // var chart4 = c3.generate({
+        //     data: {
+        //         url: './worklogs/groupby?group=type',
+        //         mimeType: 'json',
+        //         type: 'bar',
+        //         labels: true,
+        //         keys: {
+        //             x: 'GroupBy', // it's possible to specify 'x' when category axis
+        //             value: ['TimeSpentHrs']
+        //         },
+        //         names: {
+        //             TimeSpentHrs: 'Time Spent (Hrs)'
+        //         },
+        //         colors: {
+        //             TimeSpentHrs: '#E8743B',
+        //         }
+        //     },
+        //     bindto: '#chart4',
+        //     axis: {
+        //         x: {
+        //             type: 'category'
+        //         }
+        //     }
+        // });
+
+        // var chart5 = c3.generate({
+        //     data: {
+        //         url: './worklogs/groupby?group=project',
+        //         mimeType: 'json',
+        //         type: 'bar',
+        //         labels: true,
+        //         keys: {
+        //             x: 'GroupBy', // it's possible to specify 'x' when category axis
+        //             value: ['TimeSpentHrs']
+        //         },
+        //         names: {
+        //             TimeSpentHrs: 'Time Spent (Hrs)'
+        //         },
+        //         colors: {
+        //             TimeSpentHrs: '#945ECF',
+        //         }
+        //     },
+        //     bindto: '#chart5',
+        //     axis: {
+        //         x: {
+        //             type: 'category'
+        //         }
+        //     }
+        // });
+
+
+
+        // var chart3 = c3.generate({
+        //     data: {
+        //         order: null,
+        //         url: './worklogs/perdevday',
+        //         mimeType: 'json',
+        //         type: 'bar',
+        //         labels: true,
+        //         keys: {
+        //             x: 'Developer', // it's possible to specify 'x' when category axis
+        //             value: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+        //         },
+        //         colors: {
+        //             Monday: '#EE6868',
+        //             Tuesday: '#19A979',
+        //             Wednesday: '#5899DA',
+        //             Thursday: '#E8743B',
+        //             Friday: '#945ECF'
+        //         }
+        //     },
+        //     tooltip: {
+        //         show: true,
+        //         grouped: true,
+        //         // contents: function (d, defaultTitleFormat, defaultValueFormat, color) {
+        //         //     return "test" // formatted html as you want
+        //         // },
+        //         // format: {
+        //         //     title: function (x, index) { return 'Data ' + x; },
+        //         //     name: function (name, ratio, id, index) { return index + '-' + id + '-' + name; }
+        //         // }
+        //     },
+        //     bindto: '#chart3',
+        //     axis: {
+        //         x: {
+        //             type: 'category'
+        //         }
+        //     }
+        // });
 
         // var chart4 = c3.generate({
         //     data: {
@@ -357,13 +459,28 @@
         });
 
 
+        var loadDevTimesheet = function (bindTo, start, stop) {
+            let url = "./worklogs/perdev?start=" + start + "&stop=" + stop;
+
+            var devHours = new Tabulator(bindTo, {
+                autoColumns:true,
+                initialSort: [
+                    { column: "Developer", dir: "asc" }
+                ],
+                layout: "fitColumns",
+                ajaxURL: url, //ajax URL
+                });
+
+        }
+
+
+
+
+
     </script>
 
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
-        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
-        crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
         integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
         crossorigin="anonymous"></script>

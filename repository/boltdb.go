@@ -2,7 +2,7 @@ package repository
 
 import (
 	"math"
-	"strings"
+	"strconv"
 	"time"
 
 	"github.com/mkobaly/jiraworklog/types"
@@ -131,12 +131,12 @@ func (r *BoltDB) IssueAccuracy(start time.Time, stop time.Time) ([]types.IssueAc
 	return results, nil
 }
 
-func (r *BoltDB) WorklogsGroupBy(groupBy string) ([]types.WorklogGroupByChart, error) {
+func (r *BoltDB) WorklogsGroupBy(groupBy string, start time.Time, stop time.Time) ([]types.WorklogGroupByChart, error) {
 
-	start := time.Now().Truncate(24*time.Hour).AddDate(0, 0, -7)
-	_, week := start.ISOWeek()
+	//start := time.Now().Truncate(24*time.Hour).AddDate(0, 0, -7)
+	//_, week := start.ISOWeek()
 
-	query := bolthold.Where("Date").Ge(start.AddDate(0, 0, -5)).And("WeekNumber").Eq(week)
+	query := bolthold.Where("Date").Ge(start).And("Date").Le(stop)
 	agg, err := r.db.FindAggregate(&types.WorklogItem{}, query, groupBy)
 	if err != nil {
 		return nil, err
@@ -152,94 +152,64 @@ func (r *BoltDB) WorklogsGroupBy(groupBy string) ([]types.WorklogGroupByChart, e
 	return results, nil
 }
 
-func (r *BoltDB) WorklogsPerDay() ([]types.WorklogsPerDay, error) {
-	finalResults := []types.WorklogsPerDay{
-		types.WorklogsPerDay{Day: "Sunday", TimeSpentHrs: 0},
-		types.WorklogsPerDay{Day: "Monday", TimeSpentHrs: 0},
-		types.WorklogsPerDay{Day: "Tuesday", TimeSpentHrs: 0},
-		types.WorklogsPerDay{Day: "Wednesday", TimeSpentHrs: 0},
-		types.WorklogsPerDay{Day: "Thursday", TimeSpentHrs: 0},
-		types.WorklogsPerDay{Day: "Friday", TimeSpentHrs: 0},
-		types.WorklogsPerDay{Day: "Saturday", TimeSpentHrs: 0},
-	}
+func (r *BoltDB) WorklogsPerDev(start time.Time, stop time.Time) ([]map[string]string, error) {
+	final := []map[string]string{}
+	authors := make(map[string]bool)
+	activity := make(map[types.DeveloperDateKey]float64)
 
-	weekAgo := time.Now().Truncate(24*time.Hour).AddDate(0, 0, -7)
-	_, week := weekAgo.ISOWeek()
-
-	query := bolthold.Where("Date").Ge(weekAgo.AddDate(0, 0, -5)).And("WeekNumber").Eq(week)
-	agg, err := r.db.FindAggregate(&types.WorklogItem{}, query, "WeekDay")
-	if err != nil {
-		return nil, err
-	}
-
-	for i := range agg {
-		var weekDay string
-		agg[i].Group(&weekDay)
-		hours := math.Round(agg[i].Sum("TimeSpentHours")*100) / 100
-
-		for j := range finalResults {
-			if strings.ToLower(finalResults[j].Day) == strings.ToLower(weekDay) {
-				finalResults[i].TimeSpentHrs = hours
-				continue
-			}
-		}
-	}
-	return finalResults, nil
-}
-
-func (r *BoltDB) WorklogsPerDevDay() ([]types.WorklogsPerDevDay, error) {
-
-	results := make(map[string]*types.WorklogsPerDevDay)
-	final := []types.WorklogsPerDevDay{}
-
-	start := time.Now().Truncate(24*time.Hour).AddDate(0, 0, -7)
-	_, week := start.ISOWeek()
-
-	query := bolthold.Where("Date").Ge(start.AddDate(0, 0, -5)).And("WeekNumber").Eq(week)
-	agg, err := r.db.FindAggregate(&types.WorklogItem{}, query, "Author", "WeekDay")
+	query := bolthold.Where("Date").Ge(start).And("Date").Le(stop)
+	agg, err := r.db.FindAggregate(&types.WorklogItem{}, query, "Author", "Date")
 	if err != nil {
 		return nil, err
 	}
 
 	for i := range agg {
 		var author string
-		var weekDay string
-		agg[i].Group(&author, &weekDay)
+		var date time.Time
+		agg[i].Group(&author, &date)
 		hours := math.Round(agg[i].Sum("TimeSpentHours")*100) / 100
 
-		if _, ok := results[author]; !ok {
-			results[author] = &types.WorklogsPerDevDay{Developer: author}
+		date.YearDay()
+		if _, ok := authors[author]; !ok {
+			authors[author] = true
 		}
-
-		switch weekDay {
-		case "Monday":
-			results[author].Monday = hours
-		case "Tuesday":
-			results[author].Tuesday = hours
-		case "Wednesday":
-			results[author].Wednesday = hours
-		case "Thursday":
-			results[author].Thursday = hours
-		case "Friday":
-			results[author].Friday = hours
-		}
-
+		key := types.DeveloperDateKey{Date: date.YearDay(), Developer: author}
+		activity[key] += hours
 	}
-	for _, v := range results {
-		final = append(final, *v)
+
+	for a, _ := range authors {
+		worklog := types.WorklogsPerDev{Developer: a}
+		hoursTotal := 0.00
+		for i := 0; i < int(stop.Sub(start).Hours()/24); i++ {
+			date := start.AddDate(0, 0, i)
+			key := types.DeveloperDateKey{Date: date.YearDay(), Developer: a}
+
+			if _, ok := activity[key]; !ok {
+				worklog.TimeSpent = append(worklog.TimeSpent, types.HoursPerDay{Date: date, TimeSpentHrs: 0})
+			} else {
+				worklog.TimeSpent = append(worklog.TimeSpent, types.HoursPerDay{Date: date, TimeSpentHrs: activity[key]})
+				hoursTotal += activity[key]
+			}
+		}
+		tmp := make(map[string]string)
+		tmp[" Developer"] = a
+		tmp[" Total Hrs"] = strconv.FormatFloat(hoursTotal, 'f', 2, 64)
+		for _, v := range worklog.TimeSpent {
+			tmp[v.Date.Format("Jan 02")] = strconv.FormatFloat(v.TimeSpentHrs, 'f', 2, 64)
+		}
+		final = append(final, tmp)
 	}
 	return final, nil
-
 }
 
 func (r *BoltDB) WorklogsPerDevWeek() ([]types.WorklogsPerDevWeek, error) {
 	results := make(map[string]*types.WorklogsPerDevWeek)
 	final := []types.WorklogsPerDevWeek{}
 
-	start := time.Now().Truncate(24*time.Hour).AddDate(0, 0, -7)
-	_, week := start.ISOWeek()
+	start := time.Now().Truncate(24*time.Hour).AddDate(0, 0, -35)
+	_, week := time.Now().ISOWeek()
 
-	query := bolthold.Where("Date").Ge(start.AddDate(0, 0, -5)).And("WeekNumber").Ge(week)
+	query := bolthold.Where("Date").Ge(start)
 	agg, err := r.db.FindAggregate(&types.WorklogItem{}, query, "Author", "WeekNumber")
 	if err != nil {
 		return nil, err
@@ -274,3 +244,82 @@ func (r *BoltDB) WorklogsPerDevWeek() ([]types.WorklogsPerDevWeek, error) {
 	}
 	return final, nil
 }
+
+// func (r *BoltDB) WorklogsPerDay() ([]types.WorklogsPerDay, error) {
+// 	finalResults := []types.WorklogsPerDay{
+// 		types.WorklogsPerDay{Day: "Sunday", TimeSpentHrs: 0},
+// 		types.WorklogsPerDay{Day: "Monday", TimeSpentHrs: 0},
+// 		types.WorklogsPerDay{Day: "Tuesday", TimeSpentHrs: 0},
+// 		types.WorklogsPerDay{Day: "Wednesday", TimeSpentHrs: 0},
+// 		types.WorklogsPerDay{Day: "Thursday", TimeSpentHrs: 0},
+// 		types.WorklogsPerDay{Day: "Friday", TimeSpentHrs: 0},
+// 		types.WorklogsPerDay{Day: "Saturday", TimeSpentHrs: 0},
+// 	}
+
+// 	weekAgo := time.Now().Truncate(24*time.Hour).AddDate(0, 0, -7)
+// 	_, week := weekAgo.ISOWeek()
+
+// 	query := bolthold.Where("Date").Ge(weekAgo.AddDate(0, 0, -5)).And("WeekNumber").Eq(week)
+// 	agg, err := r.db.FindAggregate(&types.WorklogItem{}, query, "WeekDay")
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	for i := range agg {
+// 		var weekDay string
+// 		agg[i].Group(&weekDay)
+// 		hours := math.Round(agg[i].Sum("TimeSpentHours")*100) / 100
+
+// 		for j := range finalResults {
+// 			if strings.ToLower(finalResults[j].Day) == strings.ToLower(weekDay) {
+// 				finalResults[i].TimeSpentHrs = hours
+// 				continue
+// 			}
+// 		}
+// 	}
+// 	return finalResults, nil
+// }
+
+// func (r *BoltDB) WorklogsPerDevDay() ([]types.WorklogsPerDevDay, error) {
+
+// 	results := make(map[string]*types.WorklogsPerDevDay)
+// 	final := []types.WorklogsPerDevDay{}
+
+// 	start := time.Now().Truncate(24*time.Hour).AddDate(0, 0, -7)
+// 	_, week := start.ISOWeek()
+
+// 	query := bolthold.Where("Date").Ge(start.AddDate(0, 0, -5)).And("WeekNumber").Eq(week)
+// 	agg, err := r.db.FindAggregate(&types.WorklogItem{}, query, "Author", "WeekDay")
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	for i := range agg {
+// 		var author string
+// 		var weekDay string
+// 		agg[i].Group(&author, &weekDay)
+// 		hours := math.Round(agg[i].Sum("TimeSpentHours")*100) / 100
+
+// 		if _, ok := results[author]; !ok {
+// 			results[author] = &types.WorklogsPerDevDay{Developer: author}
+// 		}
+
+// 		switch weekDay {
+// 		case "Monday":
+// 			results[author].Monday = hours
+// 		case "Tuesday":
+// 			results[author].Tuesday = hours
+// 		case "Wednesday":
+// 			results[author].Wednesday = hours
+// 		case "Thursday":
+// 			results[author].Thursday = hours
+// 		case "Friday":
+// 			results[author].Friday = hours
+// 		}
+
+// 	}
+// 	for _, v := range results {
+// 		final = append(final, *v)
+// 	}
+// 	return final, nil
+// }
