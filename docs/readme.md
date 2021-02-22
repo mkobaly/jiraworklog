@@ -1,4 +1,4 @@
-# JiraWorklog   
+# JiraWorklog
 
 Simple utility to extract all Jira Worklogs and record them into a database so they can be easily reported on. This is a self contained solution that will collect all of the worklogs and present a simple dashboard as the presentation layer
 
@@ -14,11 +14,11 @@ For SQL Server its expected that the database and tables already exist. See belo
 
 Jira does not provide a good way to see developers productivity across all projects
 
-Time tracking is typically done at the lowest issue level. For a bug that makes sense. For a 
+Time tracking is typically done at the lowest issue level. For a bug that makes sense. For a
 story many times the time tracking is logged against the sub-task. From a management level we care more
 about the "parent issues" when it comes to seeing what was completed / worked on
 
-The assignee gets changed over time (QA for example) so you really don't know what developer worked on what issue unless you dig into the history of an issue. 
+The assignee gets changed over time (QA for example) so you really don't know what developer worked on what issue unless you dig into the history of an issue.
 
 The existing reports in Jira don't provide good insight into productivity of developers unless you use
 a jira plug-in that costs money and could change the standard jira time tracking functionality. I wanted
@@ -70,9 +70,9 @@ OPTIONS
 ## Running for the first time
 
 ### Linux or Windows
- 
- - Execute the jiraworklog executable without any parameters. Note: The first time you run this it will warn you that a configuration file was not present but one has been created for you. 
- 
+
+ - Execute the jiraworklog executable without any parameters. Note: The first time you run this it will warn you that a configuration file was not present but one has been created for you.
+
  - Edit the config.yaml file accordingly
 
  ```sh
@@ -92,10 +92,10 @@ Note: Unless you change the port it will default to 8180
 ```sh
 
 # Run using BoltDB
-docker run --name jiraworklog -p 8180:8180 --mount type=bind,source="$(pwd)"/config.yaml,target=/app/config.yaml mkobaly/jiraworklogs ./jiraworklog -v
+docker run -d --restart unless-stopped --name jiraworklog -p 8180:8180 --mount type=bind,source="$(pwd)"/config.yaml,target=/app/config.yaml mkobaly/jiraworklogs ./jiraworklog -v
 
 ## Run using SQL Server
-docker run --name jiraworklog -p 8180:8180 --mount type=bind,source="$(pwd)"/config.yaml,target=/app/config.yaml mkobaly/jiraworklogs ./jiraworklog -r MSSQL -v
+docker run -d --restart unless-stopped --name jiraworklog -p 8180:8180 --mount type=bind,source="$(pwd)"/config.yaml,target=/app/config.yaml mkobaly/jiraworklogs ./jiraworklog -r MSSQL -v
 
 ```
 
@@ -103,9 +103,9 @@ Once service has slowed down in importing worklogs and issues you can navigate t
 
 ## Workflow
 
-Jira should be easy to use but its not. Here we are assuming 1 simple rule. 
+Jira should be easy to use but its not. Here we are assuming 1 simple rule.
 
-1) Developers log their time on tickets they work on. 
+1) Developers log their time on tickets they work on.
 
 Given that we can pull all work log entries and from those entries get the issue and the parent issue (ex: sub-task => story), we now know all of the "parent issues" being worked on and can track when those parent issues are resolved
 
@@ -113,9 +113,8 @@ Given that we can pull all work log entries and from those entries get the issue
 ## Rest API
 
 - /worklogs - get all worklogs (todo: add paging)
-- /worklogs/groupby 
-- /worklogs/perday
-- /worklogs/perdevday
+- /worklogs/groupby
+- /worklogs/perdev
 - /worklogs/perdevweek
 
 - /issues - get all issues (todo: add paging)
@@ -158,7 +157,7 @@ By Developer - change week over week?
 
 ## Repository
 
-A repository handle the persistance and querying of the Jira data from our database. The goal is to have different "repositories" available. Currently only BoltDB and SQL Server are implemented. 
+A repository handle the persistance and querying of the Jira data from our database. The goal is to have different "repositories" available. Currently only BoltDB and SQL Server are implemented.
 
 ```sql
 -- Script that will create Jira database and two tables needed
