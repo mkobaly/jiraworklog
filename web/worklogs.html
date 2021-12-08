@@ -30,11 +30,13 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
 
 
+    <!-- Local helpers -->
+    <script type="text/javascript" src="./helpers.js"></script>
+
     <script>
         $(function () {
 
-            var start = moment().subtract(1, 'weeks').startOf('isoWeek');
-            var end =moment().subtract(1, 'weeks').endOf('isoWeek');
+            let [start, end] = parseStartEndParams(parseGetParams());
 
             function cb(start, end) {
                 $('#reportrange span').html(start.format('YYYY-MM-DD') + ' - ' + end.format('YYYY-MM-DD'));
