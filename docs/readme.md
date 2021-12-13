@@ -25,7 +25,9 @@ a jira plug-in that costs money and could change the standard jira time tracking
 this to work with the default jira time tracking solution (work logs)
 
 The current reporting options in Jira Cloud are somewhat limiting and unless you purchase an add-on the
-time spent by developers is difficult to report on. This utility is looking to change that
+time spent by developers is difficult to report on. This utility is looking to change that.
+
+If you follow [https://en.wikipedia.org/wiki/Pomodoro_Technique](the pomodoro technique) and wish to log your work many times a day to various issues, it is imperative to be able to tell how much work you logged so far. With stock Jira, it is practically impossible to deduct.
 
 ## Configuration
 
@@ -123,7 +125,17 @@ Given that we can pull all work log entries and from those entries get the issue
 
 ## dashboard Thoughts (WIP)
 
+### Get parameters
+
+./issues.html and ./worklogs.html can be parametrized to preload a desired timeframe, eg.
+
+- ./issues.html?start=lastweek
+- ./issues.html?start=2021-12-08&end=2021-12-24
+- ./issues.html  # loads the current week
+
 ### Issues
+
+Accessed by http://localhost:8180/issues.html
 
 - Historical page?
   - The days to complete by type line chart below could fit here
@@ -142,6 +154,8 @@ Days to complete by type
  - line chart going back 6 weeks. Each week point
 
 ### Worklogs
+
+Accessed by http://localhost:8180/worklogs.html
 
 Who hasn't logged any hours for today
 
