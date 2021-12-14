@@ -66,7 +66,23 @@ OPTIONS
 -h, --help                  print help and exit
 -p, --port <8180>           default port to serve rest API from (default: 8180)
 -r, --repo <BOLTDB>         specific repo to use (MSSQL, BOLTDB) (default: BOLTDB)
+-a, --ask                   Ask for Jira username and password from the STDIN
 -v, --verbose               verbose logging
+```
+
+## Environment values
+
+You can override values from the configuration file using the ENV.
+
+### Example
+
+JWL_JIRA_URL=> Config.Jira.URL
+Only JWL_JIRA_* are currently supported
+
+### Usage
+
+```
+JWL_JIRA_USERNAME="urho" JWL_JIRA_PASSWORD="kekkonen" ./jiraworklog
 ```
 
 ## Running for the first time
