@@ -43,6 +43,7 @@ func main() {
 	cmdline.SetOptionDefault("r", "BOLTDB")
 	cmdline.AddOption("p", "port", "8180", "default port to serve rest API from")
 	cmdline.SetOptionDefault("p", "8180")
+	cmdline.AddFlag("k", "ask", "Ask for username and password from the STDIN")
 	cmdline.AddFlag("v", "verbose", "verbose logging")
 	cmdline.Parse(os.Args)
 
