@@ -117,6 +117,7 @@ func main() {
 	mux.Handle("/issues/accuracy", http.HandlerFunc(server.GetIssueAccuracy))
 	//mux.Handle("/", http.StripPrefix(strings.TrimRight("/dashboard/", "/"), fileServer))
 	mux.Handle("/", fileServer)
+	logger.Info("Starting HTTP server at *:" + strconv.Itoa(port))
 	go http.ListenAndServe(":"+strconv.Itoa(port), mux)
 
 	select {
