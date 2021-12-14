@@ -70,7 +70,8 @@ func LoadConfig(path string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	return config, nil
+
+	return loadEnv(config), nil
 }
 
 //newConfig will create a default config file with placeholder values
@@ -85,4 +86,19 @@ func newConfig() *Config {
 		DoneStatus:    []string{"done", "closed"},
 	}
 	return config
+}
+
+//loadEnv injects configuration variables from the ENV
+func loadEnv(c *Config) *Config {
+	// Some fancy dynamicism would be great here.
+	if val, ok := os.LookupEnv("JWL_JIRA_PASSWORD"); ok == true {
+		c.Jira.Password = val
+	}
+	if val, ok := os.LookupEnv("JWL_JIRA_URL"); ok == true {
+		c.Jira.URL = val
+	}
+	if val, ok := os.LookupEnv("JWL_JIRA_USERNAME"); ok == true {
+		c.Jira.Username = val
+	}
+	return c
 }
