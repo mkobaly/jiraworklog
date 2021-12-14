@@ -22,8 +22,6 @@ type Config struct {
 	path          string
 	Jira          JiraSettings
 	SQLConnection string
-	MaxWorklogID  int
-	LastTimestamp int64
 	UserList      []string
 	DoneStatus    []string
 }
@@ -80,8 +78,6 @@ func newConfig() *Config {
 	var config = &Config{
 		Jira:          JiraSettings{URL: "https://your-url.example.com/rest/api/latest", Username: "username", Password: "use_api_token"},
 		SQLConnection: "Server=localhost;Database=Jira;User Id=xxx;Password=yyyyyy",
-		MaxWorklogID:  0,
-		LastTimestamp: 0,
 		UserList:      []string{"leave.empty", "to.pull", "all.users"},
 		DoneStatus:    []string{"done", "closed"},
 	}

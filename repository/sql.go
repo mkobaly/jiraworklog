@@ -96,6 +96,28 @@ func (s *SQL) Write(w *types.WorklogItem, pi *types.ParentIssue) error {
 	return nil
 }
 
+func (s *SQL) WorklogGetLastTimestamp() (int64, error) {
+	var lastTimestamp int64
+	err := s.DB.Get(&lastTimestamp, "SELECT lastTimestamp FROM config")
+	return lastTimestamp, err
+}
+
+func (s *SQL) WorklogUpdateLastTimestamp(lastTimestamp int64) error {
+	_, err := s.DB.Exec("UPDATE config SET lastTimestamp=?", lastTimestamp)
+	return err
+}
+
+func (s *SQL) WorklogGetMaxWorklogID() (int, error) {
+	var maxWorklogID int
+	err := s.DB.Get(&maxWorklogID, "SELECT maxWorklogID FROM config")
+	return maxWorklogID, err
+}
+
+func (s *SQL) WorklogUpdateMaxWorklogID(maxWorklogID int) error {
+	_, err := s.DB.Exec("UPDATE config SET maxWorklogID=?", maxWorklogID)
+	return err
+}
+
 //UpdateIssue will update the resolved information for the given issue
 func (s *SQL) UpdateIssue(issue *types.ParentIssue) error {
 	stmt, err := s.DB.Prepare(`
