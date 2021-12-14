@@ -78,7 +78,7 @@ func LoadConfig(path string) (*Config, error) {
 func newConfig() *Config {
 
 	var config = &Config{
-		Jira:          JiraSettings{URL: "https://your-url.atlassian.net", Username: "username", Password: "use_api_token"},
+		Jira:          JiraSettings{URL: "https://your-url.example.com/rest/api/latest", Username: "username", Password: "use_api_token"},
 		SQLConnection: "Server=localhost;Database=Jira;User Id=xxx;Password=yyyyyy",
 		MaxWorklogID:  0,
 		LastTimestamp: 0,
