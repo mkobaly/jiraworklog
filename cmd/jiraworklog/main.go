@@ -2,9 +2,12 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
+	"syscall"
 
 	"github.com/mkobaly/jiraworklog/job"
+	"golang.org/x/crypto/ssh/terminal"
 
 	//"github.com/mkobaly/jiraworklog/test"
 	"net/http"
@@ -79,6 +82,22 @@ func main() {
 		if err != nil {
 			logger.WithError(err).Fatal("port must be numeric")
 		}
+	}
+
+	if cmdline.IsOptionSet("ask") {
+		fmt.Println("Please enter Jira username:")
+		userBytes, err := terminal.ReadPassword(int(syscall.Stdin))
+		if err != nil {
+			logger.WithError(err).Fatal("Reading Jira Username from the STDIN failed")
+		}
+		cfg.Jira.Username = string(userBytes)
+		fmt.Println("Please enter Jira password:")
+		passBytes, err := terminal.ReadPassword(int(syscall.Stdin))
+		if err != nil {
+			logger.WithError(err).Fatal("Reading Jira Password from the STDIN failed")
+		}
+		cfg.Jira.Password = string(passBytes)
+		fmt.Println("Thanks!")
 	}
 
 	//Repo Settings
