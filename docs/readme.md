@@ -225,4 +225,10 @@ create table issue
 	aggregateTimeOriginalEstimate int NOT NULL DEFAULT(0),
 	dateInserted datetime NOT NULL default(getutcdate())
 )
+
+create table config
+(
+	lastTimestamp int NOT NULL,
+	maxWorklogID int NOT NULL
+)
 ```

@@ -15,15 +15,36 @@ type BoltDB struct {
 	db *bolthold.Store
 }
 
+type Config struct {
+	LastTimestamp int64
+	MaxWorklogID  int
+}
+
 //NewBoltDBRepo will create a new BoltDB repository
 func NewBoltDBRepo(dbfile string) (*BoltDB, error) {
 	db, err := bolthold.Open(dbfile, 0666, nil)
 	if err != nil {
 		return nil, err
 	}
-	return &BoltDB{
+
+	bolt := &BoltDB{
 		db: db,
-	}, nil
+	}
+
+	if mwi, err := bolt.WorklogGetMaxWorklogID(); mwi == 0 {
+		err = bolt.WorklogUpdateMaxWorklogID(0)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if ts, err := bolt.WorklogGetLastTimestamp(); ts == 0 {
+		err = bolt.WorklogUpdateLastTimestamp(0)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return bolt, nil
 }
 
 //NonResolvedIssues gets all issue keys that are not resolved yet
@@ -43,6 +64,32 @@ func (r *BoltDB) Write(wi *types.WorklogItem, pi *types.ParentIssue) error {
 	pi.UpdateDate = wi.Date
 	//parent := wi.GetParent()
 	err = r.db.Upsert(pi.ID, &pi)
+	return err
+}
+
+func (r *BoltDB) WorklogGetLastTimestamp() (int64, error) {
+	var c Config
+	err := r.db.Get("lastTimestamp", &c)
+	return c.LastTimestamp, err
+}
+
+func (r *BoltDB) WorklogUpdateLastTimestamp(lastTimestamp int64) error {
+	var c Config
+	c.LastTimestamp = lastTimestamp
+	err := r.db.Upsert("lastTimestamp", c)
+	return err
+}
+
+func (r *BoltDB) WorklogGetMaxWorklogID() (int, error) {
+	var c Config
+	err := r.db.Get("maxWorklogID", &c)
+	return c.MaxWorklogID, err
+}
+
+func (r *BoltDB) WorklogUpdateMaxWorklogID(maxWorklogID int) error {
+	var c Config
+	c.MaxWorklogID = maxWorklogID
+	err := r.db.Upsert("maxWorklogID", c)
 	return err
 }
 

@@ -41,12 +41,18 @@ func (j *JiraWorklogsDownloader) Run() error {
 
 	//jira := jiraworklog.NewJira(j.cfg)
 
-	lastTimestamp := j.cfg.LastTimestamp
+	lastTimestamp, err := j.repo.WorklogGetLastTimestamp()
+	if err != nil {
+		return errors.Wrap(err, "failed to get lastTimestamp from DB")
+	}
 	if lastTimestamp == 0 {
 		// default going back 4 months
 		lastTimestamp = time.Now().AddDate(0, -4, 0).UnixNano() / 1e6
 	}
-	maxWorklogID := j.cfg.MaxWorklogID
+	maxWorklogID, err := j.repo.WorklogGetMaxWorklogID()
+	if err != nil {
+		return errors.Wrap(err, "failed to get maxWorklogID from DB")
+	}
 	j.logger.WithField("timestamp", lastTimestamp).Info("last timestamp")
 
 	//Fetch worklogs updated since last timestamp check
@@ -103,9 +109,8 @@ func (j *JiraWorklogsDownloader) Run() error {
 		time.Sleep(200 * time.Millisecond)
 	}
 	lastTimestamp = wl.Until
-	j.cfg.MaxWorklogID = maxWorklogID
-	j.cfg.LastTimestamp = lastTimestamp
-	j.cfg.Save()
+	j.repo.WorklogUpdateMaxWorklogID(maxWorklogID)
+	j.repo.WorklogUpdateLastTimestamp(lastTimestamp)
 	j.logger.WithField("lasttimestamp", lastTimestamp).WithField("maxworklogID", maxWorklogID).Info("finished processing batch")
 	return nil
 }

@@ -23,6 +23,11 @@ type Repo interface {
 	WorklogsPerDev(start time.Time, stop time.Time) ([]map[string]string, error)
 	WorklogsPerDevWeek() ([]types.WorklogsPerDevWeek, error)
 
+	WorklogGetLastTimestamp() (int64, error)
+	WorklogUpdateLastTimestamp(lastTimestamp int64) error
+	WorklogGetMaxWorklogID() (int, error)
+	WorklogUpdateMaxWorklogID(maxWorklogID int) error
+
 	//WorklogsPerDay() ([]types.WorklogsPerDay, error)
 	//WorklogsPerDevDay() ([]types.WorklogsPerDevDay, error)
 
