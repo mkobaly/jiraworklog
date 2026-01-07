@@ -9,8 +9,8 @@ import (
 	"github.com/mkobaly/jiraworklog"
 )
 
-//WorklogItem represents the finalized worklog. This includes the issue the worklog
-//was logged against along with the issue's parent if one exists
+// WorklogItem represents the finalized worklog. This includes the issue the worklog
+// was logged against along with the issue's parent if one exists
 type WorklogItem struct {
 	ID               int       `db:"id" `
 	Author           string    `db:"author" boltholdIndex:"Author"`
@@ -22,22 +22,24 @@ type WorklogItem struct {
 
 	Project string `db:"project" boltholdIndex:"Project"`
 
-	IssueID       int    `db:"issueId"`
-	IssueKey      string `db:"issueKey"`
-	IssueType     string `db:"issueType"`
-	IssueSummary  string `db:"issueSummary"`
-	IssuePriority string `db:"issuePriority"`
-	IssueStatus   string `db:"issueStatus"`
+	IssueID            int    `db:"issueId"`
+	IssueKey           string `db:"issueKey"`
+	IssueType          string `db:"issueType"`
+	IssueSummary       string `db:"issueSummary"`
+	IssuePriority      string `db:"issuePriority"`
+	IssueStatus        string `db:"issueStatus"`
+	IssueProjectCharge string `db:"issueProjectCharge"`
 
-	ParentIssueID       int    `db:"parentIssueId"`
-	ParentIssueKey      string `db:"parentIssueKey"`
-	ParentIssueType     string `db:"parentIssueType" boltholdIndex:"ParentIssueType"`
-	ParentIssueSummary  string `db:"parentIssueSummary"`
-	ParentIssuePriority string `db:"parentIssuePriority" boltholdIndex:"ParentIssuePriority"`
-	ParentIssueStatus   string `db:"parentIssueStatus"`
+	ParentIssueID            int    `db:"parentIssueId"`
+	ParentIssueKey           string `db:"parentIssueKey"`
+	ParentIssueType          string `db:"parentIssueType" boltholdIndex:"ParentIssueType"`
+	ParentIssueSummary       string `db:"parentIssueSummary"`
+	ParentIssuePriority      string `db:"parentIssuePriority" boltholdIndex:"ParentIssuePriority"`
+	ParentIssueStatus        string `db:"parentIssueStatus"`
+	ParentIssueProjectCharge string `db:"parentIssueProjectCharge"`
 }
 
-//ConvertToModels will take rest api results from JIRA and transform them into a model we can work with
+// ConvertToModels will take rest api results from JIRA and transform them into a model we can work with
 func ConvertToModels(w jiraworklog.Worklog, i jiraworklog.Issue, parentIssue jiraworklog.Issue) (*WorklogItem, *ParentIssue) {
 	id, _ := strconv.Atoi(w.ID)
 	issueID, _ := strconv.Atoi(i.ID)
@@ -46,27 +48,29 @@ func ConvertToModels(w jiraworklog.Worklog, i jiraworklog.Issue, parentIssue jir
 	timespent := float64(w.TimeSpentSeconds) / 3600
 
 	worklogResult := &WorklogItem{
-		ID:            id,
-		Author:        w.Author.DisplayName,
-		Project:       strings.Split(i.Key, "-")[0],
-		IssueID:       issueID,
-		IssueKey:      i.Key,
-		IssuePriority: i.Fields.Priority.Name,
-		IssueType:     i.Fields.Issuetype.Name,
-		IssueSummary:  i.Fields.Summary,
-		IssueStatus:   i.Fields.Status.Name,
+		ID:                 id,
+		Author:             w.Author.DisplayName,
+		Project:            strings.Split(i.Key, "-")[0],
+		IssueID:            issueID,
+		IssueKey:           i.Key,
+		IssuePriority:      i.Fields.Priority.Name,
+		IssueType:          i.Fields.Issuetype.Name,
+		IssueSummary:       i.Fields.Summary,
+		IssueStatus:        i.Fields.Status.Name,
+		IssueProjectCharge: i.Fields.ProjectCharge.Value,
 		//Setting parent to issue and if issue has parent override below. This way its always populated
-		ParentIssueID:       issueID,
-		ParentIssueKey:      i.Key,
-		ParentIssueType:     i.Fields.Issuetype.Name,
-		ParentIssuePriority: i.Fields.Priority.Name,
-		ParentIssueSummary:  i.Fields.Summary,
-		ParentIssueStatus:   i.Fields.Status.Name,
-		Date:                started,
-		TimeSpentSeconds:    w.TimeSpentSeconds,
-		TimeSpentHours:      math.Round(timespent*100) / 100,
-		WeekNumber:          week,
-		WeekDay:             started.Weekday().String(),
+		ParentIssueID:            issueID,
+		ParentIssueKey:           i.Key,
+		ParentIssueType:          i.Fields.Issuetype.Name,
+		ParentIssuePriority:      i.Fields.Priority.Name,
+		ParentIssueSummary:       i.Fields.Summary,
+		ParentIssueStatus:        i.Fields.Status.Name,
+		ParentIssueProjectCharge: i.Fields.ProjectCharge.Value,
+		Date:                     started,
+		TimeSpentSeconds:         w.TimeSpentSeconds,
+		TimeSpentHours:           math.Round(timespent*100) / 100,
+		WeekNumber:               week,
+		WeekDay:                  started.Weekday().String(),
 	}
 
 	if i.HasParent() {
@@ -77,6 +81,7 @@ func ConvertToModels(w jiraworklog.Worklog, i jiraworklog.Issue, parentIssue jir
 		worklogResult.ParentIssuePriority = parentIssue.Fields.Priority.Name
 		worklogResult.ParentIssueSummary = parentIssue.Fields.Summary
 		worklogResult.ParentIssueStatus = parentIssue.Fields.Status.Name
+		worklogResult.ParentIssueProjectCharge = parentIssue.Fields.ProjectCharge.Value
 	}
 
 	pi := i

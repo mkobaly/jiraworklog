@@ -13,12 +13,12 @@ import (
 	"github.com/mkobaly/jiraworklog/types"
 )
 
-//SQL is the SQL Server repository
+// SQL is the SQL Server repository
 type SQL struct {
 	DB *sqlx.DB
 }
 
-//NewSQLRepo will create a new repository using a SQL database as storage
+// NewSQLRepo will create a new repository using a SQL database as storage
 func NewSQLRepo(cfg *jiraworklog.Config) (*SQL, error) {
 	db, err := sqlx.Connect("sqlserver", cfg.SQLConnection)
 	if err != nil {
@@ -28,7 +28,7 @@ func NewSQLRepo(cfg *jiraworklog.Config) (*SQL, error) {
 	return repo, nil
 }
 
-//NonResolvedIssues gets all issue keys that are not resolved yet
+// NonResolvedIssues gets all issue keys that are not resolved yet
 func (s *SQL) NonResolvedIssues() ([]types.ParentIssue, error) {
 	result := []types.ParentIssue{}
 	err := s.DB.Select(&result, `
@@ -50,7 +50,7 @@ func (s *SQL) NonResolvedIssues() ([]types.ParentIssue, error) {
 	return result, err
 }
 
-//Write will add the worklogItem to SQL server
+// Write will add the worklogItem to SQL server
 func (s *SQL) Write(w *types.WorklogItem, pi *types.ParentIssue) error {
 	//p := w.GetParent()
 	stmt, err := s.DB.Prepare(`
@@ -58,10 +58,11 @@ func (s *SQL) Write(w *types.WorklogItem, pi *types.ParentIssue) error {
 		INSERT INTO worklog
 		(
 			id, author, date, weekNumber, weekDay, timeSpentSeconds, timeSpentHours, project,
-			issueId, issueKey, issueType, issueSummary, issuePriority, issueStatus,
-			parentIssueId, parentIssueKey, parentIssueType, parentIssueSummary, parentIssuePriority, parentIssueStatus
+			issueId, issueKey, issueType, issueSummary, issuePriority, issueStatus, 
+			parentIssueId, parentIssueKey, parentIssueType, parentIssueSummary, parentIssuePriority, parentIssueStatus, 
+			issueProjectCharge, parentIssueProjectCharge
 		)
-		VALUES(@p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12, @p13, @p14, @p15, @p16, @p17, @p18, @p19, @p20)
+		VALUES(@p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12, @p13, @p14, @p15, @p16, @p17, @p18, @p19, @p20, @p30, @p31)
 
 		IF NOT EXISTS (SELECT * FROM issue WHERE [id] = @p15)
 			INSERT INTO issue
@@ -77,10 +78,11 @@ func (s *SQL) Write(w *types.WorklogItem, pi *types.ParentIssue) error {
 	}
 
 	_, err = stmt.Exec(w.ID, w.Author, mssql.DateTime1(w.Date), w.WeekNumber, w.WeekDay, w.TimeSpentSeconds, w.TimeSpentHours,
-		w.Project, w.IssueID, w.IssueKey, w.IssueType, w.IssueSummary, w.IssuePriority, w.IssueStatus,
-		w.ParentIssueID, w.ParentIssueKey, w.ParentIssueType, w.ParentIssueSummary, w.ParentIssuePriority,
+		w.Project, w.IssueID, w.IssueKey, w.IssueType, truncateString(w.IssueSummary, 255), w.IssuePriority, w.IssueStatus,
+		w.ParentIssueID, w.ParentIssueKey, w.ParentIssueType, truncateString(w.ParentIssueSummary, 255), w.ParentIssuePriority,
 		w.ParentIssueStatus, pi.Project, pi.Developer, mssql.DateTime1(pi.CreateDate), mssql.DateTime1(pi.UpdateDate),
-		sqlDate(pi.ResolvedDate), pi.IsResolved, pi.DaysToResolve, pi.AggregateTimeSpent, pi.AggregateTimeOriginalEstimate)
+		sqlDate(pi.ResolvedDate), pi.IsResolved, pi.DaysToResolve, pi.AggregateTimeSpent, pi.AggregateTimeOriginalEstimate,
+		w.IssueProjectCharge, w.ParentIssueProjectCharge)
 
 	if err != nil {
 		switch err := err.(type) {
@@ -96,7 +98,7 @@ func (s *SQL) Write(w *types.WorklogItem, pi *types.ParentIssue) error {
 	return nil
 }
 
-//UpdateIssue will update the resolved information for the given issue
+// UpdateIssue will update the resolved information for the given issue
 func (s *SQL) UpdateIssue(issue *types.ParentIssue) error {
 	stmt, err := s.DB.Prepare(`
 		UPDATE issue
@@ -117,12 +119,12 @@ func (s *SQL) UpdateIssue(issue *types.ParentIssue) error {
 	return nil
 }
 
-//Close will close the database connection
+// Close will close the database connection
 func (s *SQL) Close() {
 	s.DB.Close()
 }
 
-//AllWorkLogs will return all of the work logs from SQL server
+// AllWorkLogs will return all of the work logs from SQL server
 func (s *SQL) AllWorkLogs() ([]types.WorklogItem, error) {
 	result := []types.WorklogItem{}
 	err := s.DB.Select(&result, `
@@ -150,7 +152,7 @@ func (s *SQL) AllWorkLogs() ([]types.WorklogItem, error) {
 	return result, err
 }
 
-//AllIssues will return all issues from SQL server
+// AllIssues will return all issues from SQL server
 func (s *SQL) AllIssues() ([]types.ParentIssue, error) {
 	result := []types.ParentIssue{}
 	err := s.DB.Select(&result, `
@@ -173,8 +175,8 @@ func (s *SQL) AllIssues() ([]types.ParentIssue, error) {
 	return result, err
 }
 
-//IssuesGroupedBy will return issues group by the given groupBy value going
-//back daysBack. This data will be used for charting
+// IssuesGroupedBy will return issues group by the given groupBy value going
+// back daysBack. This data will be used for charting
 func (s *SQL) IssuesGroupedBy(groupBy string, start time.Time, stop time.Time) ([]types.IssueChartData, error) {
 	result := []types.IssueChartData{}
 	err := s.DB.Select(&result, fmt.Sprintf(`
@@ -194,7 +196,7 @@ func (s *SQL) IssuesGroupedBy(groupBy string, start time.Time, stop time.Time) (
 	return result, nil
 }
 
-//IssueAccuracy will return how accurate a developers estimate is vs actual time logged
+// IssueAccuracy will return how accurate a developers estimate is vs actual time logged
 func (s *SQL) IssueAccuracy(start time.Time, stop time.Time) ([]types.IssueAccuracy, error) {
 	result := []types.IssueAccuracy{}
 	err := s.DB.Select(&result, `
@@ -410,4 +412,12 @@ func sqlDate(t *time.Time) interface{} {
 		r = mssql.DateTime1(*t)
 	}
 	return r
+}
+
+func truncateString(s string, max int) string {
+	runes := []rune(s)
+	if len(runes) > max {
+		return string(runes[:max])
+	}
+	return s
 }

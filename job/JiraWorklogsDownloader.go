@@ -11,7 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-//JiraWorklogsDownloader is a background job that will download all worklogs from Jira
+// JiraWorklogsDownloader is a background job that will download all worklogs from Jira
 type JiraWorklogsDownloader struct {
 	cfg    *jiraworklog.Config
 	jira   jiraworklog.JiraReader
@@ -33,7 +33,7 @@ func (j *JiraWorklogsDownloader) GetName() string {
 }
 
 func (j *JiraWorklogsDownloader) GetInterval() time.Duration {
-	return time.Second * 300
+	return time.Second * 20
 }
 
 func (j *JiraWorklogsDownloader) Run() error {
@@ -78,7 +78,10 @@ func (j *JiraWorklogsDownloader) Run() error {
 			continue
 		}
 
-		issue, err := j.jira.Issue(wd.IssueID)
+		issue, err := jiraworklog.Retry(3, time.Second*10, func() (jiraworklog.Issue, error) {
+			return j.jira.Issue(wd.IssueID)
+		})
+		//issue, err := j.jira.Issue(wd.IssueID)
 		if err != nil {
 			switch err {
 			case jiraworklog.ErrIssueNotFound:
@@ -99,7 +102,7 @@ func (j *JiraWorklogsDownloader) Run() error {
 			return errors.Wrap(err, "error writting issue "+workItem.IssueKey)
 		}
 		maxWorklogID = workItem.ID
-		j.logger.WithField("IssueKey", workItem.IssueKey).Info("inserted jira issue")
+		j.logger.WithField("IssueKey", workItem.IssueKey).WithField("Date", workItem.Date).Info("inserted jira issue")
 		time.Sleep(200 * time.Millisecond)
 	}
 	lastTimestamp = wl.Until

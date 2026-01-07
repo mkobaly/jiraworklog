@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-//var errUnknownProject = errors.New("Unknown Project")
+// var errUnknownProject = errors.New("Unknown Project")
 var ErrIssueNotFound = errors.New("Jira Issue not found")
 
 type JiraReader interface {
@@ -90,7 +90,7 @@ func (j *Jira) WorklogDetails(ids []int) ([]Worklog, error) {
 
 func (j *Jira) Issue(idOrKey string) (Issue, error) {
 	issue := Issue{}
-	req, err := http.NewRequest("GET", j.Config.Jira.URL+"/issue/"+idOrKey+"?fields=priority,summary,parent,status,aggregateprogress,progress,issuetype,timespent,aggregatetimespent,timeoriginalestimate,aggregatetimeoriginalestimate,timetracking,resolutiondate,created,statuscategorychangedate", nil)
+	req, err := http.NewRequest("GET", j.Config.Jira.URL+"/issue/"+idOrKey+"?fields=priority,summary,parent,status,aggregateprogress,progress,issuetype,timespent,aggregatetimespent,timeoriginalestimate,aggregatetimeoriginalestimate,timetracking,resolutiondate,created,statuscategorychangedate,customfield_13521", nil)
 	req.SetBasicAuth(j.Config.Jira.Username, j.Config.Jira.Password)
 	resp, err := j.client.Do(req)
 	if err != nil {
@@ -284,6 +284,11 @@ type Issue struct {
 			RemainingEstimateSeconds int    `json:"remainingEstimateSeconds"`
 			TimeSpentSeconds         int    `json:"timeSpentSeconds"`
 		} `json:"timetracking"`
+		ProjectCharge struct {
+			Self  string `json:"self"`
+			Value string `json:"value"`
+			ID    string `json:"id"`
+		} `json:"customfield_13521"`
 	} `json:"fields"`
 }
 

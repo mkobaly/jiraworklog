@@ -28,7 +28,7 @@ import (
 
 var db *sqlx.DB
 
-//ErrUnknownRepo is error for unknown repository
+// ErrUnknownRepo is error for unknown repository
 var ErrUnknownRepo = errors.New("unkown repo")
 
 func main() {
@@ -98,8 +98,8 @@ func main() {
 	jira := jiraworklog.NewJira(cfg)
 	//List out all jobs we need here to run
 	j1 := job.NewJiraDownloadWorklogs(cfg, jira, repo, logger)
-	j2 := job.NewJiraCheckResolution(cfg, jira, repo, logger)
-	worker := jiraworklog.NewWorker(logger, j1, j2)
+	//j2 := job.NewJiraCheckResolution(cfg, jira, repo, logger)
+	worker := jiraworklog.NewWorker(logger, j1)
 	go worker.Start()
 
 	//HTTP server stuff
