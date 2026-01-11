@@ -50,6 +50,78 @@ func (s *SQL) NonResolvedIssues() ([]types.ParentIssue, error) {
 	return result, err
 }
 
+func (s *SQL) MaitenanceRatio(roles []string) ([]types.MaitenanceRatio, error) {
+	result := []types.MaitenanceRatio{}
+
+	// Build the SQL with an IN clause using sqlx's `IN` helper
+	query, args, err := sqlx.In(`
+        SELECT 
+            [year-month],
+            ISNULL([NR], 0) AS NR,
+            ISNULL([AM], 0) AS AM,
+            ISNULL([PR], 0) AS PR
+        FROM
+        (
+            SELECT  
+                FORMAT(date, 'yyyy-MM') AS [year-month],
+                timeSpentHours AS hours,
+                CASE 
+                    WHEN issueProjectCharge = 'Non-Recoverable' THEN 'NR'
+                    WHEN issueProjectCharge LIKE '%after market%' THEN 'AM'
+                    WHEN issueProjectCharge LIKE 'TD%' THEN 'PR'
+                    ELSE '--'
+                END AS category
+            FROM worklog
+            WHERE issueProjectCharge != ''
+            AND issueProjectCharge NOT LIKE 'SS%'
+            AND date >= '2024.01.01'
+            AND date < DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()), 0)
+            AND author IN (
+                SELECT name FROM people WHERE role IN (?)
+            )
+        ) AS src
+        PIVOT
+        (
+            SUM(hours)
+            FOR category IN ([NR], [AM], [PR], [--])
+        ) AS p
+        ORDER BY [year-month];
+    `, roles)
+	if err != nil {
+		return nil, err
+	}
+	// sqlx.In returns `?` placeholders; rebind for SQL Server (`sqlx` uses `?` by default)
+	query = s.DB.Rebind(query)
+
+	err = s.DB.Select(&result, query, args...)
+	return result, err
+
+}
+
+func (s *SQL) People() ([]types.People, error) {
+	result := []types.People{}
+	err := s.DB.Select(&result, `	
+		SELECT id, name, role FROM people;`)
+	return result, err
+}
+
+func (s *SQL) UpdatePersonRole(personId int, role string) error {
+	stmt, err := s.DB.Prepare(`
+		UPDATE people set role = @2 WHERE id = @1`)
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = stmt.Exec(personId, role)
+	return err
+}
+
+func (s *SQL) AllRoles() ([]string, error) {
+	result := []string{}
+	err := s.DB.Select(&result, `	
+		SELECT distinct role FROM people;`)
+	return result, err
+}
+
 // Write will add the worklogItem to SQL server
 func (s *SQL) Write(w *types.WorklogItem, pi *types.ParentIssue) error {
 	//p := w.GetParent()
@@ -90,7 +162,6 @@ func (s *SQL) Write(w *types.WorklogItem, pi *types.ParentIssue) error {
 			if err.Number != 2627 { //unique constraint
 				return err
 			}
-			break
 		default:
 			return err
 		}

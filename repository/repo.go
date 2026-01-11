@@ -6,7 +6,7 @@ import (
 	"github.com/mkobaly/jiraworklog/types"
 )
 
-//Repo is the interface that handles writing Jira Worklog items
+// Repo is the interface that handles writing Jira Worklog items
 type Repo interface {
 	Write(w *types.WorklogItem, pi *types.ParentIssue) error
 	NonResolvedIssues() ([]types.ParentIssue, error)
@@ -22,6 +22,13 @@ type Repo interface {
 	WorklogsGroupBy(groupBy string, start time.Time, stop time.Time) ([]types.WorklogGroupByChart, error)
 	WorklogsPerDev(start time.Time, stop time.Time) ([]map[string]string, error)
 	WorklogsPerDevWeek() ([]types.WorklogsPerDevWeek, error)
+
+	MaitenanceRatio(roles []string) ([]types.MaitenanceRatio, error)
+
+	People() ([]types.People, error)
+	UpdatePersonRole(personId int, role string) error
+
+	AllRoles() ([]string, error)
 
 	//WorklogsPerDay() ([]types.WorklogsPerDay, error)
 	//WorklogsPerDevDay() ([]types.WorklogsPerDevDay, error)

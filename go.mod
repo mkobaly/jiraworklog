@@ -1,28 +1,47 @@
 module github.com/mkobaly/jiraworklog
 
-go 1.25
+go 1.25.5
 
 require (
-	github.com/denisenkom/go-mssqldb v0.0.0-20190423183735-731ef375ac02
-	github.com/fatih/color v1.7.1-0.20181010231311-3f9d52f7176a
-	github.com/galdor/go-cmdline v1.1.1-0.20181217212330-f6df57bc77ea
-	github.com/jmoiron/sqlx v1.2.1-0.20190426154859-38398a30ed85
+	github.com/a-h/templ v0.3.977
+	github.com/denisenkom/go-mssqldb v0.12.3
+	github.com/fatih/color v1.18.0
+	github.com/galdor/go-cmdline v1.2.0
+	github.com/jmoiron/sqlx v1.4.0
+	github.com/labstack/echo/v4 v4.15.0
 	github.com/pkg/errors v0.9.1
-	github.com/sirupsen/logrus v1.4.3-0.20190518135202-2a22dbedbad1
-	github.com/stretchr/testify v1.3.1-0.20190311161405-34c6fa2dc709
-	github.com/timshannon/bolthold v0.0.0-20190315152903-eed35b755671
+	github.com/stretchr/testify v1.11.1
+	github.com/timshannon/bolthold v0.0.0-20240314194003-30aac6950928
 	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
-	cloud.google.com/go v0.39.1-0.20190513200544-741d62a9e2a8 // indirect
+	github.com/a-h/parse v0.0.0-20250122154542-74294addb73e // indirect
+	github.com/andybalholm/brotli v1.1.0 // indirect
+	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
+	github.com/cli/browser v1.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
-	github.com/kr/pretty v0.2.1 // indirect
-	github.com/mattn/go-colorable v0.1.1 // indirect
-	github.com/mattn/go-isatty v0.0.8-0.20190424075123-c1975dc15c1d // indirect
+	github.com/fsnotify/fsnotify v1.7.0 // indirect
+	github.com/golang-sql/civil v0.0.0-20220223132316-b832511892a9 // indirect
+	github.com/golang-sql/sqlexp v0.1.0 // indirect
+	github.com/google/go-cmp v0.7.0 // indirect
+	github.com/labstack/gommon v0.4.2 // indirect
+	github.com/mattn/go-colorable v0.1.14 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
+	github.com/natefinch/atomic v1.0.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	go.etcd.io/bbolt v1.3.3-0.20190528202153-2eb7227adea1 // indirect
-	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9 // indirect
-	golang.org/x/sys v0.0.0-20210219172841-57ea560cfca1 // indirect
+	github.com/valyala/bytebufferpool v1.0.0 // indirect
+	github.com/valyala/fasttemplate v1.2.2 // indirect
+	go.etcd.io/bbolt v1.4.3 // indirect
+	golang.org/x/crypto v0.46.0 // indirect
+	golang.org/x/mod v0.30.0 // indirect
+	golang.org/x/net v0.48.0 // indirect
+	golang.org/x/sync v0.19.0 // indirect
+	golang.org/x/sys v0.39.0 // indirect
+	golang.org/x/text v0.32.0 // indirect
+	golang.org/x/time v0.14.0 // indirect
+	golang.org/x/tools v0.39.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+tool github.com/a-h/templ/cmd/templ

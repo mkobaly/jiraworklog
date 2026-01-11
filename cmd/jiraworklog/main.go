@@ -1,29 +1,23 @@
 package main
 
 import (
+	"context"
 	"errors"
-	"strconv"
-
-	"github.com/mkobaly/jiraworklog/job"
-
-	//"github.com/mkobaly/jiraworklog/test"
 	"net/http"
 	"os"
 	"os/signal"
-
-	//"strings"
+	"strconv"
 	"time"
 
 	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/fatih/color"
 	cmdline "github.com/galdor/go-cmdline"
 	"github.com/jmoiron/sqlx"
-
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"github.com/mkobaly/jiraworklog"
-	//wl "github.com/mkobaly/jiraworklog"
-	//"github.com/mkobaly/jiraworklog/workers"
+	"github.com/mkobaly/jiraworklog/job"
 	"github.com/mkobaly/jiraworklog/repository"
-	//log "github.com/sirupsen/logrus"
 )
 
 var db *sqlx.DB
@@ -33,16 +27,16 @@ var ErrUnknownRepo = errors.New("unkown repo")
 
 func main() {
 
-	c := make(chan os.Signal)
+	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 
 	//Define command line params and parse input
 	cmdline := cmdline.New()
 	cmdline.AddOption("c", "config", "config.yaml", "path to configuration file")
 	cmdline.AddOption("r", "repo", "BOLTDB", "specific repo to use (MSSQL, BOLTDB)")
-	cmdline.SetOptionDefault("r", "BOLTDB")
-	cmdline.AddOption("p", "port", "8180", "default port to serve rest API from")
-	cmdline.SetOptionDefault("p", "8180")
+	cmdline.SetOptionDefault("r", "MSSQL")
+	cmdline.AddOption("p", "port", "8380", "default port to serve rest API from")
+	cmdline.SetOptionDefault("p", "8380")
 	cmdline.AddFlag("k", "ask", "Ask for username and password from the STDIN")
 	cmdline.AddFlag("v", "verbose", "verbose logging")
 	cmdline.Parse(os.Args)
@@ -69,21 +63,23 @@ func main() {
 			color.Yellow("============================================================================================================")
 			os.Exit(0)
 		default:
-			logger.WithError(err).Fatal("failed to load config file")
+			logger.Error("failed to load config file", "error", err)
+			os.Exit(1)
 		}
 	}
 
 	//Port
-	port := 8180
+	port := 8380
 	if cmdline.IsOptionSet("p") {
 		port, err = strconv.Atoi(cmdline.OptionValue("p"))
 		if err != nil {
-			logger.WithError(err).Fatal("port must be numeric")
+			logger.Error("port must be numeric", "error", err)
+			os.Exit(1)
 		}
 	}
 
 	//Repo Settings
-	repoType := "BOLTDB"
+	repoType := "MSSQL"
 	if cmdline.IsOptionSet("r") {
 		repoType = cmdline.OptionValue("r")
 	}
@@ -91,43 +87,75 @@ func main() {
 	//load repo
 	repo, err := loadRepo(repoType, cfg)
 	if err != nil {
-		logger.Fatal(err)
+		logger.Error("failed to load repository", "error", err, "type", repoType)
+		os.Exit(1)
 	}
 
-	//jira := &test.FakeJira{}
 	jira := jiraworklog.NewJira(cfg)
 	//List out all jobs we need here to run
 	j1 := job.NewJiraDownloadWorklogs(cfg, jira, repo, logger)
-	//j2 := job.NewJiraCheckResolution(cfg, jira, repo, logger)
 	worker := jiraworklog.NewWorker(logger, j1)
 	go worker.Start()
 
-	//HTTP server stuff
-	fileServer := http.FileServer(FileSystem{http.Dir("./web")})
-	server := NewHttpServer(repo, logger)
-	mux := http.NewServeMux()
-	mux.Handle("/worklogs", http.HandlerFunc(server.GetWorkLogs))
-	mux.Handle("/worklogs/groupby", http.HandlerFunc(server.GetWorklogsGroupBy))
-	//mux.Handle("/worklogs/perday", http.HandlerFunc(server.GetWorklogsPerDay))
-	mux.Handle("/worklogs/perdev", http.HandlerFunc(server.GetWorklogsPerDev))
-	//mux.Handle("/worklogs/perdevday", http.HandlerFunc(server.GetWorklogsPerDevDay))
-	mux.Handle("/worklogs/perdevweek", http.HandlerFunc(server.GetWorklogsPerDevWeek))
+	// Initialize Echo
+	e := echo.New()
+	e.HideBanner = true
 
-	mux.Handle("/issues", http.HandlerFunc(server.GetIssues))
-	mux.Handle("/issues/groupby", http.HandlerFunc(server.GetIssuesGroupedBy))
-	mux.Handle("/issues/accuracy", http.HandlerFunc(server.GetIssueAccuracy))
-	//mux.Handle("/", http.StripPrefix(strings.TrimRight("/dashboard/", "/"), fileServer))
-	mux.Handle("/", fileServer)
-	logger.Info("Starting HTTP server at *:" + strconv.Itoa(port))
-	go http.ListenAndServe(":"+strconv.Itoa(port), mux)
+	// Middleware
+	e.Use(middleware.Recover())
+	e.Use(middleware.RequestID())
 
-	select {
-	case sig := <-c:
-		logger.WithField("signal", sig).Warn("Shutting down due to signal")
-		worker.Shutdown()
-		repo.Close()
-		time.Sleep(1 * time.Second)
+	// Create handler
+	handler := NewHandler(repo, logger)
+
+	// Static files (paths relative to where binary is run)
+	e.Static("/static", "../static")
+	e.Static("/web", "../web") // Legacy web directory support
+
+	// Dashboard routes
+	e.GET("/", handler.Dashboard)
+	e.GET("/dashboard", handler.Dashboard)
+
+	// Worklog routes
+	e.GET("/worklogs", handler.GetWorkLogs)
+	e.GET("/worklogs/groupby", handler.GetWorklogsGroupBy)
+	e.GET("/worklogs/perdev", handler.GetWorklogsPerDev)
+	e.GET("/worklogs/perdevweek", handler.GetWorklogsPerDevWeek)
+
+	// Issue routes
+	e.GET("/issues", handler.GetIssues)
+	e.GET("/issues/groupby", handler.GetIssuesGroupedBy)
+	e.GET("/issues/accuracy", handler.GetIssueAccuracy)
+
+	// Reports routes
+	e.GET("/reports/maintenance", handler.GetMaintenanceRatio)
+
+	// Settings routes
+	e.GET("/settings/people", handler.GetPeople)
+	e.PUT("/settings/people/:id/role", handler.UpdatePersonRole)
+
+	// Start server in background
+	go func() {
+		logger.Info("Starting HTTP server", "port", port)
+		if err := e.Start(":" + strconv.Itoa(port)); err != nil && err != http.ErrServerClosed {
+			logger.Error("failed to start server", "error", err)
+		}
+	}()
+
+	// Wait for interrupt signal
+	sig := <-c
+	logger.Warn("Shutting down due to signal", "signal", sig.String())
+
+	// Graceful shutdown
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := e.Shutdown(ctx); err != nil {
+		logger.Error("failed to shutdown server gracefully", "error", err)
 	}
+
+	worker.Shutdown()
+	repo.Close()
+	time.Sleep(1 * time.Second)
 }
 
 func loadRepo(repoType string, cfg *jiraworklog.Config) (repository.Repo, error) {

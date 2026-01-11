@@ -1,0 +1,128 @@
+package pages
+
+import (
+	"fmt"
+	"github.com/mkobaly/jiraworklog/templates/layouts"
+	"github.com/mkobaly/jiraworklog/templates/components"
+	"github.com/mkobaly/jiraworklog/types"
+)
+
+templ Worklogs(worklogs []types.WorklogItem) {
+	@layouts.Base("Worklogs") {
+		<div class="mb-6">
+			<h1 class="text-3xl font-bold text-gray-900">Worklogs</h1>
+			<p class="text-gray-600 mt-2">All time tracking entries</p>
+		</div>
+
+		if len(worklogs) == 0 {
+			<div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+				<p class="text-yellow-700">No worklogs found.</p>
+			</div>
+		} else {
+			@components.WorklogMobileList(worklogs)
+		}
+	}
+}
+
+templ WorklogsGroupBy(groupBy string, data []types.WorklogGroupByChart) {
+	@layouts.Base("Worklogs by " + groupBy) {
+		<div class="mb-6">
+			<h1 class="text-3xl font-bold text-gray-900">Worklogs by { groupBy }</h1>
+			<p class="text-gray-600 mt-2">Aggregated time tracking data</p>
+		</div>
+
+		if len(data) == 0 {
+			<div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+				<p class="text-yellow-700">No data found.</p>
+			</div>
+		} else {
+			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+				for _, item := range data {
+					@components.WorklogsGroupByCard(&item)
+				}
+			</div>
+		}
+	}
+}
+
+templ WorklogsPerDev(data []map[string]string) {
+	@layouts.Base("Worklogs per Developer") {
+		<div class="mb-6">
+			<h1 class="text-3xl font-bold text-gray-900">Worklogs per Developer</h1>
+			<p class="text-gray-600 mt-2">Time logged by each developer over time</p>
+		</div>
+
+		if len(data) == 0 {
+			<div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+				<p class="text-yellow-700">No data found.</p>
+			</div>
+		} else {
+			<div class="bg-white rounded-lg shadow-md p-6">
+				<div class="overflow-x-auto">
+					<table class="min-w-full">
+						<thead class="bg-gray-50">
+							<tr>
+								<th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Developer</th>
+								<th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+								<th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Hours</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-gray-200">
+							for _, entry := range data {
+								<tr class="hover:bg-gray-50">
+									<td class="px-4 py-2 text-sm text-gray-900">{ entry["developer"] }</td>
+									<td class="px-4 py-2 text-sm text-gray-900">{ entry["group"] }</td>
+									<td class="px-4 py-2 text-sm text-gray-900">{ entry["timeSpentHrs"] }</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			</div>
+		}
+	}
+}
+
+templ WorklogsPerDevWeek(data []types.WorklogsPerDevWeek) {
+	@layouts.Base("Worklogs per Developer (Weekly)") {
+		<div class="mb-6">
+			<h1 class="text-3xl font-bold text-gray-900">Weekly Worklogs per Developer</h1>
+			<p class="text-gray-600 mt-2">Time logged by each developer over the last 4 weeks</p>
+		</div>
+
+		if len(data) == 0 {
+			<div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+				<p class="text-yellow-700">No data found.</p>
+			</div>
+		} else {
+			<div class="bg-white rounded-lg shadow-md overflow-hidden">
+				<div class="overflow-x-auto">
+					<table class="min-w-full divide-y divide-gray-200">
+						<thead class="bg-gray-50">
+							<tr>
+								<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Developer</th>
+								<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">This Week</th>
+								<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Week</th>
+								<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">2 Weeks Ago</th>
+								<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">3 Weeks Ago</th>
+								<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">4 Weeks Ago</th>
+							</tr>
+						</thead>
+						<tbody class="bg-white divide-y divide-gray-200">
+							for _, dev := range data {
+								<tr class="hover:bg-gray-50">
+									<td class="px-4 py-3 font-medium text-gray-900">{ dev.Developer }</td>
+									<td class="px-4 py-3 text-sm text-gray-900">{ fmt.Sprintf("%.1f", dev.ThisWeek) }</td>
+									<td class="px-4 py-3 text-sm text-gray-900">{ fmt.Sprintf("%.1f", dev.LastWeek) }</td>
+									<td class="px-4 py-3 text-sm text-gray-900">{ fmt.Sprintf("%.1f", dev.TwoWeeks) }</td>
+									<td class="px-4 py-3 text-sm text-gray-900">{ fmt.Sprintf("%.1f", dev.ThreeWeeks) }</td>
+									<td class="px-4 py-3 text-sm text-gray-900">{ fmt.Sprintf("%.1f", dev.FourWeeks) }</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			</div>
+		}
+	}
+}

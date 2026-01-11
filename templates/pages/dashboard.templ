@@ -1,0 +1,31 @@
+package pages
+
+import (
+	"github.com/mkobaly/jiraworklog/templates/layouts"
+)
+
+templ Dashboard() {
+	@layouts.Base("Dashboard") {
+		<div class="mb-6">
+			<h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
+			<p class="text-gray-600 mt-2">Welcome to Jira Worklog Tracker</p>
+		</div>
+
+		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+			<a href="/worklogs" class="block bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition border-l-4 border-blue-500">
+				<h2 class="text-xl font-bold text-gray-900 mb-2">Worklogs</h2>
+				<p class="text-gray-600">View all time tracking entries</p>
+			</a>
+
+			<a href="/issues" class="block bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition border-l-4 border-purple-500">
+				<h2 class="text-xl font-bold text-gray-900 mb-2">Issues</h2>
+				<p class="text-gray-600">Browse all tracked issues</p>
+			</a>
+
+			<a href="/reports/maintenance" class="block bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition border-l-4 border-green-500">
+				<h2 class="text-xl font-bold text-gray-900 mb-2">Maintenance Ratio</h2>
+				<p class="text-gray-600">Project vs After Market distribution</p>
+			</a>
+		</div>
+	}
+}

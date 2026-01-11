@@ -9,13 +9,13 @@ import (
 	"github.com/timshannon/bolthold"
 )
 
-//BoltDB is a repository with BoltDB as the backend
+// BoltDB is a repository with BoltDB as the backend
 type BoltDB struct {
 	//db *storm.DB
 	db *bolthold.Store
 }
 
-//NewBoltDBRepo will create a new BoltDB repository
+// NewBoltDBRepo will create a new BoltDB repository
 func NewBoltDBRepo(dbfile string) (*BoltDB, error) {
 	db, err := bolthold.Open(dbfile, 0666, nil)
 	if err != nil {
@@ -26,14 +26,14 @@ func NewBoltDBRepo(dbfile string) (*BoltDB, error) {
 	}, nil
 }
 
-//NonResolvedIssues gets all issue keys that are not resolved yet
+// NonResolvedIssues gets all issue keys that are not resolved yet
 func (r *BoltDB) NonResolvedIssues() ([]types.ParentIssue, error) {
 	var issues []types.ParentIssue
 	err := r.db.Find(&issues, bolthold.Where("IsResolved").Eq(false))
 	return issues, err
 }
 
-//Write will add the worklogItem to BoltDB
+// Write will add the worklogItem to BoltDB
 func (r *BoltDB) Write(wi *types.WorklogItem, pi *types.ParentIssue) error {
 
 	err := r.db.Upsert(wi.ID, &wi)
@@ -46,32 +46,32 @@ func (r *BoltDB) Write(wi *types.WorklogItem, pi *types.ParentIssue) error {
 	return err
 }
 
-//UpdateIssue will update the resolved information for the given issue
+// UpdateIssue will update the resolved information for the given issue
 func (r *BoltDB) UpdateIssue(issue *types.ParentIssue) error {
 	return r.db.Upsert(issue.ID, &issue)
 }
 
-//Close will close the boltDB connection
+// Close will close the boltDB connection
 func (r *BoltDB) Close() {
 	r.db.Close()
 }
 
-//AllWorkLogs will return all of the work logs from boltDB
+// AllWorkLogs will return all of the work logs from boltDB
 func (r *BoltDB) AllWorkLogs() ([]types.WorklogItem, error) {
 	var worklogs []types.WorklogItem
 	err := r.db.Find(&worklogs, nil)
 	return worklogs, err
 }
 
-//AllIssues will return all of the issues from boltDB
+// AllIssues will return all of the issues from boltDB
 func (r *BoltDB) AllIssues() ([]types.ParentIssue, error) {
 	var issues []types.ParentIssue
 	err := r.db.Find(&issues, nil)
 	return issues, err
 }
 
-//IssuesGroupedBy will return issues group by the given groupBy value going
-//back weeksBack. This data will be used for charting
+// IssuesGroupedBy will return issues group by the given groupBy value going
+// back weeksBack. This data will be used for charting
 func (r *BoltDB) IssuesGroupedBy(groupBy string, start time.Time, stop time.Time) ([]types.IssueChartData, error) {
 	//y, m, d := time.Now().AddDate(0, 0, -1*weeksBack).Date()
 	//date := time.Date(y, m, d, 0, 0, 0, 0, time.Local)
@@ -243,6 +243,22 @@ func (r *BoltDB) WorklogsPerDevWeek() ([]types.WorklogsPerDevWeek, error) {
 		final = append(final, *v)
 	}
 	return final, nil
+}
+
+func (r *BoltDB) MaitenanceRatio(roles []string) ([]types.MaitenanceRatio, error) {
+	return nil, nil
+}
+
+func (r *BoltDB) People() ([]types.People, error) {
+	return nil, nil
+}
+
+func (r *BoltDB) UpdatePersonRole(personId int, role string) error {
+	return nil
+}
+
+func (r *BoltDB) AllRoles() ([]string, error) {
+	return nil, nil
 }
 
 // func (r *BoltDB) WorklogsPerDay() ([]types.WorklogsPerDay, error) {

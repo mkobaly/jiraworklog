@@ -9,9 +9,10 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/mkobaly/jiraworklog/repository"
 	"github.com/mkobaly/jiraworklog/types"
+	"github.com/stretchr/testify/require"
 )
 
-var cnnString = "Server=localhost;Database=Jira;User Id=sa;Password=xxxxxx"
+var cnnString = "Server=192.168.0.2;Database=jira_new;User Id=sa;Password=Kobaly!123"
 
 // func Init() *Repository {
 
@@ -25,6 +26,20 @@ func TestFetch(t *testing.T) {
 	defer db.Close()
 	repo := &repository.SQL{DB: db}
 	_, err = repo.NonResolvedIssues()
+	if err != nil {
+		t.Error("Error executing repository.Fetch()", err.Error())
+	}
+}
+
+func TestMaintenanceRatio(t *testing.T) {
+	db, err := sqlx.Connect("sqlserver", cnnString)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer db.Close()
+	repo := &repository.SQL{DB: db}
+	foo, err := repo.MaitenanceRatio()
+	require.Greater(t, len(foo), 1)
 	if err != nil {
 		t.Error("Error executing repository.Fetch()", err.Error())
 	}

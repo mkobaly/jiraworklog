@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(go run:*)",
+      "Bash(go build:*)",
+      "Bash(go mod tidy:*)",
+      "Bash(./build.sh:*)",
+      "Bash(if grep -qi logrus go.mod go.sum)",
+      "Bash(then echo \"logrus still present\")",
+      "Bash(else echo \"✓ logrus completely removed from dependencies\")",
+      "Bash(fi)",
+      "Bash(go get:*)",
+      "Bash(curl:*)",
+      "Bash(pkill:*)"
+    ]
+  }
+}

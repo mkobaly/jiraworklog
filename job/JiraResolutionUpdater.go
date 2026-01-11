@@ -1,14 +1,15 @@
 package job
 
 import (
+	"log/slog"
+	"math/rand"
+	"strings"
+	"time"
+
 	"github.com/mkobaly/jiraworklog"
 	"github.com/mkobaly/jiraworklog/repository"
 	"github.com/mkobaly/jiraworklog/types"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
-	"math/rand"
-	"strings"
-	"time"
 )
 
 //JiraResolutionUpdater is a job that runs in the background and scans for any jira issues that are not resolved yet
@@ -17,10 +18,10 @@ type JiraResolutionUpdater struct {
 	cfg    *jiraworklog.Config
 	jira   jiraworklog.JiraReader
 	repo   repository.Repo
-	logger *log.Entry
+	logger *slog.Logger
 }
 
-func NewJiraCheckResolution(cfg *jiraworklog.Config, jira jiraworklog.JiraReader, repo repository.Repo, logger *log.Entry) *JiraResolutionUpdater {
+func NewJiraCheckResolution(cfg *jiraworklog.Config, jira jiraworklog.JiraReader, repo repository.Repo, logger *slog.Logger) *JiraResolutionUpdater {
 	return &JiraResolutionUpdater{
 		cfg:    cfg,
 		jira:   jira,
@@ -38,8 +39,6 @@ func (j *JiraResolutionUpdater) GetInterval() time.Duration {
 }
 
 func (j *JiraResolutionUpdater) Run() error {
-	//jira := jiraworklog.NewJira(j.cfg)
-
 	unresolvedIssues, err := j.repo.NonResolvedIssues()
 	if err != nil {
 		return errors.Wrap(err, "error fetching non resolved issues")
@@ -54,8 +53,6 @@ func (j *JiraResolutionUpdater) Run() error {
 			return errors.Wrap(err, "unknown error getting issue details from jira. id="+ui.Key)
 		}
 
-		//j.logger.Info("have issue")
-
 		if !j.isIssueResolved(j.cfg, issue) {
 			continue
 		}
@@ -63,24 +60,14 @@ func (j *JiraResolutionUpdater) Run() error {
 		j.logger.Info("issue resolved")
 
 		types.MergeIssue(&ui, issue)
-		//resolvedIssue := types.NewResolvedParentIssue(issue)
-
-		// resolved := time.Time{}
-		// if issue.Fields.ResolutionDate != nil {
-		// 	resolved, _ = time.Parse("2006-01-02T15:04:05.000-0700", *issue.Fields.ResolutionDate)
-		// } else {
-		// 	resolved, _ = time.Parse("2006-01-02T15:04:05.000-0700", *issue.Fields.StatusCategoryChangeDate)
-		// }
-		//j.logger.WithField("resolved", resolved).Info("resolution date")
 
 		err = j.repo.UpdateIssue(&ui)
 		if err != nil {
 			return errors.Wrap(err, "error writting issue "+ui.Key)
 		}
-		j.logger.WithField("IssueKey", ui.Key).Info("updated resolution date for jira issue")
+		j.logger.Info("updated resolution date for jira issue", "IssueKey", ui.Key)
 	}
 
-	//logger.WithField("lasttimestamp", lastTimestamp).WithField("maxworklogID", maxWorklogID).Info("finished processing batch")
 	return nil
 }
 

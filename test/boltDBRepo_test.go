@@ -1,14 +1,13 @@
 package test
 
 import (
-	"fmt"
-	"github.com/mkobaly/jiraworklog/repository"
-	"github.com/mkobaly/jiraworklog/types"
-	"github.com/stretchr/testify/require"
-	"github.com/timshannon/bolthold"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/mkobaly/jiraworklog/repository"
+	"github.com/mkobaly/jiraworklog/types"
+	"github.com/stretchr/testify/require"
 )
 
 var worklogItem10 = &types.WorklogItem{
@@ -91,7 +90,7 @@ func TestIssueGroupByDeveloper(t *testing.T) {
 		r.Write(worklogItem10, &i)
 	}
 
-	results, err := r.IssuesGroupedBy("Developer", 100)
+	results, err := r.IssuesGroupedBy("Developer", time.Now().Add(time.Hour*-24), time.Now())
 	require.Equal(t, 2, len(results))
 }
 
@@ -106,7 +105,7 @@ func TestIssueGroupByType(t *testing.T) {
 		r.Write(worklogItem10, &i)
 	}
 
-	results, err := r.IssuesGroupedBy("Type", 100)
+	results, err := r.IssuesGroupedBy("Type", time.Now().Add(time.Hour*-24), time.Now())
 	require.Equal(t, 3, len(results))
 }
 
@@ -122,7 +121,7 @@ func TestIssueGroupByPriority(t *testing.T) {
 		r.Write(worklogItem10, &i)
 	}
 
-	results, err := r.IssuesGroupedBy("Priority", 100)
+	results, err := r.IssuesGroupedBy("Priority", time.Now().Add(time.Hour*-24), time.Now())
 	require.Equal(t, 4, len(results))
 }
 

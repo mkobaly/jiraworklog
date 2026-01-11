@@ -1,0 +1,82 @@
+package layouts
+
+templ Base(title string) {
+	<!DOCTYPE html>
+	<html lang="en" data-turbo-refresh-scroll="preserve">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<meta name="turbo-cache-control" content="no-cache"/>
+			<title>{ title } - Jira Worklog</title>
+
+			<!-- Hotwire Turbo -->
+			<script type="module">
+				import hotwiredTurbo from 'https://cdn.jsdelivr.net/npm/@hotwired/turbo@8.0.4/+esm'
+			</script>
+
+			<!-- Tailwind CSS for mobile-friendly styling -->
+			<script src="https://cdn.tailwindcss.com"></script>
+
+			<!-- Custom CSS -->
+			<link rel="stylesheet" href="/static/css/app.css"/>
+
+			<!-- Mobile optimizations -->
+			<meta name="apple-mobile-web-app-capable" content="yes"/>
+			<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+		</head>
+		<body class="bg-gray-50 min-h-screen flex flex-col">
+			@Navigation()
+
+			<main class="container mx-auto px-4 py-6 max-w-7xl flex-grow">
+				{ children... }
+			</main>
+
+			<footer class="py-6 bg-gray-800 text-white text-center mt-auto">
+				<p class="text-sm">Jira Worklog Tracker</p>
+			</footer>
+		</body>
+	</html>
+}
+
+templ Navigation() {
+	<nav class="bg-blue-600 text-white shadow-lg">
+		<div class="container mx-auto px-4">
+			<div class="flex items-center justify-between h-16">
+				<div class="flex items-center">
+					<a href="/" class="text-xl font-bold">Jira Worklog</a>
+				</div>
+
+				<!-- Mobile menu button -->
+				<button
+					id="mobile-menu-button"
+					class="md:hidden p-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-white"
+					onclick="document.getElementById('mobile-menu').classList.toggle('hidden')"
+				>
+					<svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+					</svg>
+				</button>
+
+				<!-- Desktop menu -->
+				<div class="hidden md:flex space-x-4">
+					<a href="/" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Dashboard</a>
+					<a href="/worklogs" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Worklogs</a>
+					<a href="/issues" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Issues</a>
+					<a href="/reports/maintenance" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Maintenance</a>
+					<a href="/settings/people" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">People</a>
+				</div>
+			</div>
+
+			<!-- Mobile menu -->
+			<div id="mobile-menu" class="hidden md:hidden pb-4">
+				<div class="flex flex-col space-y-2">
+					<a href="/" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Dashboard</a>
+					<a href="/worklogs" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Worklogs</a>
+					<a href="/issues" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Issues</a>
+					<a href="/reports/maintenance" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Maintenance</a>
+					<a href="/settings/people" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">People</a>
+				</div>
+			</div>
+		</div>
+	</nav>
+}

@@ -1,0 +1,219 @@
+package pages
+
+import (
+	"encoding/json"
+	"fmt"
+	"github.com/mkobaly/jiraworklog/templates/layouts"
+	"github.com/mkobaly/jiraworklog/types"
+)
+
+templ MaintenanceRatio(data []types.MaitenanceRatio) {
+	@layouts.Base("Maintenance Ratio") {
+		<div class="mb-6">
+			<h1 class="text-3xl font-bold text-gray-900">Maintenance Ratio</h1>
+			<p class="text-gray-600 mt-2">Project vs After Market time distribution with PR/AM ratio</p>
+		</div>
+
+		if len(data) == 0 {
+			<div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+				<p class="text-yellow-700">No maintenance ratio data found.</p>
+			</div>
+		} else {
+			<div class="bg-white rounded-lg shadow-md p-6">
+				<div class="h-96 md:h-[500px]">
+					<canvas id="maintenanceChart"></canvas>
+				</div>
+			</div>
+
+			<!-- Data table for mobile/accessibility -->
+			<div class="mt-6 bg-white rounded-lg shadow-md overflow-hidden">
+				<div class="px-4 py-3 bg-gray-50 border-b">
+					<h2 class="text-lg font-semibold text-gray-900">Data Table</h2>
+				</div>
+				<div class="overflow-x-auto">
+					<table class="min-w-full divide-y divide-gray-200">
+						<thead class="bg-gray-50">
+							<tr>
+								<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Month</th>
+								<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Non Recoverable</th>
+								<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">After Market</th>
+								<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Project</th>
+								<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
+								<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">PR/AM Ratio</th>
+							</tr>
+						</thead>
+						<tbody class="bg-white divide-y divide-gray-200">
+							for _, item := range data {
+								<tr class="hover:bg-gray-50">
+									<td class="px-4 py-3 text-sm font-medium text-gray-900">{ item.YearMonth }</td>
+									<td class="px-4 py-3 text-sm text-gray-900 text-right">{ fmt.Sprintf("%.1f", item.NonRecoverable) }h</td>
+									<td class="px-4 py-3 text-sm text-gray-900 text-right">{ fmt.Sprintf("%.1f", item.AfterMarket) }h</td>
+									<td class="px-4 py-3 text-sm text-gray-900 text-right">{ fmt.Sprintf("%.1f", item.Project) }h</td>
+									<td class="px-4 py-3 text-sm text-gray-900 text-right font-medium">{ fmt.Sprintf("%.1f", item.NonRecoverable + item.AfterMarket + item.Project) }h</td>
+									<td class="px-4 py-3 text-sm text-gray-900 text-right">
+										if item.AfterMarket + item.Project > 0 {
+											{ fmt.Sprintf("%.1f%%", item.Ratio() * 100) }
+										} else {
+											-
+										}
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			</div>
+
+			<!-- Hidden element with chart data -->
+			<div id="chartData" data-chart={ toChartData(data) } style="display:none;"></div>
+
+			<!-- Chart.js from CDN -->
+			<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+			@maintenanceChartScript()
+		}
+	}
+}
+
+templ maintenanceChartScript() {
+	<script>
+		(function() {
+			const chartDataEl = document.getElementById('chartData');
+			const chartData = JSON.parse(chartDataEl.dataset.chart);
+
+			const ctx = document.getElementById('maintenanceChart').getContext('2d');
+			new Chart(ctx, {
+				type: 'bar',
+				data: {
+					labels: chartData.labels,
+					datasets: [
+						{
+							label: 'Non Recoverable',
+							data: chartData.nrPercent,
+							backgroundColor: '#1f77b4',
+							stack: 'stack1',
+							order: 2
+						},
+						{
+							label: 'After Market',
+							data: chartData.amPercent,
+							backgroundColor: '#ff7f0e',
+							stack: 'stack1',
+							order: 2
+						},
+						{
+							label: 'Project',
+							data: chartData.prPercent,
+							backgroundColor: '#2ca02c',
+							stack: 'stack1',
+							order: 2
+						},
+						{
+							label: 'Ratio PR/AM',
+							data: chartData.ratio,
+							type: 'line',
+							borderColor: '#17becf',
+							backgroundColor: '#17becf',
+							borderWidth: 2,
+							pointRadius: 3,
+							pointHoverRadius: 5,
+							fill: false,
+							yAxisID: 'y',
+							order: 1
+						}
+					]
+				},
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					interaction: {
+						intersect: false,
+						mode: 'index'
+					},
+					plugins: {
+						title: {
+							display: true,
+							text: 'Maintenance Ratio',
+							font: {
+								size: 18
+							}
+						},
+						legend: {
+							position: 'bottom'
+						},
+						tooltip: {
+							callbacks: {
+								label: function(context) {
+									let label = context.dataset.label || '';
+									if (label) {
+										label += ': ';
+									}
+									if (context.parsed.y !== null) {
+										label += context.parsed.y.toFixed(1) + '%';
+									}
+									return label;
+								}
+							}
+						}
+					},
+					scales: {
+						x: {
+							stacked: true,
+							grid: {
+								display: false
+							}
+						},
+						y: {
+							stacked: true,
+							min: 0,
+							max: 100,
+							ticks: {
+								callback: function(value) {
+									return value + '%';
+								}
+							},
+							grid: {
+								color: 'rgba(0, 0, 0, 0.1)'
+							}
+						}
+					}
+				}
+			});
+		})();
+	</script>
+}
+
+// Helper function to convert data to chart-friendly JSON
+func toChartData(data []types.MaitenanceRatio) string {
+	type chartData struct {
+		Labels    []string  `json:"labels"`
+		NRPercent []float32 `json:"nrPercent"`
+		AMPercent []float32 `json:"amPercent"`
+		PRPercent []float32 `json:"prPercent"`
+		Ratio     []float32 `json:"ratio"`
+	}
+
+	cd := chartData{
+		Labels:    make([]string, len(data)),
+		NRPercent: make([]float32, len(data)),
+		AMPercent: make([]float32, len(data)),
+		PRPercent: make([]float32, len(data)),
+		Ratio:     make([]float32, len(data)),
+	}
+
+	for i, item := range data {
+		cd.Labels[i] = item.YearMonth
+		total := item.NonRecoverable + item.AfterMarket + item.Project
+		if total > 0 {
+			cd.NRPercent[i] = (item.NonRecoverable / total) * 100
+			cd.AMPercent[i] = (item.AfterMarket / total) * 100
+			cd.PRPercent[i] = (item.Project / total) * 100
+		}
+		// Ratio is PR / (AM + PR) as percentage
+		if item.AfterMarket+item.Project > 0 {
+			cd.Ratio[i] = item.Ratio() * 100
+		}
+	}
+
+	jsonBytes, _ := json.Marshal(cd)
+	return string(jsonBytes)
+}

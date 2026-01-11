@@ -8,8 +8,8 @@ import (
 	"github.com/mkobaly/jiraworklog"
 )
 
-//ParentIssue represents a top level issue that a work log
-//was tracked against
+// ParentIssue represents a top level issue that a work log
+// was tracked against
 type ParentIssue struct {
 	ID                            int        `db:"id"`
 	Key                           string     `db:"key"`
@@ -28,8 +28,8 @@ type ParentIssue struct {
 	Developer                     string     `db:"developer" boltholdIndex:"Developer"`
 }
 
-//MergeIssue will take an existing parentIssue and merge it with the changes from Jira. This will only happen
-//for issues that are not resolved yet.
+// MergeIssue will take an existing parentIssue and merge it with the changes from Jira. This will only happen
+// for issues that are not resolved yet.
 func MergeIssue(parentIssue *ParentIssue, i jiraworklog.Issue) {
 	resolvedDate := time.Time{}
 	if i.Fields.ResolutionDate != nil {
@@ -50,4 +50,21 @@ func MergeIssue(parentIssue *ParentIssue, i jiraworklog.Issue) {
 	parentIssue.Project = strings.Split(i.Key, "-")[0]
 	parentIssue.AggregateTimeOriginalEstimate = i.Fields.Aggregatetimeoriginalestimate
 	parentIssue.AggregateTimeSpent = i.Fields.Aggregatetimespent
+}
+
+type MaitenanceRatio struct {
+	YearMonth      string  `db:"year-month"`
+	NonRecoverable float32 `db:"NR"`
+	AfterMarket    float32 `db:"AM"`
+	Project        float32 `db:"PR"`
+}
+
+func (mr MaitenanceRatio) Ratio() float32 {
+	return mr.Project / (mr.AfterMarket + mr.Project)
+}
+
+type People struct {
+	Id   int    `db:"id"`
+	Name string `db:"name"`
+	Role string `db:"role"`
 }
