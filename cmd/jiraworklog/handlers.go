@@ -261,16 +261,27 @@ func (h *Handler) GetWorklogsPerDevWeek(c echo.Context) error {
 }
 
 func (h *Handler) GetMaintenanceRatio(c echo.Context) error {
-	//hard coded roles
-	roles := []string{"qa", "dev"}
-	data, err := h.repo.MaitenanceRatio(roles)
+	// Get all available roles for the dropdown
+	allRoles, err := h.repo.AllRoles()
+	if err != nil {
+		h.logger.Error("error fetching all roles", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch roles")
+	}
+
+	// Get selected roles from query params, default to all roles if none specified
+	selectedRoles := c.QueryParams()["roles"]
+	if len(selectedRoles) == 0 {
+		selectedRoles = allRoles
+	}
+
+	data, err := h.repo.MaitenanceRatio(selectedRoles)
 	if err != nil {
 		h.logger.Error("error fetching maintenance ratio", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch maintenance ratio")
 	}
 
 	if wantsHTML(c) {
-		return pages.MaintenanceRatio(data).Render(c.Request().Context(), c.Response().Writer)
+		return pages.MaintenanceRatio(data, allRoles, selectedRoles).Render(c.Request().Context(), c.Response().Writer)
 	}
 
 	// JSON response

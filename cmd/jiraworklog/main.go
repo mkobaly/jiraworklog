@@ -12,6 +12,7 @@ import (
 	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/fatih/color"
 	cmdline "github.com/galdor/go-cmdline"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -33,8 +34,8 @@ func main() {
 	//Define command line params and parse input
 	cmdline := cmdline.New()
 	cmdline.AddOption("c", "config", "config.yaml", "path to configuration file")
-	cmdline.AddOption("r", "repo", "BOLTDB", "specific repo to use (MSSQL, BOLTDB)")
-	cmdline.SetOptionDefault("r", "MSSQL")
+	cmdline.AddOption("r", "repo", "POSTGRES", "specific repo to use (MSSQL, POSTGRES)")
+	cmdline.SetOptionDefault("r", "POSTGRES")
 	cmdline.AddOption("p", "port", "8380", "default port to serve rest API from")
 	cmdline.SetOptionDefault("p", "8380")
 	cmdline.AddFlag("k", "ask", "Ask for username and password from the STDIN")
@@ -79,7 +80,7 @@ func main() {
 	}
 
 	//Repo Settings
-	repoType := "MSSQL"
+	repoType := "POSTGRES"
 	if cmdline.IsOptionSet("r") {
 		repoType = cmdline.OptionValue("r")
 	}
@@ -93,8 +94,9 @@ func main() {
 
 	jira := jiraworklog.NewJira(cfg)
 	//List out all jobs we need here to run
-	j1 := job.NewJiraDownloadWorklogs(cfg, jira, repo, logger)
-	worker := jiraworklog.NewWorker(logger, j1)
+	//j1 := job.NewJiraSyncWorklogsJob(cfg, jira, repo)
+	j2 := job.NewJJiraSyncIssuesJob(cfg, jira, repo)
+	worker := jiraworklog.NewWorker(logger, j2)
 	go worker.Start()
 
 	// Initialize Echo
@@ -162,10 +164,8 @@ func loadRepo(repoType string, cfg *jiraworklog.Config) (repository.Repo, error)
 	switch repoType {
 	case "MSSQL":
 		return repository.NewSQLRepo(cfg)
-	case "BOLTDB":
-		return repository.NewBoltDBRepo("jira.db")
-	case "GOOGLESHEET":
-		return nil, ErrUnknownRepo
+	case "POSTGRES":
+		return repository.NewPostgresRepo(cfg)
 	default:
 		return nil, ErrUnknownRepo
 	}

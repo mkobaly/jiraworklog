@@ -14,8 +14,10 @@ var ErrIssueNotFound = errors.New("Jira Issue not found")
 
 type JiraReader interface {
 	WorklogsUpdated(timestamp int64) (UpdatedWorklogs, error)
+	WorklogsDeleted(timestamp int64) (DeletedWorklogs, error)
 	WorklogDetails(ids []int) ([]Worklog, error)
 	Issue(idOrKey string) (Issue, error)
+	BulkFetchIssues(idOrKeys []string) ([]Issue, error)
 }
 
 type Jira struct {
@@ -38,6 +40,33 @@ func (j *Jira) WorklogsUpdated(timestamp int64) (UpdatedWorklogs, error) {
 	}
 
 	req, err := http.NewRequest("GET", j.Config.Jira.URL+"/worklog/updated"+since, nil)
+	req.SetBasicAuth(j.Config.Jira.Username, j.Config.Jira.Password)
+	resp, err := j.client.Do(req)
+	if err != nil {
+		return worklog, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return worklog, fmt.Errorf("Not 200 response %d", resp.StatusCode)
+	}
+
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&worklog)
+	if err != nil {
+		return worklog, err
+	}
+	return worklog, nil
+}
+
+func (j *Jira) WorklogsDeleted(timestamp int64) (DeletedWorklogs, error) {
+	worklog := DeletedWorklogs{}
+	since := ""
+	if timestamp > 0 {
+		since = "?since=" + strconv.FormatInt(timestamp, 10)
+	}
+
+	req, err := http.NewRequest("GET", j.Config.Jira.URL+"/worklog/deleted"+since, nil)
 	req.SetBasicAuth(j.Config.Jira.Username, j.Config.Jira.Password)
 	resp, err := j.client.Do(req)
 	if err != nil {
@@ -114,6 +143,50 @@ func (j *Jira) Issue(idOrKey string) (Issue, error) {
 	return issue, nil
 }
 
+func (j *Jira) BulkFetchIssues(idOrKeys []string) ([]Issue, error) {
+	issues := []Issue{}
+
+	// Step 2: Use the JQL to search for issues
+	searchPayload := map[string]interface{}{
+		"fields": []string{"priority", "summary", "parent", "status", "aggregateprogress", "progress",
+			"issuetype", "timespent", "aggregatetimespent", "timeoriginalestimate", "aggregatetimeoriginalestimate", "timetracking",
+			"resolutiondate", "created", "updated", "statuscategorychangedate", "fixedversions", "customfield_13521"},
+		"issueIdsOrKeys": idOrKeys,
+		//"maxResults":     200, // adjust as needed
+	}
+	payloadBytes, err := json.Marshal(searchPayload)
+	if err != nil {
+		return issues, err
+	}
+
+	req, err := http.NewRequest("POST", j.Config.Jira.URL+"/issue/bulkfetch", bytes.NewBuffer(payloadBytes))
+	if err != nil {
+		return issues, err
+	}
+	req.SetBasicAuth(j.Config.Jira.Username, j.Config.Jira.Password)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := j.client.Do(req)
+	if err != nil {
+		return issues, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		if resp.StatusCode == 404 {
+			return issues, ErrIssueNotFound
+		}
+		return issues, fmt.Errorf("Not 200 response %d", resp.StatusCode)
+	}
+
+	response := BulkJiraResponse{}
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&response)
+	if err != nil {
+		return issues, err
+	}
+	return response.Issues, nil
+}
+
 type UpdatedWorklogs struct {
 	Values []struct {
 		WorklogID   int           `json:"worklogId"`
@@ -124,6 +197,18 @@ type UpdatedWorklogs struct {
 	Until    int64  `json:"until"`
 	Self     string `json:"self"`
 	LastPage bool   `json:"lastPage"`
+}
+
+type DeletedWorklogs struct {
+	LastPage bool   `json:"lastPage"`
+	NextPage string `json:"nextPage"`
+	Self     string `json:"self"`
+	Since    int64  `json:"since"`
+	Until    int64  `json:"until"`
+	Values   []struct {
+		UpdatedTime int64 `json:"updatedTime"`
+		WorklogID   int   `json:"worklogId"`
+	} `json:"values"`
 }
 
 type Worklog struct {
@@ -182,8 +267,9 @@ type Issue struct {
 	Key    string `json:"key"`
 	Fields struct {
 		Summary                  string  `json:"summary"`
-		Created                  string  `json:created`
-		ResolutionDate           *string `json:resolutiondate`
+		Created                  string  `json:"created"`
+		Updated                  string  `json:"updated"`
+		ResolutionDate           *string `json:"resolutiondate"`
 		StatusCategoryChangeDate *string `json:"statuscategorychangedate"`
 		Issuetype                struct {
 			Self        string `json:"self"`
@@ -194,7 +280,7 @@ type Issue struct {
 			Subtask     bool   `json:"subtask"`
 			AvatarID    int    `json:"avatarId"`
 		} `json:"issuetype"`
-		Parent struct {
+		Parent *struct {
 			ID     string `json:"id"`
 			Key    string `json:"key"`
 			Self   string `json:"self"`
@@ -231,9 +317,9 @@ type Issue struct {
 				} `json:"issuetype"`
 			} `json:"fields"`
 		} `json:"parent"`
-		Timespent            int `json:"timespent"`
-		Timeoriginalestimate int `json:"timeoriginalestimate"`
-		Description          struct {
+		//Timespent            int `json:"timespent"`
+		//Timeoriginalestimate int `json:"timeoriginalestimate"`
+		Description struct {
 			Version int    `json:"version"`
 			Type    string `json:"type"`
 			Content []struct {
@@ -254,9 +340,10 @@ type Issue struct {
 			Total    int `json:"total"`
 			Percent  int `json:"percent"`
 		} `json:"aggregateprogress"`
-		Aggregatetimespent            int `json:"aggregatetimespent"`
-		Aggregatetimeoriginalestimate int `json:"aggregatetimeoriginalestimate"`
-		Priority                      struct {
+		//Aggregatetimespent            int `json:"aggregatetimespent"`
+		//Aggregatetimeoriginalestimate int `json:"aggregatetimeoriginalestimate"`
+
+		Priority struct {
 			Self    string `json:"self"`
 			IconURL string `json:"iconUrl"`
 			Name    string `json:"name"`
@@ -289,6 +376,15 @@ type Issue struct {
 			Value string `json:"value"`
 			ID    string `json:"id"`
 		} `json:"customfield_13521"`
+		FixVersions []struct {
+			Self        string `json:"self"`
+			ID          string `json:"id"`
+			Description string `json:"description"`
+			Name        string `json:"name"`
+			Archived    bool   `json:"archived"`
+			Released    bool   `json:"released"`
+			ReleaseDate string `json:"releaseDate"`
+		} `json:"fixVersions"`
 	} `json:"fields"`
 }
 
@@ -301,4 +397,9 @@ func (i Issue) ParentID() string {
 		return i.Fields.Parent.ID
 	}
 	return ""
+}
+
+type BulkJiraResponse struct {
+	Expand string  `json:"expand"`
+	Issues []Issue `json:"issues"`
 }

@@ -8,11 +8,16 @@ import (
 
 // Repo is the interface that handles writing Jira Worklog items
 type Repo interface {
-	Write(w *types.WorklogItem, pi *types.ParentIssue) error
+	//Write(w *types.WorklogItem, pi *types.ParentIssue) error
 	NonResolvedIssues() ([]types.ParentIssue, error)
 	//UpdateResolutionDate(issueKey string, resolvedDate time.Time) error
-	UpdateIssue(*types.ParentIssue) error
+
+	SaveWorklog(w *types.Worklog) error
+	DeleteWorklog(id int) error
+	UpdateIssue(*types.StoredIssue) error
 	Close()
+
+	MissingIssues() ([]int, error)
 
 	AllIssues() ([]types.ParentIssue, error)
 	IssuesGroupedBy(groupBy string, start time.Time, stop time.Time) ([]types.IssueChartData, error)

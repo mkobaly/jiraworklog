@@ -8,12 +8,11 @@ import (
 
 	"github.com/mkobaly/jiraworklog"
 	"github.com/mkobaly/jiraworklog/repository"
-	"github.com/mkobaly/jiraworklog/types"
 	"github.com/pkg/errors"
 )
 
-//JiraResolutionUpdater is a job that runs in the background and scans for any jira issues that are not resolved yet
-//It will query for those issues until they are resolved
+// JiraResolutionUpdater is a job that runs in the background and scans for any jira issues that are not resolved yet
+// It will query for those issues until they are resolved
 type JiraResolutionUpdater struct {
 	cfg    *jiraworklog.Config
 	jira   jiraworklog.JiraReader
@@ -59,12 +58,13 @@ func (j *JiraResolutionUpdater) Run() error {
 
 		j.logger.Info("issue resolved")
 
-		types.MergeIssue(&ui, issue)
+		//types.MergeIssue(&ui, issue)
 
-		err = j.repo.UpdateIssue(&ui)
-		if err != nil {
-			return errors.Wrap(err, "error writting issue "+ui.Key)
-		}
+		//TODO implement correctly
+		// err = j.repo.UpdateIssue(&ui)
+		// if err != nil {
+		// 	return errors.Wrap(err, "error writting issue "+ui.Key)
+		// }
 		j.logger.Info("updated resolution date for jira issue", "IssueKey", ui.Key)
 	}
 

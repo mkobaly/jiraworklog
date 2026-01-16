@@ -7,16 +7,80 @@ import (
 	"github.com/mkobaly/jiraworklog/types"
 )
 
-templ MaintenanceRatio(data []types.MaitenanceRatio) {
+templ MaintenanceRatio(data []types.MaitenanceRatio, allRoles []string, selectedRoles []string) {
 	@layouts.Base("Maintenance Ratio") {
 		<div class="mb-6">
 			<h1 class="text-3xl font-bold text-gray-900">Maintenance Ratio</h1>
 			<p class="text-gray-600 mt-2">Project vs After Market time distribution with PR/AM ratio</p>
 		</div>
 
+		<!-- Role filter dropdown -->
+		<div class="mb-6">
+			<div class="relative inline-block">
+				<button
+					type="button"
+					id="role-dropdown-btn"
+					class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+					onclick="toggleRoleDropdown()"
+				>
+					<span class="mr-2">Filter by Roles</span>
+					<span id="selected-count" class="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">{ fmt.Sprintf("%d", len(selectedRoles)) }</span>
+					<svg class="ml-2 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+					</svg>
+				</button>
+				<div
+					id="role-dropdown"
+					class="hidden absolute z-10 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200"
+				>
+					<div class="p-3 border-b border-gray-200">
+						<label class="flex items-center cursor-pointer">
+							<input
+								type="checkbox"
+								id="select-all-roles"
+								class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+								onclick="toggleAllRoles(this)"
+								if len(selectedRoles) == len(allRoles) {
+									checked
+								}
+							/>
+							<span class="ml-2 text-sm font-medium text-gray-700">Select All</span>
+						</label>
+					</div>
+					<div class="max-h-60 overflow-y-auto p-2">
+						for _, role := range allRoles {
+							<label class="flex items-center px-2 py-1.5 rounded hover:bg-gray-100 cursor-pointer">
+								<input
+									type="checkbox"
+									name="roles"
+									value={ role }
+									class="role-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+									if isRoleSelected(role, selectedRoles) {
+										checked
+									}
+								/>
+								<span class="ml-2 text-sm text-gray-700">{ role }</span>
+							</label>
+						}
+					</div>
+					<div class="p-3 border-t border-gray-200">
+						<button
+							type="button"
+							class="w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+							onclick="applyRoleFilter()"
+						>
+							Apply Filter
+						</button>
+					</div>
+				</div>
+			</div>
+			<!-- Hidden data for selected roles -->
+			<div id="selectedRolesData" data-roles={ toSelectedRolesJSON(selectedRoles) } style="display:none;"></div>
+		</div>
+
 		if len(data) == 0 {
 			<div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-				<p class="text-yellow-700">No maintenance ratio data found.</p>
+				<p class="text-yellow-700">No maintenance ratio data found for the selected roles.</p>
 			</div>
 		} else {
 			<div class="bg-white rounded-lg shadow-md p-6">
@@ -76,8 +140,70 @@ templ MaintenanceRatio(data []types.MaitenanceRatio) {
 
 templ maintenanceChartScript() {
 	<script>
+		// Role dropdown functions
+		function toggleRoleDropdown() {
+			const dropdown = document.getElementById('role-dropdown');
+			dropdown.classList.toggle('hidden');
+		}
+
+		// Close dropdown when clicking outside
+		document.addEventListener('click', function(event) {
+			const dropdown = document.getElementById('role-dropdown');
+			const btn = document.getElementById('role-dropdown-btn');
+			if (dropdown && btn && !dropdown.contains(event.target) && !btn.contains(event.target)) {
+				dropdown.classList.add('hidden');
+			}
+		});
+
+		function toggleAllRoles(selectAllCheckbox) {
+			const checkboxes = document.querySelectorAll('.role-checkbox');
+			checkboxes.forEach(cb => {
+				cb.checked = selectAllCheckbox.checked;
+			});
+			updateSelectedCount();
+		}
+
+		function updateSelectedCount() {
+			const checkboxes = document.querySelectorAll('.role-checkbox:checked');
+			const countEl = document.getElementById('selected-count');
+			if (countEl) {
+				countEl.textContent = checkboxes.length;
+			}
+
+			// Update select all checkbox state
+			const allCheckboxes = document.querySelectorAll('.role-checkbox');
+			const selectAllCheckbox = document.getElementById('select-all-roles');
+			if (selectAllCheckbox) {
+				selectAllCheckbox.checked = checkboxes.length === allCheckboxes.length;
+				selectAllCheckbox.indeterminate = checkboxes.length > 0 && checkboxes.length < allCheckboxes.length;
+			}
+		}
+
+		// Add change listeners to role checkboxes
+		document.querySelectorAll('.role-checkbox').forEach(cb => {
+			cb.addEventListener('change', updateSelectedCount);
+		});
+
+		function applyRoleFilter() {
+			const checkboxes = document.querySelectorAll('.role-checkbox:checked');
+			const selectedRoles = Array.from(checkboxes).map(cb => cb.value);
+
+			if (selectedRoles.length === 0) {
+				alert('Please select at least one role');
+				return;
+			}
+
+			// Build URL with selected roles
+			const params = new URLSearchParams();
+			selectedRoles.forEach(role => params.append('roles', role));
+
+			// Navigate to the new URL (Turbo will handle the page update)
+			window.location.href = '/reports/maintenance?' + params.toString();
+		}
+
 		(function() {
 			const chartDataEl = document.getElementById('chartData');
+			if (!chartDataEl) return;
 			const chartData = JSON.parse(chartDataEl.dataset.chart);
 
 			const ctx = document.getElementById('maintenanceChart').getContext('2d');
@@ -180,6 +306,22 @@ templ maintenanceChartScript() {
 			});
 		})();
 	</script>
+}
+
+// Helper function to check if a role is in the selected roles list
+func isRoleSelected(role string, selectedRoles []string) bool {
+	for _, r := range selectedRoles {
+		if r == role {
+			return true
+		}
+	}
+	return false
+}
+
+// Helper function to convert selected roles to JSON
+func toSelectedRolesJSON(roles []string) string {
+	jsonBytes, _ := json.Marshal(roles)
+	return string(jsonBytes)
 }
 
 // Helper function to convert data to chart-friendly JSON

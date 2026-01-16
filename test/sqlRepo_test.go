@@ -37,8 +37,9 @@ func TestMaintenanceRatio(t *testing.T) {
 		log.Fatalln(err)
 	}
 	defer db.Close()
+	roles := []string{"qa", "dev"}
 	repo := &repository.SQL{DB: db}
-	foo, err := repo.MaitenanceRatio()
+	foo, err := repo.MaitenanceRatio(roles)
 	require.Greater(t, len(foo), 1)
 	if err != nil {
 		t.Error("Error executing repository.Fetch()", err.Error())

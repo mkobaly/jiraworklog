@@ -1,92 +1,87 @@
 package repository
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"strconv"
 	"time"
 
-	mssql "github.com/denisenkom/go-mssqldb"
 	"github.com/jmoiron/sqlx"
 	"github.com/mkobaly/jiraworklog"
 	"github.com/mkobaly/jiraworklog/types"
 )
 
 // SQL is the SQL Server repository
-type SQL struct {
+type Postgres struct {
 	DB *sqlx.DB
 }
 
-// NewSQLRepo will create a new repository using a SQL database as storage
-func NewSQLRepo(cfg *jiraworklog.Config) (*SQL, error) {
-	db, err := sqlx.Connect("sqlserver", cfg.SQLConnection)
+// NewSQLRepo will create a new repository using a Postgres database as storage
+func NewPostgresRepo(cfg *jiraworklog.Config) (*Postgres, error) {
+	db, err := sqlx.Connect("pgx", cfg.SQLConnection)
 	if err != nil {
 		return nil, err
 	}
-	repo := &SQL{DB: db}
+	repo := &Postgres{DB: db}
 	return repo, nil
 }
 
 // NonResolvedIssues gets all issue keys that are not resolved yet
-func (s *SQL) NonResolvedIssues() ([]types.ParentIssue, error) {
+func (s *Postgres) NonResolvedIssues() ([]types.ParentIssue, error) {
 	result := []types.ParentIssue{}
 	err := s.DB.Select(&result, `
-	SELECT [id]
-		,[key]
-		,[type]
-		,[summary]
-		,[priority]
-		,[status]
-		,[project]
-		,[createDate]
-		,[resolvedDate]
-		,[isResolved]
-		,aggregateTimeSpent
-		,aggregateTimeOriginalEstimate
-	FROM [issue]
-	WHERE isResolved = 0
-	AND dateInserted <= dateadd(minute,-10, getutcdate())`)
+	SELECT
+		id,
+		"key",
+		type,
+		summary,
+		priority,
+		status,
+		project,
+		createdate,
+		resolveddate,
+		isresolved,
+		aggregatetimespent,
+		aggregatetimeoriginalestimate
+	FROM issue
+	WHERE isresolved = FALSE
+	AND dateinserted <= (NOW() AT TIME ZONE 'UTC') - INTERVAL '10 minutes';`)
 	return result, err
 }
 
-func (s *SQL) MaitenanceRatio(roles []string) ([]types.MaitenanceRatio, error) {
+func (s *Postgres) MaitenanceRatio(roles []string) ([]types.MaitenanceRatio, error) {
 	result := []types.MaitenanceRatio{}
 
 	// Build the SQL with an IN clause using sqlx's `IN` helper
 	query, args, err := sqlx.In(`
-        SELECT 
-            [year-month],
-            ISNULL([NR], 0) AS NR,
-            ISNULL([AM], 0) AS AM,
-            ISNULL([PR], 0) AS PR
-        FROM
-        (
-            SELECT  
-                FORMAT(date, 'yyyy-MM') AS [year-month],
-                timeSpentHours AS hours,
-                CASE 
-                    WHEN issueProjectCharge = 'Non-Recoverable' THEN 'NR'
-                    WHEN issueProjectCharge LIKE '%after market%' THEN 'AM'
-                    WHEN issueProjectCharge LIKE 'TD%' THEN 'PR'
-                    ELSE '--'
-                END AS category
-            FROM worklog
-            WHERE issueProjectCharge != ''
-            AND issueProjectCharge NOT LIKE 'SS%'
-            AND date >= '2024.01.01'
-            AND date < DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()), 0)
-            AND author IN (
-                SELECT name FROM people WHERE role IN (?)
-            )
-        ) AS src
-        PIVOT
-        (
-            SUM(hours)
-            FOR category IN ([NR], [AM], [PR], [--])
-        ) AS p
-        ORDER BY [year-month];
-    `, roles)
+        SELECT
+			year_month,
+			SUM(CASE WHEN category = 'NR' THEN hours ELSE 0 END) AS nr,
+			SUM(CASE WHEN category = 'AM' THEN hours ELSE 0 END) AS am,
+			SUM(CASE WHEN category = 'PR' THEN hours ELSE 0 END) AS pr,
+			SUM(CASE WHEN category = '--' THEN hours ELSE 0 END) AS other
+		FROM (
+				SELECT
+					to_char(date, 'YYYY-MM') AS year_month,
+					timespenthours AS hours,
+					CASE
+						WHEN i.projectcharge = 'Non-Recoverable' THEN 'NR'
+						WHEN i.projectcharge ILIKE '%after market%' THEN 'AM'
+						WHEN i.projectcharge ILIKE 'TD%' THEN 'PR'
+						ELSE '--'
+						END AS category
+				FROM worklog w
+				JOIN issue i on w.issuekey = i.key
+				WHERE i.projectcharge <> ''
+				AND i.projectcharge NOT ILIKE 'SS%'
+				AND date >= DATE '2024-01-01'
+				AND date < date_trunc('month', now() AT TIME ZONE 'UTC')
+				AND author IN (
+					SELECT name FROM people WHERE role = ANY($1)
+				)
+			) AS src
+		GROUP BY year_month
+		ORDER BY year_month;`, roles)
 	if err != nil {
 		return nil, err
 	}
@@ -98,27 +93,16 @@ func (s *SQL) MaitenanceRatio(roles []string) ([]types.MaitenanceRatio, error) {
 
 }
 
-func (s *SQL) MissingIssues() ([]int, error) {
-	result := []int{}
-	err := s.DB.Select(&result, `	
-		SELECT DISTINCT issueid FROM worklog
-		WHERE issueid NOT IN 
-		(
-			SELECT id FROM issue
-		);`)
-	return result, err
-}
-
-func (s *SQL) People() ([]types.People, error) {
+func (s *Postgres) People() ([]types.People, error) {
 	result := []types.People{}
 	err := s.DB.Select(&result, `	
 		SELECT id, name, role FROM people;`)
 	return result, err
 }
 
-func (s *SQL) UpdatePersonRole(personId int, role string) error {
+func (s *Postgres) UpdatePersonRole(personId int, role string) error {
 	stmt, err := s.DB.Prepare(`
-		UPDATE people set role = @p2 WHERE id = @p1`)
+		UPDATE people set role = $2 WHERE id = $1`)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -126,45 +110,61 @@ func (s *SQL) UpdatePersonRole(personId int, role string) error {
 	return err
 }
 
-func (s *SQL) AllRoles() ([]string, error) {
+func (s *Postgres) AllRoles() ([]string, error) {
 	result := []string{}
 	err := s.DB.Select(&result, `	
 		SELECT distinct role FROM people;`)
 	return result, err
 }
 
-// Write will add the worklogItem to SQL server
-func (s *SQL) SaveWorklog(w *types.Worklog) error {
-	//p := w.GetParent()
-	stmt, err := s.DB.Prepare(`
-		IF NOT EXISTS (SELECT * FROM worklog WHERE id = @p1)
-		INSERT INTO worklog
+func (s *Postgres) MissingIssues() ([]int, error) {
+	result := []int{}
+	err := s.DB.Select(&result, `	
+		SELECT DISTINCT issueid FROM worklog
+		WHERE issueid NOT IN 
 		(
-			id, author, date, weekNumber, weekDay, timeSpentSeconds, timeSpentHours, issueKey 
+			SELECT id FROM issue
 		)
-		VALUES(@p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8)`)
+		UNION
+		SELECT parentid from issue where parentid not in (select id from issue);`)
+	return result, err
+}
+
+// SaveWorklog will write the worklog entry to the database
+func (s *Postgres) SaveWorklog(w *types.Worklog) error {
+	stmt, err := s.DB.Prepare(`
+        INSERT INTO worklog (
+            id, author, "date", weeknumber, weekday, timespentseconds, timespenthours,  issueid
+        )
+        VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8
+        )
+        ON CONFLICT (id) DO UPDATE SET
+			id = EXCLUDED.id,
+			author = EXCLUDED.author,
+			"date" = EXCLUDED."date",
+			weeknumber = EXCLUDED.weeknumber,
+			weekday = EXCLUDED.weekday,
+			timespentseconds = EXCLUDED.timespentseconds,
+			timespenthours = EXCLUDED.timespenthours,
+			issueid = EXCLUDED.issueid;`)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	_, err = stmt.Exec(w.ID, w.Author, mssql.DateTime1(w.Date), w.WeekNumber, w.WeekDay, w.TimeSpentSeconds, w.TimeSpentHours, w.IssueId)
-
+	_, err = stmt.Exec(w.ID, w.Author, w.Date, w.WeekNumber, w.WeekDay, w.TimeSpentSeconds, w.TimeSpentHours, w.IssueId)
 	if err != nil {
-		switch err := err.(type) {
-		case mssql.Error:
-			if err.Number != 2627 { //unique constraint
-				return err
-			}
-		default:
-			return err
-		}
+		return err
 	}
 	return nil
 }
 
-func (s *SQL) DeleteWorklog(id int) error {
+func (s *Postgres) DeleteWorklog(id int) error {
 	stmt, err := s.DB.Prepare(`
-        DELETE worklog WHERE id = @p1`)
+        DELETE FROM worklog WHERE id = $1`)
+	if err != nil {
+		return err
+	}
 
 	_, err = stmt.Exec(id)
 	if err != nil {
@@ -173,34 +173,45 @@ func (s *SQL) DeleteWorklog(id int) error {
 	return nil
 }
 
-// UpdateIssue will update the resolved information for the given issue
-func (s *SQL) UpdateIssue(issue *types.StoredIssue) error {
-	stmt, err := s.DB.Prepare(`
-		UPDATE issue
-			SET resolvedDate = @p2,
-			isResolved = 1,
-			aggregateTimeSpent = @p3,
-			aggregateTimeOriginalEstimate = @p4,
-			daysToResolve = @p5
-		WHERE id = @p1`)
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = stmt.Exec(issue.ID, issue.ResolvedDate,
-		issue.AggregateTimeSpent, issue.AggregateTimeOriginalEstimate, issue.DaysToResolve)
-	if err != nil {
-		return err
-	}
-	return nil
+// UpdateIssue will insert or update the issue in the database
+func (s *Postgres) UpdateIssue(issue *types.StoredIssue) error {
+	_, err := s.DB.Exec(`
+		INSERT INTO issue (
+			id, "key", parentid, type, summary, priority, status, project,
+			projectcharge, fixedversions, createdate, updatedate, resolveddate, daystoresolve,
+			aggregatetimespent, aggregatetimeoriginalestimate, remainingestimate
+		) VALUES (
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17
+		)
+		ON CONFLICT (id) DO UPDATE SET
+			"key" = EXCLUDED."key",
+			parentid = EXCLUDED.parentid,
+			type = EXCLUDED.type,
+			summary = EXCLUDED.summary,
+			priority = EXCLUDED.priority,
+			status = EXCLUDED.status,
+			project = EXCLUDED.project,
+			projectcharge = EXCLUDED.projectcharge,
+			fixedversions = EXCLUDED.fixedversions,
+			updatedate = EXCLUDED.updatedate,
+			resolveddate = EXCLUDED.resolveddate,
+			daystoresolve = EXCLUDED.daystoresolve,
+			aggregatetimespent = EXCLUDED.aggregatetimespent,
+			aggregatetimeoriginalestimate = EXCLUDED.aggregatetimeoriginalestimate,
+			remainingestimate = EXCLUDED.remainingestimate`,
+		issue.ID, issue.Key, issue.ParentId, issue.Type, issue.Summary, issue.Priority, issue.Status, issue.Project,
+		issue.ProjectCharge, issue.FixedVersions, issue.CreateDate, issue.UpdateDate, issue.ResolvedDate, issue.DaysToResolve,
+		issue.AggregateTimeSpent, issue.AggregateTimeOriginalEstimate, issue.RemainingEstimate)
+	return err
 }
 
 // Close will close the database connection
-func (s *SQL) Close() {
+func (s *Postgres) Close() {
 	s.DB.Close()
 }
 
 // AllWorkLogs will return all of the work logs from SQL server
-func (s *SQL) AllWorkLogs() ([]types.WorklogItem, error) {
+func (s *Postgres) AllWorkLogs() ([]types.WorklogItem, error) {
 	result := []types.WorklogItem{}
 	err := s.DB.Select(&result, `
 		SELECT  [id]
@@ -228,7 +239,7 @@ func (s *SQL) AllWorkLogs() ([]types.WorklogItem, error) {
 }
 
 // AllIssues will return all issues from SQL server
-func (s *SQL) AllIssues() ([]types.ParentIssue, error) {
+func (s *Postgres) AllIssues() ([]types.ParentIssue, error) {
 	result := []types.ParentIssue{}
 	err := s.DB.Select(&result, `
 	SELECT
@@ -252,7 +263,7 @@ func (s *SQL) AllIssues() ([]types.ParentIssue, error) {
 
 // IssuesGroupedBy will return issues group by the given groupBy value going
 // back daysBack. This data will be used for charting
-func (s *SQL) IssuesGroupedBy(groupBy string, start time.Time, stop time.Time) ([]types.IssueChartData, error) {
+func (s *Postgres) IssuesGroupedBy(groupBy string, start time.Time, stop time.Time) ([]types.IssueChartData, error) {
 	result := []types.IssueChartData{}
 	err := s.DB.Select(&result, fmt.Sprintf(`
 	select [%s] [groupBy],
@@ -272,7 +283,7 @@ func (s *SQL) IssuesGroupedBy(groupBy string, start time.Time, stop time.Time) (
 }
 
 // IssueAccuracy will return how accurate a developers estimate is vs actual time logged
-func (s *SQL) IssueAccuracy(start time.Time, stop time.Time) ([]types.IssueAccuracy, error) {
+func (s *Postgres) IssueAccuracy(start time.Time, stop time.Time) ([]types.IssueAccuracy, error) {
 	result := []types.IssueAccuracy{}
 	err := s.DB.Select(&result, `
 	SELECT developer, count(*) [count],
@@ -289,7 +300,7 @@ func (s *SQL) IssueAccuracy(start time.Time, stop time.Time) ([]types.IssueAccur
 	return result, nil
 }
 
-func (s *SQL) WorklogsGroupBy(groupBy string, start time.Time, stop time.Time) ([]types.WorklogGroupByChart, error) {
+func (s *Postgres) WorklogsGroupBy(groupBy string, start time.Time, stop time.Time) ([]types.WorklogGroupByChart, error) {
 	result := []types.WorklogGroupByChart{}
 	//date := time.Now().AddDate(0, 0, -7)
 	err := s.DB.Select(&result, fmt.Sprintf(`
@@ -304,7 +315,7 @@ func (s *SQL) WorklogsGroupBy(groupBy string, start time.Time, stop time.Time) (
 	return result, nil
 }
 
-func (s *SQL) WorklogsPerDev(start time.Time, stop time.Time) ([]map[string]string, error) {
+func (s *Postgres) WorklogsPerDev(start time.Time, stop time.Time) ([]map[string]string, error) {
 	final := []map[string]string{}
 	authors := make(map[string]bool)
 	activity := make(map[types.DeveloperDateKey]float64)
@@ -355,7 +366,7 @@ func (s *SQL) WorklogsPerDev(start time.Time, stop time.Time) ([]map[string]stri
 	return final, nil
 }
 
-func (s *SQL) WorklogsPerDevWeek() ([]types.WorklogsPerDevWeek, error) {
+func (s *Postgres) WorklogsPerDevWeek() ([]types.WorklogsPerDevWeek, error) {
 	results := make(map[string]*types.WorklogsPerDevWeek)
 	final := []types.WorklogsPerDevWeek{}
 
@@ -400,7 +411,7 @@ func (s *SQL) WorklogsPerDevWeek() ([]types.WorklogsPerDevWeek, error) {
 	return final, nil
 }
 
-// func (s *SQL) WorklogsPerDay() ([]types.WorklogsPerDay, error) {
+// func (s *Postgres) WorklogsPerDay() ([]types.WorklogsPerDay, error) {
 // 	finalResults := []types.WorklogsPerDay{
 // 		types.WorklogsPerDay{Day: "Sunday", TimeSpentHrs: 0},
 // 		types.WorklogsPerDay{Day: "Monday", TimeSpentHrs: 0},
@@ -476,23 +487,3 @@ func (s *SQL) WorklogsPerDevWeek() ([]types.WorklogsPerDevWeek, error) {
 // 	}
 // 	return final, nil
 // }
-
-func sqlDate(t *time.Time) interface{} {
-	var r interface{}
-	r = &sql.NullBool{}
-	if t == nil {
-		return r
-	}
-	if !t.IsZero() {
-		r = mssql.DateTime1(*t)
-	}
-	return r
-}
-
-func truncateString(s string, max int) string {
-	runes := []rune(s)
-	if len(runes) > max {
-		return string(runes[:max])
-	}
-	return s
-}
