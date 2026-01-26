@@ -172,6 +172,25 @@ type People struct {
 	Role string `db:"role"`
 }
 
+// IssueMissingCharge represents an issue that has no project charge assigned
+type IssueMissingCharge struct {
+	Project    string    `db:"project"`
+	Key        string    `db:"key"`
+	Type       string    `db:"type"`
+	Summary    string    `db:"summary"`
+	Priority   string    `db:"priority"`
+	Status     string    `db:"status"`
+	UpdateDate time.Time `db:"updatedate"`
+}
+
+// CustomerBugCount represents customer bug counts grouped by project, priority, and month
+type CustomerBugCount struct {
+	Project   string `db:"project"`
+	Priority  string `db:"priority"`
+	YearMonth string `db:"year_month"`
+	Count     int    `db:"count"`
+}
+
 func MustNullInt32(s string) sql.NullInt32 {
 	if s == "" {
 		return sql.NullInt32{}

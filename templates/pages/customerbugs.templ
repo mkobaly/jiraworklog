@@ -1,0 +1,262 @@
+package pages
+
+import (
+	"encoding/json"
+	"fmt"
+	"github.com/mkobaly/jiraworklog/templates/layouts"
+	"github.com/mkobaly/jiraworklog/types"
+)
+
+templ CustomerBugs(data []types.CustomerBugCount, projects []string, selectedProject string) {
+	@layouts.Base("Customer Bugs") {
+		<div class="mb-6">
+			<h1 class="text-3xl font-bold text-gray-900">Customer Bugs</h1>
+			<p class="text-gray-600 mt-2">Customer bug trends by priority over time</p>
+		</div>
+
+		<!-- Project filter dropdown -->
+		<div class="mb-6">
+			<label for="project-select" class="block text-sm font-medium text-gray-700 mb-2">Select Project</label>
+			<select
+				id="project-select"
+				class="block w-64 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+				onchange="filterByProject(this.value)"
+			>
+				<option value="" if selectedProject == "" { selected }>All Projects</option>
+				for _, project := range projects {
+					<option value={ project } if project == selectedProject { selected }>{ project }</option>
+				}
+			</select>
+		</div>
+
+		if len(data) == 0 {
+			<div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+				<p class="text-yellow-700">No customer bug data found for the selected project.</p>
+			</div>
+		} else {
+			<div class="bg-white rounded-lg shadow-md p-6">
+				<div class="h-96 md:h-[500px]">
+					<canvas id="customerBugsChart"></canvas>
+				</div>
+			</div>
+
+			<!-- Data table -->
+			<div class="mt-6 bg-white rounded-lg shadow-md overflow-hidden">
+				<div class="px-4 py-3 bg-gray-50 border-b">
+					<h2 class="text-lg font-semibold text-gray-900">Data Table</h2>
+				</div>
+				<div class="overflow-x-auto max-h-96">
+					<table class="min-w-full divide-y divide-gray-200">
+						<thead class="bg-gray-50 sticky top-0">
+							<tr>
+								<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Project</th>
+								<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Priority</th>
+								<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Month</th>
+								<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Count</th>
+							</tr>
+						</thead>
+						<tbody class="bg-white divide-y divide-gray-200">
+							for _, item := range data {
+								<tr class="hover:bg-gray-50">
+									<td class="px-4 py-2 text-sm text-gray-900">{ item.Project }</td>
+									<td class="px-4 py-2 text-sm">
+										@bugPriorityBadge(item.Priority)
+									</td>
+									<td class="px-4 py-2 text-sm text-gray-900">{ item.YearMonth }</td>
+									<td class="px-4 py-2 text-sm text-gray-900 text-right font-medium">{ fmt.Sprintf("%d", item.Count) }</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			</div>
+
+			<!-- Hidden element with chart data -->
+			<div id="chartData" data-chart={ toBugChartData(data) } style="display:none;"></div>
+
+			<!-- Chart.js from CDN -->
+			<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+			@customerBugsChartScript()
+		}
+	}
+}
+
+templ bugPriorityBadge(priority string) {
+	switch priority {
+		case "Highest", "Critical":
+			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+				{ priority }
+			</span>
+		case "High":
+			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+				{ priority }
+			</span>
+		case "Medium":
+			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+				{ priority }
+			</span>
+		case "Low", "Lowest":
+			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+				{ priority }
+			</span>
+		default:
+			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+				{ priority }
+			</span>
+	}
+}
+
+templ customerBugsChartScript() {
+	<script>
+		function filterByProject(project) {
+			const params = new URLSearchParams();
+			if (project) {
+				params.set('project', project);
+			}
+			const queryString = params.toString();
+			window.location.href = '/reports/customer-bugs' + (queryString ? '?' + queryString : '');
+		}
+
+		(function() {
+			const chartDataEl = document.getElementById('chartData');
+			if (!chartDataEl) return;
+			const chartData = JSON.parse(chartDataEl.dataset.chart);
+
+			// Priority colors
+			const priorityColors = {
+				'Highest': '#dc2626',
+				'Critical': '#dc2626',
+				'High': '#ea580c',
+				'Medium': '#ca8a04',
+				'Low': '#16a34a',
+				'Lowest': '#22c55e'
+			};
+
+			const defaultColor = '#6b7280';
+
+			// Create datasets for each priority
+			const datasets = Object.keys(chartData.priorities).map(priority => {
+				return {
+					label: priority,
+					data: chartData.labels.map(month => chartData.priorities[priority][month] || 0),
+					borderColor: priorityColors[priority] || defaultColor,
+					backgroundColor: priorityColors[priority] || defaultColor,
+					borderWidth: 2,
+					tension: 0.3,
+					pointRadius: 4,
+					pointHoverRadius: 6,
+					fill: false
+				};
+			});
+
+			const ctx = document.getElementById('customerBugsChart').getContext('2d');
+			new Chart(ctx, {
+				type: 'line',
+				data: {
+					labels: chartData.labels,
+					datasets: datasets
+				},
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					interaction: {
+						intersect: false,
+						mode: 'index'
+					},
+					plugins: {
+						title: {
+							display: true,
+							text: 'Customer Bugs by Priority Over Time',
+							font: {
+								size: 18
+							}
+						},
+						legend: {
+							position: 'bottom'
+						},
+						tooltip: {
+							callbacks: {
+								label: function(context) {
+									return context.dataset.label + ': ' + context.parsed.y + ' bugs';
+								}
+							}
+						}
+					},
+					scales: {
+						x: {
+							title: {
+								display: true,
+								text: 'Month'
+							},
+							grid: {
+								display: false
+							}
+						},
+						y: {
+							title: {
+								display: true,
+								text: 'Bug Count'
+							},
+							beginAtZero: true,
+							ticks: {
+								stepSize: 1
+							},
+							grid: {
+								color: 'rgba(0, 0, 0, 0.1)'
+							}
+						}
+					}
+				}
+			});
+		})();
+	</script>
+}
+
+// Helper function to convert data to chart-friendly JSON
+func toBugChartData(data []types.CustomerBugCount) string {
+	type chartData struct {
+		Labels     []string                       `json:"labels"`
+		Priorities map[string]map[string]int      `json:"priorities"`
+	}
+
+	// Collect unique months and priorities
+	monthSet := make(map[string]bool)
+	prioritySet := make(map[string]bool)
+
+	for _, item := range data {
+		monthSet[item.YearMonth] = true
+		prioritySet[item.Priority] = true
+	}
+
+	// Sort months
+	months := make([]string, 0, len(monthSet))
+	for month := range monthSet {
+		months = append(months, month)
+	}
+	// Simple sort for YYYY-MM format
+	for i := 0; i < len(months)-1; i++ {
+		for j := i + 1; j < len(months); j++ {
+			if months[i] > months[j] {
+				months[i], months[j] = months[j], months[i]
+			}
+		}
+	}
+
+	// Build priority data maps
+	priorities := make(map[string]map[string]int)
+	for priority := range prioritySet {
+		priorities[priority] = make(map[string]int)
+	}
+
+	for _, item := range data {
+		priorities[item.Priority][item.YearMonth] += item.Count
+	}
+
+	cd := chartData{
+		Labels:     months,
+		Priorities: priorities,
+	}
+
+	jsonBytes, _ := json.Marshal(cd)
+	return string(jsonBytes)
+}

@@ -131,6 +131,8 @@ func main() {
 
 	// Reports routes
 	e.GET("/reports/maintenance", handler.GetMaintenanceRatio)
+	e.GET("/reports/missing-charge", handler.GetIssuesMissingProjectCharge)
+	e.GET("/reports/customer-bugs", handler.GetCustomerBugs)
 
 	// Settings routes
 	e.GET("/settings/people", handler.GetPeople)

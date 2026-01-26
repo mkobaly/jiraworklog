@@ -35,6 +35,11 @@ type Repo interface {
 
 	AllRoles() ([]string, error)
 
+	IssuesMissingProjectCharge() ([]types.IssueMissingCharge, error)
+
+	CustomerBugCounts(project string) ([]types.CustomerBugCount, error)
+	CustomerBugProjects() ([]string, error)
+
 	//WorklogsPerDay() ([]types.WorklogsPerDay, error)
 	//WorklogsPerDevDay() ([]types.WorklogsPerDevDay, error)
 

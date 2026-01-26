@@ -106,8 +106,47 @@ func (s *Postgres) UpdatePersonRole(personId int, role string) error {
 
 func (s *Postgres) AllRoles() ([]string, error) {
 	result := []string{}
-	err := s.DB.Select(&result, `	
+	err := s.DB.Select(&result, `
 		SELECT distinct role FROM people;`)
+	return result, err
+}
+
+func (s *Postgres) IssuesMissingProjectCharge() ([]types.IssueMissingCharge, error) {
+	result := []types.IssueMissingCharge{}
+	err := s.DB.Select(&result, `
+		SELECT project, key, type, summary, priority, status, updatedate
+		FROM issue
+		WHERE projectcharge = ''
+		AND id IN (SELECT worklog.issueid FROM worklog)
+		AND updatedate >= NOW() - INTERVAL '60 days'
+		ORDER BY updatedate DESC;`)
+	return result, err
+}
+
+func (s *Postgres) CustomerBugCounts(project string) ([]types.CustomerBugCount, error) {
+	result := []types.CustomerBugCount{}
+	query := `
+		SELECT
+			project,
+			COALESCE(NULLIF(priority, ''), 'Medium') AS priority,
+			to_char(createdate, 'YYYY-MM') AS year_month,
+			count(*) AS count
+		FROM issue
+		WHERE type IN ('Customer Bug', 'HW / FW Customer Bug')
+		AND ($1 = '' OR project = $1)
+		GROUP BY project, priority, to_char(createdate, 'YYYY-MM')
+		ORDER BY year_month, priority;`
+	err := s.DB.Select(&result, query, project)
+	return result, err
+}
+
+func (s *Postgres) CustomerBugProjects() ([]string, error) {
+	result := []string{}
+	err := s.DB.Select(&result, `
+		SELECT DISTINCT project
+		FROM issue
+		WHERE type IN ('Customer Bug', 'HW / FW Customer Bug')
+		ORDER BY project;`)
 	return result, err
 }
 

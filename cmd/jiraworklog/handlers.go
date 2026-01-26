@@ -349,3 +349,48 @@ func (h *Handler) UpdatePersonRole(c echo.Context) error {
 		"role":   req.Role,
 	})
 }
+
+func (h *Handler) GetIssuesMissingProjectCharge(c echo.Context) error {
+	issues, err := h.repo.IssuesMissingProjectCharge()
+	if err != nil {
+		h.logger.Error("error fetching issues missing project charge", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch issues")
+	}
+
+	if wantsHTML(c) {
+		return pages.MissingProjectCharge(issues).Render(c.Request().Context(), c.Response().Writer)
+	}
+
+	// JSON response
+	return c.JSON(http.StatusOK, issues)
+}
+
+func (h *Handler) GetCustomerBugs(c echo.Context) error {
+	// Get list of projects for the dropdown
+	projects, err := h.repo.CustomerBugProjects()
+	if err != nil {
+		h.logger.Error("error fetching customer bug projects", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch projects")
+	}
+
+	// Get selected project from query param
+	selectedProject := c.QueryParam("project")
+
+	// Get bug data
+	data, err := h.repo.CustomerBugCounts(selectedProject)
+	if err != nil {
+		h.logger.Error("error fetching customer bug counts", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch bug data")
+	}
+
+	if wantsHTML(c) {
+		return pages.CustomerBugs(data, projects, selectedProject).Render(c.Request().Context(), c.Response().Writer)
+	}
+
+	// JSON response
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":            data,
+		"projects":        projects,
+		"selectedProject": selectedProject,
+	})
+}
