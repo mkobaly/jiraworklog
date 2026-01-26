@@ -376,6 +376,9 @@ func (h *Handler) GetCustomerBugs(c echo.Context) error {
 	// Get selected project from query param
 	selectedProject := c.QueryParam("project")
 
+	// Get aggregate option from query param
+	aggregate := c.QueryParam("aggregate") == "true"
+
 	// Get bug data
 	data, err := h.repo.CustomerBugCounts(selectedProject)
 	if err != nil {
@@ -384,7 +387,7 @@ func (h *Handler) GetCustomerBugs(c echo.Context) error {
 	}
 
 	if wantsHTML(c) {
-		return pages.CustomerBugs(data, projects, selectedProject).Render(c.Request().Context(), c.Response().Writer)
+		return pages.CustomerBugs(data, projects, selectedProject, aggregate).Render(c.Request().Context(), c.Response().Writer)
 	}
 
 	// JSON response
@@ -392,5 +395,6 @@ func (h *Handler) GetCustomerBugs(c echo.Context) error {
 		"data":            data,
 		"projects":        projects,
 		"selectedProject": selectedProject,
+		"aggregate":       aggregate,
 	})
 }

@@ -133,6 +133,7 @@ func (s *Postgres) CustomerBugCounts(project string) ([]types.CustomerBugCount, 
 			count(*) AS count
 		FROM issue
 		WHERE type IN ('Customer Bug', 'HW / FW Customer Bug')
+		AND createdate >= now() - INTERVAL '2 years'
 		AND ($1 = '' OR project = $1)
 		GROUP BY project, priority, to_char(createdate, 'YYYY-MM')
 		ORDER BY year_month, priority;`
@@ -146,6 +147,7 @@ func (s *Postgres) CustomerBugProjects() ([]string, error) {
 		SELECT DISTINCT project
 		FROM issue
 		WHERE type IN ('Customer Bug', 'HW / FW Customer Bug')
+		AND createdate >= now() - INTERVAL '2 years'
 		ORDER BY project;`)
 	return result, err
 }

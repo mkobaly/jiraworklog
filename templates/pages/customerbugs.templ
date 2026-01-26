@@ -7,26 +7,42 @@ import (
 	"github.com/mkobaly/jiraworklog/types"
 )
 
-templ CustomerBugs(data []types.CustomerBugCount, projects []string, selectedProject string) {
+templ CustomerBugs(data []types.CustomerBugCount, projects []string, selectedProject string, aggregate bool) {
 	@layouts.Base("Customer Bugs") {
 		<div class="mb-6">
 			<h1 class="text-3xl font-bold text-gray-900">Customer Bugs</h1>
 			<p class="text-gray-600 mt-2">Customer bug trends by priority over time</p>
 		</div>
 
-		<!-- Project filter dropdown -->
-		<div class="mb-6">
-			<label for="project-select" class="block text-sm font-medium text-gray-700 mb-2">Select Project</label>
-			<select
-				id="project-select"
-				class="block w-64 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-				onchange="filterByProject(this.value)"
-			>
-				<option value="" if selectedProject == "" { selected }>All Projects</option>
-				for _, project := range projects {
-					<option value={ project } if project == selectedProject { selected }>{ project }</option>
-				}
-			</select>
+		<!-- Filters -->
+		<div class="mb-6 flex flex-wrap items-end gap-4">
+			<div>
+				<label for="project-select" class="block text-sm font-medium text-gray-700 mb-2">Select Project</label>
+				<select
+					id="project-select"
+					class="block w-64 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+					onchange="applyFilters()"
+				>
+					<option value="" if selectedProject == "" { selected }>All Projects</option>
+					for _, project := range projects {
+						<option value={ project } if project == selectedProject { selected }>{ project }</option>
+					}
+				</select>
+			</div>
+			<div class="flex items-center">
+				<label class="flex items-center cursor-pointer px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50">
+					<input
+						type="checkbox"
+						id="aggregate-checkbox"
+						class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+						onchange="applyFilters()"
+						if aggregate {
+							checked
+						}
+					/>
+					<span class="ml-2 text-sm text-gray-700">Aggregate Priorities</span>
+				</label>
+			</div>
 		</div>
 
 		if len(data) == 0 {
@@ -50,21 +66,33 @@ templ CustomerBugs(data []types.CustomerBugCount, projects []string, selectedPro
 						<thead class="bg-gray-50 sticky top-0">
 							<tr>
 								<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Project</th>
-								<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Priority</th>
+								if !aggregate {
+									<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Priority</th>
+								}
 								<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Month</th>
 								<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Count</th>
 							</tr>
 						</thead>
 						<tbody class="bg-white divide-y divide-gray-200">
-							for _, item := range data {
-								<tr class="hover:bg-gray-50">
-									<td class="px-4 py-2 text-sm text-gray-900">{ item.Project }</td>
-									<td class="px-4 py-2 text-sm">
-										@bugPriorityBadge(item.Priority)
-									</td>
-									<td class="px-4 py-2 text-sm text-gray-900">{ item.YearMonth }</td>
-									<td class="px-4 py-2 text-sm text-gray-900 text-right font-medium">{ fmt.Sprintf("%d", item.Count) }</td>
-								</tr>
+							if aggregate {
+								for _, item := range aggregateData(data) {
+									<tr class="hover:bg-gray-50">
+										<td class="px-4 py-2 text-sm text-gray-900">{ item.Project }</td>
+										<td class="px-4 py-2 text-sm text-gray-900">{ item.YearMonth }</td>
+										<td class="px-4 py-2 text-sm text-gray-900 text-right font-medium">{ fmt.Sprintf("%d", item.Count) }</td>
+									</tr>
+								}
+							} else {
+								for _, item := range data {
+									<tr class="hover:bg-gray-50">
+										<td class="px-4 py-2 text-sm text-gray-900">{ item.Project }</td>
+										<td class="px-4 py-2 text-sm">
+											@bugPriorityBadge(item.Priority)
+										</td>
+										<td class="px-4 py-2 text-sm text-gray-900">{ item.YearMonth }</td>
+										<td class="px-4 py-2 text-sm text-gray-900 text-right font-medium">{ fmt.Sprintf("%d", item.Count) }</td>
+									</tr>
+								}
 							}
 						</tbody>
 					</table>
@@ -72,7 +100,11 @@ templ CustomerBugs(data []types.CustomerBugCount, projects []string, selectedPro
 			</div>
 
 			<!-- Hidden element with chart data -->
-			<div id="chartData" data-chart={ toBugChartData(data) } style="display:none;"></div>
+			if aggregate {
+				<div id="chartData" data-chart={ toBugChartDataAggregated(data, selectedProject) } data-aggregate="true" style="display:none;"></div>
+			} else {
+				<div id="chartData" data-chart={ toBugChartData(data) } data-aggregate="false" style="display:none;"></div>
+			}
 
 			<!-- Chart.js from CDN -->
 			<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -108,10 +140,16 @@ templ bugPriorityBadge(priority string) {
 
 templ customerBugsChartScript() {
 	<script>
-		function filterByProject(project) {
+		function applyFilters() {
+			const project = document.getElementById('project-select').value;
+			const aggregate = document.getElementById('aggregate-checkbox').checked;
+
 			const params = new URLSearchParams();
 			if (project) {
 				params.set('project', project);
+			}
+			if (aggregate) {
+				params.set('aggregate', 'true');
 			}
 			const queryString = params.toString();
 			window.location.href = '/reports/customer-bugs' + (queryString ? '?' + queryString : '');
@@ -121,8 +159,9 @@ templ customerBugsChartScript() {
 			const chartDataEl = document.getElementById('chartData');
 			if (!chartDataEl) return;
 			const chartData = JSON.parse(chartDataEl.dataset.chart);
+			const isAggregated = chartDataEl.dataset.aggregate === 'true';
 
-			// Priority colors
+			// Priority colors (for non-aggregated view)
 			const priorityColors = {
 				'Highest': '#dc2626',
 				'Critical': '#dc2626',
@@ -132,22 +171,51 @@ templ customerBugsChartScript() {
 				'Lowest': '#22c55e'
 			};
 
+			// Project colors (for aggregated view)
+			const projectColors = [
+				'#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
+				'#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1',
+				'#14b8a6', '#a855f7', '#22c55e', '#eab308', '#0ea5e9'
+			];
+
 			const defaultColor = '#6b7280';
 
-			// Create datasets for each priority
-			const datasets = Object.keys(chartData.priorities).map(priority => {
-				return {
-					label: priority,
-					data: chartData.labels.map(month => chartData.priorities[priority][month] || 0),
-					borderColor: priorityColors[priority] || defaultColor,
-					backgroundColor: priorityColors[priority] || defaultColor,
-					borderWidth: 2,
-					tension: 0.3,
-					pointRadius: 4,
-					pointHoverRadius: 6,
-					fill: false
-				};
-			});
+			let datasets;
+			let chartTitle;
+
+			if (isAggregated) {
+				// Aggregated view: one line per project (or single line if project selected)
+				chartTitle = 'Customer Bugs by Project Over Time';
+				datasets = Object.keys(chartData.series).map((key, index) => {
+					return {
+						label: key,
+						data: chartData.labels.map(month => chartData.series[key][month] || 0),
+						borderColor: projectColors[index % projectColors.length],
+						backgroundColor: projectColors[index % projectColors.length],
+						borderWidth: 2,
+						tension: 0.3,
+						pointRadius: 4,
+						pointHoverRadius: 6,
+						fill: false
+					};
+				});
+			} else {
+				// Normal view: one line per priority
+				chartTitle = 'Customer Bugs by Priority Over Time';
+				datasets = Object.keys(chartData.priorities).map(priority => {
+					return {
+						label: priority,
+						data: chartData.labels.map(month => chartData.priorities[priority][month] || 0),
+						borderColor: priorityColors[priority] || defaultColor,
+						backgroundColor: priorityColors[priority] || defaultColor,
+						borderWidth: 2,
+						tension: 0.3,
+						pointRadius: 4,
+						pointHoverRadius: 6,
+						fill: false
+					};
+				});
+			}
 
 			const ctx = document.getElementById('customerBugsChart').getContext('2d');
 			new Chart(ctx, {
@@ -166,7 +234,7 @@ templ customerBugsChartScript() {
 					plugins: {
 						title: {
 							display: true,
-							text: 'Customer Bugs by Priority Over Time',
+							text: chartTitle,
 							font: {
 								size: 18
 							}
@@ -212,11 +280,55 @@ templ customerBugsChartScript() {
 	</script>
 }
 
-// Helper function to convert data to chart-friendly JSON
+// AggregatedBugCount represents bug counts aggregated by project and month
+type AggregatedBugCount struct {
+	Project   string
+	YearMonth string
+	Count     int
+}
+
+// Helper to aggregate data by project (for table display)
+func aggregateData(data []types.CustomerBugCount) []AggregatedBugCount {
+	// Map of project -> month -> count
+	aggregated := make(map[string]map[string]int)
+
+	for _, item := range data {
+		if _, ok := aggregated[item.Project]; !ok {
+			aggregated[item.Project] = make(map[string]int)
+		}
+		aggregated[item.Project][item.YearMonth] += item.Count
+	}
+
+	// Convert to slice
+	result := []AggregatedBugCount{}
+	for project, months := range aggregated {
+		for month, count := range months {
+			result = append(result, AggregatedBugCount{
+				Project:   project,
+				YearMonth: month,
+				Count:     count,
+			})
+		}
+	}
+
+	// Sort by project, then by month
+	for i := 0; i < len(result)-1; i++ {
+		for j := i + 1; j < len(result); j++ {
+			if result[i].Project > result[j].Project ||
+				(result[i].Project == result[j].Project && result[i].YearMonth > result[j].YearMonth) {
+				result[i], result[j] = result[j], result[i]
+			}
+		}
+	}
+
+	return result
+}
+
+// Helper function to convert data to chart-friendly JSON (by priority)
 func toBugChartData(data []types.CustomerBugCount) string {
 	type chartData struct {
-		Labels     []string                       `json:"labels"`
-		Priorities map[string]map[string]int      `json:"priorities"`
+		Labels     []string                  `json:"labels"`
+		Priorities map[string]map[string]int `json:"priorities"`
 	}
 
 	// Collect unique months and priorities
@@ -233,7 +345,6 @@ func toBugChartData(data []types.CustomerBugCount) string {
 	for month := range monthSet {
 		months = append(months, month)
 	}
-	// Simple sort for YYYY-MM format
 	for i := 0; i < len(months)-1; i++ {
 		for j := i + 1; j < len(months); j++ {
 			if months[i] > months[j] {
@@ -255,6 +366,63 @@ func toBugChartData(data []types.CustomerBugCount) string {
 	cd := chartData{
 		Labels:     months,
 		Priorities: priorities,
+	}
+
+	jsonBytes, _ := json.Marshal(cd)
+	return string(jsonBytes)
+}
+
+// Helper function to convert data to chart-friendly JSON (aggregated by project)
+func toBugChartDataAggregated(data []types.CustomerBugCount, selectedProject string) string {
+	type chartData struct {
+		Labels []string                  `json:"labels"`
+		Series map[string]map[string]int `json:"series"`
+	}
+
+	// Collect unique months and projects
+	monthSet := make(map[string]bool)
+	projectSet := make(map[string]bool)
+
+	for _, item := range data {
+		monthSet[item.YearMonth] = true
+		projectSet[item.Project] = true
+	}
+
+	// Sort months
+	months := make([]string, 0, len(monthSet))
+	for month := range monthSet {
+		months = append(months, month)
+	}
+	for i := 0; i < len(months)-1; i++ {
+		for j := i + 1; j < len(months); j++ {
+			if months[i] > months[j] {
+				months[i], months[j] = months[j], months[i]
+			}
+		}
+	}
+
+	// Build series data maps (aggregated by project)
+	series := make(map[string]map[string]int)
+
+	if selectedProject != "" {
+		// Single project selected: show single line labeled with project name
+		series[selectedProject] = make(map[string]int)
+		for _, item := range data {
+			series[selectedProject][item.YearMonth] += item.Count
+		}
+	} else {
+		// All projects: show one line per project
+		for project := range projectSet {
+			series[project] = make(map[string]int)
+		}
+		for _, item := range data {
+			series[item.Project][item.YearMonth] += item.Count
+		}
+	}
+
+	cd := chartData{
+		Labels: months,
+		Series: series,
 	}
 
 	jsonBytes, _ := json.Marshal(cd)
