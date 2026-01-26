@@ -11,24 +11,24 @@ import (
 )
 
 type StoredIssue struct {
-	ID                            int           `db:"id"`
-	Key                           string        `db:"key"`
-	ParentId                      sql.NullInt32 `db:"parentId"`
-	Type                          string        `db:"type"`
-	Summary                       string        `db:"summary"`
-	Priority                      string        `db:"priority"`
-	Status                        string        `db:"status"`
-	Project                       string        `db:"project"`
-	ProjectCharge                 string        `db:"projectcharge"`
-	FixedVersions                 []string      `db:"fixedversions"`
-	CreateDate                    time.Time     `db:"createdate"`
-	UpdateDate                    time.Time     `db:"updatedate"`
-	ResolvedDate                  sql.NullTime  `db:"resolveddate"`
-	DaysToResolve                 int           `db:"daystoresolve"`
-	AggregateTimeSpent            int           `db:"aggregatetimespent"`
-	AggregateTimeOriginalEstimate int           `db:"aggregatetimeoriginalestimate"`
-	RemainingEstimate             int           `db:"remainingestimate"`
-	DevAggregateTimeSpent         int           `db:"devaggregatetimespent"`
+	ID                int           `db:"id"`
+	Key               string        `db:"key"`
+	ParentId          sql.NullInt32 `db:"parentId"`
+	Type              string        `db:"type"`
+	Summary           string        `db:"summary"`
+	Priority          string        `db:"priority"`
+	Status            string        `db:"status"`
+	Project           string        `db:"project"`
+	ProjectCharge     string        `db:"projectcharge"`
+	FixedVersions     []string      `db:"fixedversions"`
+	CreateDate        time.Time     `db:"createdate"`
+	UpdateDate        time.Time     `db:"updatedate"`
+	ResolvedDate      sql.NullTime  `db:"resolveddate"`
+	DaysToResolve     int           `db:"daystoresolve"`
+	TimeSpent         int           `db:"timespent"`
+	OriginalEstimate  int           `db:"originalestimate"`
+	RemainingEstimate int           `db:"remainingestimate"`
+	DevTimeSpent      int           `db:"devtimespent"`
 }
 
 func ToDomain(i jiraworklog.Issue) StoredIssue {
@@ -54,23 +54,23 @@ func ToDomain(i jiraworklog.Issue) StoredIssue {
 	}
 
 	return StoredIssue{
-		ID:                            id,
-		Key:                           i.Key,
-		ParentId:                      parentId,
-		Type:                          i.Fields.Issuetype.Name,
-		Summary:                       i.Fields.Summary,
-		Priority:                      i.Fields.Priority.Name,
-		Status:                        i.Fields.Status.Name,
-		Project:                       strings.Split(i.Key, "-")[0],
-		ProjectCharge:                 i.Fields.ProjectCharge.Value,
-		FixedVersions:                 fixedVersions,
-		CreateDate:                    created,
-		ResolvedDate:                  resolvedDate,
-		UpdateDate:                    updated,
-		DaysToResolve:                 daysToResolve,
-		AggregateTimeSpent:            i.Fields.Timetracking.TimeSpentSeconds,
-		AggregateTimeOriginalEstimate: i.Fields.Timetracking.OriginalEstimateSeconds,
-		RemainingEstimate:             i.Fields.Timetracking.RemainingEstimateSeconds,
+		ID:                id,
+		Key:               i.Key,
+		ParentId:          parentId,
+		Type:              i.Fields.Issuetype.Name,
+		Summary:           i.Fields.Summary,
+		Priority:          i.Fields.Priority.Name,
+		Status:            i.Fields.Status.Name,
+		Project:           strings.Split(i.Key, "-")[0],
+		ProjectCharge:     i.Fields.ProjectCharge.Value,
+		FixedVersions:     fixedVersions,
+		CreateDate:        created,
+		ResolvedDate:      resolvedDate,
+		UpdateDate:        updated,
+		DaysToResolve:     daysToResolve,
+		TimeSpent:         i.Fields.Timetracking.TimeSpentSeconds,
+		OriginalEstimate:  i.Fields.Timetracking.OriginalEstimateSeconds,
+		RemainingEstimate: i.Fields.Timetracking.RemainingEstimateSeconds,
 	}
 }
 
@@ -104,8 +104,8 @@ func (si *StoredIssue) Merge(i jiraworklog.Issue) {
 	si.ResolvedDate = resolvedDate
 	si.UpdateDate = updated
 	si.DaysToResolve = daysToResolve
-	si.AggregateTimeSpent = i.Fields.Timetracking.TimeSpentSeconds
-	si.AggregateTimeOriginalEstimate = i.Fields.Timetracking.OriginalEstimateSeconds
+	si.TimeSpent = i.Fields.Timetracking.TimeSpentSeconds
+	si.OriginalEstimate = i.Fields.Timetracking.OriginalEstimateSeconds
 	si.RemainingEstimate = i.Fields.Timetracking.RemainingEstimateSeconds
 
 }
@@ -155,10 +155,11 @@ type ParentIssue struct {
 // }
 
 type MaitenanceRatio struct {
-	YearMonth      string  `db:"year-month"`
-	NonRecoverable float32 `db:"NR"`
-	AfterMarket    float32 `db:"AM"`
-	Project        float32 `db:"PR"`
+	YearMonth      string  `db:"year_month"`
+	NonRecoverable float32 `db:"nr"`
+	AfterMarket    float32 `db:"am"`
+	Project        float32 `db:"pr"`
+	Other          float32 `db:"other"`
 }
 
 func (mr MaitenanceRatio) Ratio() float32 {

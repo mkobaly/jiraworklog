@@ -41,8 +41,8 @@ func (s *Postgres) NonResolvedIssues() ([]types.ParentIssue, error) {
 		createdate,
 		resolveddate,
 		isresolved,
-		aggregatetimespent,
-		aggregatetimeoriginalestimate
+		timespent,
+		originalestimate
 	FROM issue
 	WHERE isresolved = FALSE
 	AND dateinserted <= (NOW() AT TIME ZONE 'UTC') - INTERVAL '10 minutes';`)
@@ -52,8 +52,7 @@ func (s *Postgres) NonResolvedIssues() ([]types.ParentIssue, error) {
 func (s *Postgres) MaitenanceRatio(roles []string) ([]types.MaitenanceRatio, error) {
 	result := []types.MaitenanceRatio{}
 
-	// Build the SQL with an IN clause using sqlx's `IN` helper
-	query, args, err := sqlx.In(`
+	query := `
         SELECT
 			year_month,
 			SUM(CASE WHEN category = 'NR' THEN hours ELSE 0 END) AS nr,
@@ -71,7 +70,7 @@ func (s *Postgres) MaitenanceRatio(roles []string) ([]types.MaitenanceRatio, err
 						ELSE '--'
 						END AS category
 				FROM worklog w
-				JOIN issue i on w.issuekey = i.key
+				JOIN issue i on w.issueid = i.id
 				WHERE i.projectcharge <> ''
 				AND i.projectcharge NOT ILIKE 'SS%'
 				AND date >= DATE '2024-01-01'
@@ -81,16 +80,11 @@ func (s *Postgres) MaitenanceRatio(roles []string) ([]types.MaitenanceRatio, err
 				)
 			) AS src
 		GROUP BY year_month
-		ORDER BY year_month;`, roles)
-	if err != nil {
-		return nil, err
-	}
-	// sqlx.In returns `?` placeholders; rebind for SQL Server (`sqlx` uses `?` by default)
-	query = s.DB.Rebind(query)
+		ORDER BY year_month;`
 
-	err = s.DB.Select(&result, query, args...)
+	// PostgreSQL's ANY($1) works directly with a string array, no need for sqlx.In
+	err := s.DB.Select(&result, query, roles)
 	return result, err
-
 }
 
 func (s *Postgres) People() ([]types.People, error) {
@@ -179,7 +173,7 @@ func (s *Postgres) UpdateIssue(issue *types.StoredIssue) error {
 		INSERT INTO issue (
 			id, "key", parentid, type, summary, priority, status, project,
 			projectcharge, fixedversions, createdate, updatedate, resolveddate, daystoresolve,
-			aggregatetimespent, aggregatetimeoriginalestimate, remainingestimate
+			timespent, originalestimate, remainingestimate
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17
 		)
@@ -196,12 +190,13 @@ func (s *Postgres) UpdateIssue(issue *types.StoredIssue) error {
 			updatedate = EXCLUDED.updatedate,
 			resolveddate = EXCLUDED.resolveddate,
 			daystoresolve = EXCLUDED.daystoresolve,
-			aggregatetimespent = EXCLUDED.aggregatetimespent,
-			aggregatetimeoriginalestimate = EXCLUDED.aggregatetimeoriginalestimate,
-			remainingestimate = EXCLUDED.remainingestimate`,
+			timespent = EXCLUDED.timespent,
+			originalestimate = EXCLUDED.originalestimate,
+			remainingestimate = EXCLUDED.remainingestimate,
+			dateupdated = now()`,
 		issue.ID, issue.Key, issue.ParentId, issue.Type, issue.Summary, issue.Priority, issue.Status, issue.Project,
 		issue.ProjectCharge, issue.FixedVersions, issue.CreateDate, issue.UpdateDate, issue.ResolvedDate, issue.DaysToResolve,
-		issue.AggregateTimeSpent, issue.AggregateTimeOriginalEstimate, issue.RemainingEstimate)
+		issue.TimeSpent, issue.OriginalEstimate, issue.RemainingEstimate)
 	return err
 }
 

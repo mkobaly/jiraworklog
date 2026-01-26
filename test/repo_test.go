@@ -1,12 +1,11 @@
 package test
 
 import (
-	"log"
 	"testing"
 	"time"
 
 	_ "github.com/denisenkom/go-mssqldb"
-	"github.com/jmoiron/sqlx"
+	"github.com/mkobaly/jiraworklog"
 	"github.com/mkobaly/jiraworklog/repository"
 	"github.com/mkobaly/jiraworklog/types"
 	"github.com/stretchr/testify/require"
@@ -18,13 +17,23 @@ var cnnString = "Server=192.168.0.2;Database=jira_new;User Id=sa;Password=Kobaly
 
 // }
 
-func TestFetch(t *testing.T) {
-	db, err := sqlx.Connect("sqlserver", cnnString)
+func GetTestConfig() (*jiraworklog.Config, error) {
+	cfg, err := jiraworklog.LoadConfig("../bin/config.yaml")
 	if err != nil {
-		log.Fatalln(err)
+		return nil, err
 	}
-	defer db.Close()
-	repo := &repository.SQL{DB: db}
+	return cfg, nil
+}
+
+func TestFetch(t *testing.T) {
+	cfg, err := GetTestConfig()
+	if err != nil {
+		t.Fail()
+	}
+	repo, err := repository.NewPostgresRepo(cfg)
+	if err != nil {
+		t.Fail()
+	}
 	_, err = repo.NonResolvedIssues()
 	if err != nil {
 		t.Error("Error executing repository.Fetch()", err.Error())
@@ -32,17 +41,18 @@ func TestFetch(t *testing.T) {
 }
 
 func TestMaintenanceRatio(t *testing.T) {
-	db, err := sqlx.Connect("sqlserver", cnnString)
+	cfg, err := GetTestConfig()
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal()
 	}
-	defer db.Close()
-	roles := []string{"qa", "dev"}
-	repo := &repository.SQL{DB: db}
-	foo, err := repo.MaitenanceRatio(roles)
+	repo, err := repository.NewPostgresRepo(cfg)
+	if err != nil {
+		t.Fatal()
+	}
+	foo, err := repo.MaitenanceRatio([]string{"dev"})
 	require.Greater(t, len(foo), 1)
 	if err != nil {
-		t.Error("Error executing repository.Fetch()", err.Error())
+		t.Fatal("Error executing repository.Fetch()", err.Error())
 	}
 }
 
@@ -52,26 +62,27 @@ func TestNullDates(t *testing.T) {
 }
 
 func TestInsert(t *testing.T) {
-	db, err := sqlx.Connect("sqlserver", cnnString)
+	cfg, err := GetTestConfig()
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal()
 	}
-	defer db.Close()
-	repo := &repository.SQL{DB: db}
+	repo, err := repository.NewPostgresRepo(cfg)
+	if err != nil {
+		t.Fatal()
+	}
 
-	worklog := &types.WorklogItem{
-		ID:               1000,
+	worklog := &types.Worklog{
+		ID:               -1,
 		Author:           "bob.smith",
 		TimeSpentSeconds: 456,
 		Date:             time.Now(),
-		IssueID:          444,
-		IssueKey:         "ABC-123",
-		IssuePriority:    "high",
-		IssueType:        "story",
-		IssueSummary:     "Test ticket",
+		IssueId:          1,
+		WeekNumber:       23,
+		WeekDay:          "Friday",
+		TimeSpentHours:   3,
 	}
 
-	repo.Write(worklog, nil)
+	repo.SaveWorklog(worklog)
 	if err != nil {
 		t.Error("Error executing repository.Fetch()", err.Error())
 	}

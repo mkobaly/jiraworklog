@@ -6,7 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
+	"time"
 )
 
 // var errUnknownProject = errors.New("Unknown Project")
@@ -18,6 +20,7 @@ type JiraReader interface {
 	WorklogDetails(ids []int) ([]Worklog, error)
 	Issue(idOrKey string) (Issue, error)
 	BulkFetchIssues(idOrKeys []string) ([]Issue, error)
+	IssuesUpdated(timestamp time.Time, nextPageToken string) (IssuesUpdated, error)
 }
 
 type Jira struct {
@@ -143,6 +146,40 @@ func (j *Jira) Issue(idOrKey string) (Issue, error) {
 	return issue, nil
 }
 
+// IssuesUpdated will fetch all issues that were updated on the given timestamp. This is for the single
+// day, the 24 hour period
+func (j *Jira) IssuesUpdated(timestamp time.Time, nextPageToken string) (IssuesUpdated, error) {
+	issuesUpdated := IssuesUpdated{}
+	ts := timestamp.Format("2006-01-02")
+	te := timestamp.Add(time.Hour * 24).Format("2006-01-02")
+	query := fmt.Sprintf("jql=updated>=\"%s\" AND updated < \"%s\" order by updated ASC", ts, te)
+	if nextPageToken != "" {
+		query += fmt.Sprintf("&nextPageToken=%s", nextPageToken)
+	}
+	req, err := http.NewRequest("GET", j.Config.Jira.URL+fmt.Sprintf("/search/jql?%s", url.PathEscape(query)), nil)
+	req.SetBasicAuth(j.Config.Jira.Username, j.Config.Jira.Password)
+	resp, err := j.client.Do(req)
+	if err != nil {
+		return issuesUpdated, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		if resp.StatusCode == 404 {
+			return issuesUpdated, ErrIssueNotFound
+		}
+
+		return issuesUpdated, fmt.Errorf("Not 200 response %d", resp.StatusCode)
+	}
+
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&issuesUpdated)
+	if err != nil {
+		return issuesUpdated, err
+	}
+	return issuesUpdated, nil
+}
+
 func (j *Jira) BulkFetchIssues(idOrKeys []string) ([]Issue, error) {
 	issues := []Issue{}
 
@@ -150,7 +187,7 @@ func (j *Jira) BulkFetchIssues(idOrKeys []string) ([]Issue, error) {
 	searchPayload := map[string]interface{}{
 		"fields": []string{"priority", "summary", "parent", "status", "aggregateprogress", "progress",
 			"issuetype", "timespent", "aggregatetimespent", "timeoriginalestimate", "aggregatetimeoriginalestimate", "timetracking",
-			"resolutiondate", "created", "updated", "statuscategorychangedate", "fixedversions", "customfield_13521"},
+			"resolutiondate", "created", "updated", "statuscategorychangedate", "fixVersions", "versions", "customfield_13521"},
 		"issueIdsOrKeys": idOrKeys,
 		//"maxResults":     200, // adjust as needed
 	}
@@ -340,9 +377,6 @@ type Issue struct {
 			Total    int `json:"total"`
 			Percent  int `json:"percent"`
 		} `json:"aggregateprogress"`
-		//Aggregatetimespent            int `json:"aggregatetimespent"`
-		//Aggregatetimeoriginalestimate int `json:"aggregatetimeoriginalestimate"`
-
 		Priority struct {
 			Self    string `json:"self"`
 			IconURL string `json:"iconUrl"`
@@ -385,6 +419,15 @@ type Issue struct {
 			Released    bool   `json:"released"`
 			ReleaseDate string `json:"releaseDate"`
 		} `json:"fixVersions"`
+		AffectsVersions []struct {
+			Self        string `json:"self"`
+			ID          string `json:"id"`
+			Description string `json:"description"`
+			Name        string `json:"name"`
+			Archived    bool   `json:"archived"`
+			Released    bool   `json:"released"`
+			ReleaseDate string `json:"releaseDate"`
+		} `json:"versions"`
 	} `json:"fields"`
 }
 
@@ -397,6 +440,14 @@ func (i Issue) ParentID() string {
 		return i.Fields.Parent.ID
 	}
 	return ""
+}
+
+type IssuesUpdated struct {
+	IsLast        bool   `json:"isLast"`
+	NextPageToken string `json:"nextPageToken"`
+	Issues        []struct {
+		ID string `json:"id"`
+	} `json:"issues"`
 }
 
 type BulkJiraResponse struct {

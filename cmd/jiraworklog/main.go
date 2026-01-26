@@ -94,9 +94,9 @@ func main() {
 
 	jira := jiraworklog.NewJira(cfg)
 	//List out all jobs we need here to run
-	//j1 := job.NewJiraSyncWorklogsJob(cfg, jira, repo)
+	j1 := job.NewJiraSyncWorklogsJob(cfg, jira, repo)
 	j2 := job.NewJJiraSyncIssuesJob(cfg, jira, repo)
-	worker := jiraworklog.NewWorker(logger, j2)
+	worker := jiraworklog.NewWorker(logger, j1, j2)
 	go worker.Start()
 
 	// Initialize Echo
@@ -162,8 +162,6 @@ func main() {
 
 func loadRepo(repoType string, cfg *jiraworklog.Config) (repository.Repo, error) {
 	switch repoType {
-	case "MSSQL":
-		return repository.NewSQLRepo(cfg)
 	case "POSTGRES":
 		return repository.NewPostgresRepo(cfg)
 	default:

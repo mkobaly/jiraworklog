@@ -4,6 +4,8 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
+	"sync"
+	"time"
 
 	yaml "gopkg.in/yaml.v2"
 )
@@ -19,31 +21,38 @@ type JiraSettings struct {
 
 // Config holds info needed for connecting to Jira and SQL
 type Config struct {
+	mu            sync.Mutex `yaml:"-"`
 	path          string
 	Jira          JiraSettings
 	SQLConnection string
 	//MaxWorklogID  int
 	WorklogUpdatedLastTimestamp int64
 	WorklogDeletedLastTimestamp int64
+	IssueLastTimestamp          time.Time
 
-	UserList   []string
-	DoneStatus []string
+	UserList         []string
+	DoneStatus       []string
+	ExcludedProjects []string
 }
 
 // Save will persist the configuration information
 func (c *Config) Save() error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	bytes, err := yaml.Marshal(c)
 	if err == nil {
-		return ioutil.WriteFile(c.path, bytes, 0777)
+		return os.WriteFile(c.path, bytes, 0777)
 	}
 	return err
 }
 
 // Write will persist the configuration information to the given path
 func (c *Config) Write(path string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	bytes, err := yaml.Marshal(c)
 	if err == nil {
-		return ioutil.WriteFile(path, bytes, 0777)
+		return os.WriteFile(path, bytes, 0777)
 	}
 	return err
 }
@@ -84,6 +93,7 @@ func newConfig() *Config {
 		SQLConnection:               "Server=localhost;Database=Jira;User Id=xxx;Password=yyyyyy",
 		WorklogDeletedLastTimestamp: 0,
 		WorklogUpdatedLastTimestamp: 0,
+		IssueLastTimestamp:          time.Now(),
 		UserList:                    []string{"leave.empty", "to.pull", "all.users"},
 		DoneStatus:                  []string{"done", "closed"},
 	}
