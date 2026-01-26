@@ -108,6 +108,7 @@ templ CustomerBugs(data []types.CustomerBugCount, projects []string, selectedPro
 
 			<!-- Chart.js from CDN -->
 			<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+			<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-trendline"></script>
 			@customerBugsChartScript()
 		}
 	}
@@ -187,32 +188,46 @@ templ customerBugsChartScript() {
 				// Aggregated view: one line per project (or single line if project selected)
 				chartTitle = 'Customer Bugs by Project Over Time';
 				datasets = Object.keys(chartData.series).map((key, index) => {
+					const color = projectColors[index % projectColors.length];
 					return {
 						label: key,
 						data: chartData.labels.map(month => chartData.series[key][month] || 0),
-						borderColor: projectColors[index % projectColors.length],
-						backgroundColor: projectColors[index % projectColors.length],
+						borderColor: color,
+						backgroundColor: color,
 						borderWidth: 2,
 						tension: 0.3,
 						pointRadius: 4,
 						pointHoverRadius: 6,
-						fill: false
+						fill: false,
+						trendlineLinear: {
+							colorMin: color,
+							colorMax: color,
+							lineStyle: 'dashed',
+							width: 2
+						}
 					};
 				});
 			} else {
 				// Normal view: one line per priority
 				chartTitle = 'Customer Bugs by Priority Over Time';
 				datasets = Object.keys(chartData.priorities).map(priority => {
+					const color = priorityColors[priority] || defaultColor;
 					return {
 						label: priority,
 						data: chartData.labels.map(month => chartData.priorities[priority][month] || 0),
-						borderColor: priorityColors[priority] || defaultColor,
-						backgroundColor: priorityColors[priority] || defaultColor,
+						borderColor: color,
+						backgroundColor: color,
 						borderWidth: 2,
 						tension: 0.3,
 						pointRadius: 4,
 						pointHoverRadius: 6,
-						fill: false
+						fill: false,
+						trendlineLinear: {
+							colorMin: color,
+							colorMax: color,
+							lineStyle: 'dashed',
+							width: 2
+						}
 					};
 				});
 			}
@@ -245,6 +260,9 @@ templ customerBugsChartScript() {
 						tooltip: {
 							callbacks: {
 								label: function(context) {
+									if (context.dataset.label === 'Trend (Total)') {
+										return context.dataset.label + ': ' + context.parsed.y.toFixed(1);
+									}
 									return context.dataset.label + ': ' + context.parsed.y + ' bugs';
 								}
 							}
