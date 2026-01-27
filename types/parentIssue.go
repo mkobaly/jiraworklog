@@ -2,6 +2,7 @@ package types
 
 import (
 	"database/sql"
+	"database/sql/driver"
 	"math"
 	"strconv"
 	"strings"
@@ -9,6 +10,100 @@ import (
 
 	"github.com/mkobaly/jiraworklog"
 )
+
+// StringArray is a custom type for PostgreSQL text[] arrays
+type StringArray []string
+
+// Scan implements the sql.Scanner interface for reading PostgreSQL arrays
+func (a *StringArray) Scan(src interface{}) error {
+	if src == nil {
+		*a = nil
+		return nil
+	}
+
+	var str string
+	switch v := src.(type) {
+	case []byte:
+		str = string(v)
+	case string:
+		str = v
+	default:
+		*a = nil
+		return nil
+	}
+
+	// Handle empty array
+	if str == "{}" || str == "" {
+		*a = []string{}
+		return nil
+	}
+
+	// Remove the curly braces
+	str = strings.TrimPrefix(str, "{")
+	str = strings.TrimSuffix(str, "}")
+
+	// Parse the array elements
+	var result []string
+	var current strings.Builder
+	inQuotes := false
+	escaped := false
+
+	for _, r := range str {
+		if escaped {
+			current.WriteRune(r)
+			escaped = false
+			continue
+		}
+
+		switch r {
+		case '\\':
+			escaped = true
+		case '"':
+			inQuotes = !inQuotes
+		case ',':
+			if inQuotes {
+				current.WriteRune(r)
+			} else {
+				result = append(result, current.String())
+				current.Reset()
+			}
+		default:
+			current.WriteRune(r)
+		}
+	}
+
+	// Don't forget the last element
+	if current.Len() > 0 {
+		result = append(result, current.String())
+	}
+
+	*a = result
+	return nil
+}
+
+// Value implements the driver.Valuer interface for writing PostgreSQL arrays
+func (a StringArray) Value() (driver.Value, error) {
+	if a == nil {
+		return nil, nil
+	}
+	if len(a) == 0 {
+		return "{}", nil
+	}
+
+	var escaped []string
+	for _, s := range a {
+		// Escape quotes and backslashes
+		s = strings.ReplaceAll(s, `\`, `\\`)
+		s = strings.ReplaceAll(s, `"`, `\"`)
+		// Quote strings that contain special characters
+		if strings.ContainsAny(s, `,{}"\\`) || s == "" {
+			s = `"` + s + `"`
+		}
+		escaped = append(escaped, s)
+	}
+
+	return "{" + strings.Join(escaped, ",") + "}", nil
+}
 
 type StoredIssue struct {
 	ID                int           `db:"id"`
@@ -189,6 +284,22 @@ type CustomerBugCount struct {
 	Priority  string `db:"priority"`
 	YearMonth string `db:"year_month"`
 	Count     int    `db:"count"`
+}
+
+// Project represents a project with associated project charges
+type Project struct {
+	Id             int         `db:"id"`
+	Name           string      `db:"name"`
+	Visible        bool        `db:"visible"`
+	ProjectCharges StringArray `db:"projectcharge"`
+}
+
+// ProjectChargeHours represents hours worked per project charge and role
+type ProjectChargeHours struct {
+	Project       string         `db:"project"`
+	ProjectCharge string         `db:"projectcharge"`
+	Role          sql.NullString `db:"role"`
+	Hours         float64        `db:"hours"`
 }
 
 func MustNullInt32(s string) sql.NullInt32 {

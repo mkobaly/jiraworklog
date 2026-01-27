@@ -1,0 +1,247 @@
+package pages
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/mkobaly/jiraworklog/templates/layouts"
+	"github.com/mkobaly/jiraworklog/types"
+)
+
+// ProjectGroup represents a project with its charges and total hours
+type ProjectGroup struct {
+	Name    string
+	Charges []ChargeGroup
+	Total   float64
+}
+
+// ChargeGroup represents a project charge with its role hours
+type ChargeGroup struct {
+	Name      string
+	RoleHours []RoleHours
+	Total     float64
+}
+
+// RoleHours represents hours for a specific role
+type RoleHours struct {
+	Role  string
+	Hours float64
+}
+
+func groupProjectChargeHours(data []types.ProjectChargeHours) []ProjectGroup {
+	projectMap := make(map[string]*ProjectGroup)
+	chargeMap := make(map[string]map[string]*ChargeGroup)
+	var projectOrder []string
+
+	for _, item := range data {
+		// Initialize project if needed
+		if _, exists := projectMap[item.Project]; !exists {
+			projectMap[item.Project] = &ProjectGroup{Name: item.Project}
+			chargeMap[item.Project] = make(map[string]*ChargeGroup)
+			projectOrder = append(projectOrder, item.Project)
+		}
+
+		// Initialize charge if needed
+		if _, exists := chargeMap[item.Project][item.ProjectCharge]; !exists {
+			chargeMap[item.Project][item.ProjectCharge] = &ChargeGroup{Name: item.ProjectCharge}
+		}
+
+		// Add role hours
+		role := "Unknown"
+		if item.Role.Valid && item.Role.String != "" {
+			role = item.Role.String
+		}
+		chargeMap[item.Project][item.ProjectCharge].RoleHours = append(
+			chargeMap[item.Project][item.ProjectCharge].RoleHours,
+			RoleHours{Role: role, Hours: item.Hours},
+		)
+		chargeMap[item.Project][item.ProjectCharge].Total += item.Hours
+		projectMap[item.Project].Total += item.Hours
+	}
+
+	// Build final result maintaining order
+	var result []ProjectGroup
+	for _, projectName := range projectOrder {
+		project := projectMap[projectName]
+		for chargeName, charge := range chargeMap[projectName] {
+			_ = chargeName
+			project.Charges = append(project.Charges, *charge)
+		}
+		result = append(result, *project)
+	}
+
+	return result
+}
+
+templ ProjectChargeHoursPage(data []types.ProjectChargeHours) {
+	@layouts.Base("Project Charge Hours") {
+		<div class="mb-6">
+			<h1 class="text-3xl font-bold text-gray-900">Project Charge Hours</h1>
+			<p class="text-gray-600 mt-2">Hours worked per project charge and role</p>
+		</div>
+
+		if len(data) == 0 {
+			<div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+				<p class="text-yellow-700">No project charge hours data found.</p>
+			</div>
+		} else {
+			<!-- Desktop view -->
+			<div class="hidden md:block space-y-6">
+				for _, project := range groupProjectChargeHours(data) {
+					<div class="bg-white rounded-lg shadow-md overflow-hidden">
+						<!-- Project header -->
+						<div class="bg-blue-600 text-white px-6 py-3 flex justify-between items-center">
+							<h2 class="text-lg font-semibold">{ project.Name }</h2>
+							<span class="text-lg font-bold">{ formatHours(project.Total) } hrs</span>
+						</div>
+
+						<table class="min-w-full divide-y divide-gray-200">
+							<thead class="bg-gray-50">
+								<tr>
+									<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project Charge</th>
+									<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+									<th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Hours</th>
+								</tr>
+							</thead>
+							<tbody class="bg-white divide-y divide-gray-200">
+								for _, charge := range project.Charges {
+									for i, roleHour := range charge.RoleHours {
+										<tr class="hover:bg-gray-50">
+											if i == 0 {
+												<td class="px-6 py-3 whitespace-nowrap" rowspan={ fmt.Sprintf("%d", len(charge.RoleHours)) }>
+													<div class="text-sm font-medium text-gray-900">{ charge.Name }</div>
+													<div class="text-xs text-gray-500">Subtotal: { formatHours(charge.Total) } hrs</div>
+												</td>
+											}
+											<td class="px-6 py-3 whitespace-nowrap">
+												@roleBadge(roleHour.Role)
+											</td>
+											<td class="px-6 py-3 whitespace-nowrap text-right text-sm text-gray-900">
+												{ formatHours(roleHour.Hours) }
+											</td>
+										</tr>
+									}
+								}
+							</tbody>
+						</table>
+					</div>
+				}
+			</div>
+
+			<!-- Mobile view -->
+			<div class="md:hidden space-y-4">
+				for _, project := range groupProjectChargeHours(data) {
+					<div class="bg-white rounded-lg shadow-md overflow-hidden">
+						<!-- Project header -->
+						<div class="bg-blue-600 text-white px-4 py-3 flex justify-between items-center">
+							<h2 class="text-base font-semibold">{ project.Name }</h2>
+							<span class="text-base font-bold">{ formatHours(project.Total) } hrs</span>
+						</div>
+
+						<div class="divide-y divide-gray-200">
+							for _, charge := range project.Charges {
+								<div class="p-4">
+									<div class="flex justify-between items-start mb-2">
+										<span class="text-sm font-medium text-gray-900">{ charge.Name }</span>
+										<span class="text-sm font-semibold text-blue-600">{ formatHours(charge.Total) } hrs</span>
+									</div>
+									<div class="space-y-1">
+										for _, roleHour := range charge.RoleHours {
+											<div class="flex justify-between items-center text-sm">
+												@roleBadge(roleHour.Role)
+												<span class="text-gray-700">{ formatHours(roleHour.Hours) } hrs</span>
+											</div>
+										}
+									</div>
+								</div>
+							}
+						</div>
+					</div>
+				}
+			</div>
+
+			<!-- Summary stats -->
+			<div class="mt-6 bg-white rounded-lg shadow-md p-6">
+				<h3 class="text-lg font-semibold text-gray-900 mb-4">Summary</h3>
+				<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+					<div class="bg-blue-50 rounded-lg p-4">
+						<div class="text-sm text-blue-600 font-medium">Total Projects</div>
+						<div class="text-2xl font-bold text-blue-900">{ fmt.Sprintf("%d", len(groupProjectChargeHours(data))) }</div>
+					</div>
+					<div class="bg-green-50 rounded-lg p-4">
+						<div class="text-sm text-green-600 font-medium">Total Hours</div>
+						<div class="text-2xl font-bold text-green-900">{ formatHours(totalHours(data)) }</div>
+					</div>
+					<div class="bg-purple-50 rounded-lg p-4">
+						<div class="text-sm text-purple-600 font-medium">Project Charges</div>
+						<div class="text-2xl font-bold text-purple-900">{ fmt.Sprintf("%d", countUniqueCharges(data)) }</div>
+					</div>
+				</div>
+			</div>
+		}
+	}
+}
+
+templ roleBadge(role string) {
+	switch role {
+		case "dev":
+			<span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">dev</span>
+		case "qa":
+			<span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">qa</span>
+		case "devOps":
+			<span class="px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-800">devOps</span>
+		case "mgmt":
+			<span class="px-2 py-1 text-xs rounded-full bg-orange-100 text-orange-800">mgmt</span>
+		default:
+			<span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">{ role }</span>
+	}
+}
+
+func totalHours(data []types.ProjectChargeHours) float64 {
+	var total float64
+	for _, item := range data {
+		total += item.Hours
+	}
+	return total
+}
+
+func countUniqueCharges(data []types.ProjectChargeHours) int {
+	charges := make(map[string]bool)
+	for _, item := range data {
+		charges[item.ProjectCharge] = true
+	}
+	return len(charges)
+}
+
+// formatHours formats a float with commas as thousands separator
+func formatHours(n float64) string {
+	// Format with 2 decimal places first
+	s := fmt.Sprintf("%.2f", n)
+
+	// Split into integer and decimal parts
+	parts := strings.Split(s, ".")
+	intPart := parts[0]
+	decPart := parts[1]
+
+	// Add commas to integer part
+	var result strings.Builder
+	negative := false
+	if len(intPart) > 0 && intPart[0] == '-' {
+		negative = true
+		intPart = intPart[1:]
+	}
+
+	for i, c := range intPart {
+		if i > 0 && (len(intPart)-i)%3 == 0 {
+			result.WriteRune(',')
+		}
+		result.WriteRune(c)
+	}
+
+	formatted := result.String()
+	if negative {
+		formatted = "-" + formatted
+	}
+
+	return formatted + "." + decPart
+}

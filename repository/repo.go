@@ -40,6 +40,16 @@ type Repo interface {
 	CustomerBugCounts(project string) ([]types.CustomerBugCount, error)
 	CustomerBugProjects() ([]string, error)
 
+	// Project management
+	AllProjects() ([]types.Project, error)
+	CreateProject(name string, projectCharges []string) error
+	UpdateProject(id int, name string, visible bool, projectCharges []string) error
+	DeleteProject(id int) error
+	AllProjectCharges() ([]string, error)
+
+	// Project charge hours reporting
+	ProjectChargeHours() ([]types.ProjectChargeHours, error)
+
 	//WorklogsPerDay() ([]types.WorklogsPerDay, error)
 	//WorklogsPerDevDay() ([]types.WorklogsPerDevDay, error)
 

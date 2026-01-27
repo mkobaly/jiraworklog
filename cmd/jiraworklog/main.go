@@ -133,10 +133,17 @@ func main() {
 	e.GET("/reports/maintenance", handler.GetMaintenanceRatio)
 	e.GET("/reports/missing-charge", handler.GetIssuesMissingProjectCharge)
 	e.GET("/reports/customer-bugs", handler.GetCustomerBugs)
+	e.GET("/reports/project-hours", handler.GetProjectChargeHours)
 
 	// Settings routes
 	e.GET("/settings/people", handler.GetPeople)
 	e.PUT("/settings/people/:id/role", handler.UpdatePersonRole)
+
+	// Projects routes
+	e.GET("/settings/projects", handler.GetProjects)
+	e.POST("/settings/projects", handler.CreateProject)
+	e.PUT("/settings/projects/:id", handler.UpdateProject)
+	e.DELETE("/settings/projects/:id", handler.DeleteProject)
 
 	// Start server in background
 	go func() {

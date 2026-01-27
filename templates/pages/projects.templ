@@ -1,0 +1,474 @@
+package pages
+
+import (
+	"encoding/json"
+	"fmt"
+	"github.com/mkobaly/jiraworklog/templates/layouts"
+	"github.com/mkobaly/jiraworklog/types"
+	"strings"
+)
+
+templ Projects(projects []types.Project, allProjectCharges []string) {
+	@layouts.Base("Projects Management") {
+		<div class="mb-6">
+			<h1 class="text-3xl font-bold text-gray-900">Projects Management</h1>
+			<p class="text-gray-600 mt-2">Manage projects and their associated project charges</p>
+		</div>
+
+		<!-- Hidden element with project charges data for JavaScript -->
+		<div id="projectChargesData" data-charges={ toProjectChargesJSON(allProjectCharges) } style="display:none;"></div>
+
+		<!-- Success/Error message container -->
+		<div id="message-container" class="hidden mb-4">
+			<div id="success-message" class="hidden bg-green-50 border-l-4 border-green-400 p-4">
+				<p class="text-green-700"></p>
+			</div>
+			<div id="error-message" class="hidden bg-red-50 border-l-4 border-red-400 p-4">
+				<p class="text-red-700"></p>
+			</div>
+		</div>
+
+		<!-- Add Project Button -->
+		<div class="mb-6">
+			<button
+				type="button"
+				class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+				onclick="showAddProjectModal()"
+			>
+				<svg class="inline-block w-5 h-5 mr-1 -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+				</svg>
+				Add Project
+			</button>
+		</div>
+
+		if len(projects) == 0 {
+			<div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+				<p class="text-yellow-700">No projects found. Click "Add Project" to create one.</p>
+			</div>
+		} else {
+			<!-- Projects Table -->
+			<div class="bg-white rounded-lg shadow-md overflow-hidden">
+				<table class="min-w-full divide-y divide-gray-200">
+					<thead class="bg-gray-50">
+						<tr>
+							<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+							<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Visible</th>
+							<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project Charges</th>
+							<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+						</tr>
+					</thead>
+					<tbody class="bg-white divide-y divide-gray-200" id="projects-table-body">
+						for _, project := range projects {
+							<tr
+								class="hover:bg-gray-50 project-row"
+								data-project-id={ fmt.Sprintf("%d", project.Id) }
+								data-project-name={ project.Name }
+								data-project-visible={ fmt.Sprintf("%t", project.Visible) }
+								data-project-charges={ toProjectChargesJSON(project.ProjectCharges) }
+							>
+								<td class="px-6 py-4 whitespace-nowrap">
+									<div class="text-sm font-medium text-gray-900">{ project.Name }</div>
+								</td>
+								<td class="px-6 py-4 whitespace-nowrap">
+									if project.Visible {
+										<span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Yes</span>
+									} else {
+										<span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">No</span>
+									}
+								</td>
+								<td class="px-6 py-4">
+									<div class="flex flex-wrap gap-1 max-w-md">
+										for _, charge := range project.ProjectCharges {
+											<span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">{ charge }</span>
+										}
+										if len(project.ProjectCharges) == 0 {
+											<span class="text-gray-400 text-sm">None</span>
+										}
+									</div>
+								</td>
+								<td class="px-6 py-4 whitespace-nowrap text-sm">
+									<button
+										class="edit-project-btn text-blue-600 hover:text-blue-800 font-medium mr-3"
+									>
+										Edit
+									</button>
+									<button
+										class="delete-project-btn text-red-600 hover:text-red-800 font-medium"
+									>
+										Delete
+									</button>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+
+		<!-- Add/Edit Project Modal -->
+		<div id="project-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+			<div class="relative top-20 mx-auto p-5 border w-full max-w-xl shadow-lg rounded-lg bg-white">
+				<div class="flex justify-between items-center mb-4">
+					<h3 id="modal-title" class="text-lg font-semibold text-gray-900">Add Project</h3>
+					<button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+						<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+						</svg>
+					</button>
+				</div>
+
+				<form id="project-form" onsubmit="saveProject(event)">
+					<input type="hidden" id="project-id" value=""/>
+
+					<div class="mb-4">
+						<label for="project-name" class="block text-sm font-medium text-gray-700 mb-1">Project Name</label>
+						<input
+							type="text"
+							id="project-name"
+							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+							required
+							placeholder="Enter project name"
+						/>
+					</div>
+
+					<div class="mb-4">
+						<label class="flex items-center cursor-pointer">
+							<input
+								type="checkbox"
+								id="project-visible"
+								class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+								checked
+							/>
+							<span class="ml-2 text-sm text-gray-700">Visible</span>
+						</label>
+					</div>
+
+					<div class="mb-4">
+						<label class="block text-sm font-medium text-gray-700 mb-1">Project Charges</label>
+						<p class="text-xs text-gray-500 mb-2">Select one or more project charges to associate with this project</p>
+
+						<!-- Search filter for project charges -->
+						<div class="relative mb-2">
+							<input
+								type="text"
+								id="charge-search"
+								class="w-full px-3 py-2 pl-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+								placeholder="Search project charges..."
+								oninput="filterCharges(this.value)"
+							/>
+							<svg class="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+							</svg>
+						</div>
+
+						<div class="border border-gray-300 rounded-md max-h-48 overflow-y-auto">
+							<div id="charges-list" class="p-2 space-y-1">
+								for _, charge := range allProjectCharges {
+									<label class="charge-item flex items-center p-1.5 rounded hover:bg-gray-100 cursor-pointer" data-charge={ strings.ToLower(charge) }>
+										<input
+											type="checkbox"
+											name="project-charges"
+											value={ charge }
+											class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+										/>
+										<span class="ml-2 text-sm text-gray-700">{ charge }</span>
+									</label>
+								}
+							</div>
+						</div>
+						<p id="selected-count" class="text-xs text-gray-500 mt-1">0 selected</p>
+					</div>
+
+					<div class="flex justify-end space-x-3">
+						<button
+							type="button"
+							onclick="closeModal()"
+							class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
+						>
+							Cancel
+						</button>
+						<button
+							type="submit"
+							id="save-btn"
+							class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+						>
+							Save
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+
+		<!-- Delete Confirmation Modal -->
+		<div id="delete-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+			<div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-lg bg-white">
+				<div class="text-center">
+					<svg class="mx-auto h-12 w-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+					</svg>
+					<h3 class="text-lg font-semibold text-gray-900 mt-4">Delete Project</h3>
+					<p class="text-gray-600 mt-2">Are you sure you want to delete "<span id="delete-project-name"></span>"? This action cannot be undone.</p>
+					<input type="hidden" id="delete-project-id"/>
+					<div class="flex justify-center space-x-3 mt-6">
+						<button
+							type="button"
+							onclick="closeDeleteModal()"
+							class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
+						>
+							Cancel
+						</button>
+						<button
+							type="button"
+							onclick="deleteProject()"
+							class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+						>
+							Delete
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		@projectsScript()
+	}
+}
+
+templ projectsScript() {
+	<script>
+		function showAddProjectModal() {
+			document.getElementById('modal-title').textContent = 'Add Project';
+			document.getElementById('project-id').value = '';
+			document.getElementById('project-name').value = '';
+			document.getElementById('project-visible').checked = true;
+
+			// Uncheck all project charges
+			document.querySelectorAll('input[name="project-charges"]').forEach(cb => {
+				cb.checked = false;
+			});
+			updateSelectedCount();
+
+			document.getElementById('project-modal').classList.remove('hidden');
+			document.getElementById('project-name').focus();
+		}
+
+		function showEditProjectModal(id, name, visible, charges) {
+			document.getElementById('modal-title').textContent = 'Edit Project';
+			document.getElementById('project-id').value = id;
+			document.getElementById('project-name').value = name;
+			document.getElementById('project-visible').checked = visible;
+
+			// Set project charges
+			document.querySelectorAll('input[name="project-charges"]').forEach(cb => {
+				cb.checked = charges.includes(cb.value);
+			});
+			updateSelectedCount();
+
+			document.getElementById('project-modal').classList.remove('hidden');
+			document.getElementById('project-name').focus();
+		}
+
+		function closeModal() {
+			document.getElementById('project-modal').classList.add('hidden');
+			document.getElementById('charge-search').value = '';
+			filterCharges('');
+		}
+
+		function filterCharges(searchTerm) {
+			const term = searchTerm.toLowerCase().trim();
+			const items = document.querySelectorAll('.charge-item');
+
+			items.forEach(item => {
+				const charge = item.dataset.charge || '';
+				if (charge.includes(term)) {
+					item.classList.remove('hidden');
+				} else {
+					item.classList.add('hidden');
+				}
+			});
+		}
+
+		function updateSelectedCount() {
+			const count = document.querySelectorAll('input[name="project-charges"]:checked').length;
+			document.getElementById('selected-count').textContent = count + ' selected';
+		}
+
+		// Add change listeners to checkboxes
+		document.querySelectorAll('input[name="project-charges"]').forEach(cb => {
+			cb.addEventListener('change', updateSelectedCount);
+		});
+
+		// Add click listeners to edit buttons
+		document.querySelectorAll('.edit-project-btn').forEach(btn => {
+			btn.addEventListener('click', function() {
+				const row = this.closest('.project-row');
+				const id = parseInt(row.dataset.projectId);
+				const name = row.dataset.projectName;
+				const visible = row.dataset.projectVisible === 'true';
+				const charges = JSON.parse(row.dataset.projectCharges || '[]');
+				showEditProjectModal(id, name, visible, charges);
+			});
+		});
+
+		// Add click listeners to delete buttons
+		document.querySelectorAll('.delete-project-btn').forEach(btn => {
+			btn.addEventListener('click', function() {
+				const row = this.closest('.project-row');
+				const id = parseInt(row.dataset.projectId);
+				const name = row.dataset.projectName;
+				confirmDeleteProject(id, name);
+			});
+		});
+
+		async function saveProject(event) {
+			event.preventDefault();
+
+			const projectId = document.getElementById('project-id').value;
+			const name = document.getElementById('project-name').value.trim();
+			const visible = document.getElementById('project-visible').checked;
+			const charges = Array.from(document.querySelectorAll('input[name="project-charges"]:checked'))
+				.map(cb => cb.value);
+
+			if (!name) {
+				showMessage('error', 'Project name is required');
+				return;
+			}
+
+			const saveBtn = document.getElementById('save-btn');
+			saveBtn.disabled = true;
+			saveBtn.textContent = 'Saving...';
+
+			try {
+				const isEdit = projectId !== '';
+				const url = isEdit ? '/settings/projects/' + projectId : '/settings/projects';
+				const method = isEdit ? 'PUT' : 'POST';
+
+				const response = await fetch(url, {
+					method: method,
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({
+						name: name,
+						visible: visible,
+						projectCharges: charges
+					})
+				});
+
+				if (response.ok) {
+					showMessage('success', isEdit ? 'Project updated successfully!' : 'Project created successfully!');
+					closeModal();
+					// Reload to show updated data
+					setTimeout(() => window.location.reload(), 500);
+				} else {
+					const errorText = await response.text();
+					showMessage('error', errorText || 'Failed to save project. Please try again.');
+				}
+			} catch (error) {
+				console.error('Error saving project:', error);
+				showMessage('error', 'Failed to save project. Please try again.');
+			} finally {
+				saveBtn.disabled = false;
+				saveBtn.textContent = 'Save';
+			}
+		}
+
+		function confirmDeleteProject(id, name) {
+			document.getElementById('delete-project-id').value = id;
+			document.getElementById('delete-project-name').textContent = name;
+			document.getElementById('delete-modal').classList.remove('hidden');
+		}
+
+		function closeDeleteModal() {
+			document.getElementById('delete-modal').classList.add('hidden');
+		}
+
+		async function deleteProject() {
+			const projectId = document.getElementById('delete-project-id').value;
+
+			try {
+				const response = await fetch('/settings/projects/' + projectId, {
+					method: 'DELETE'
+				});
+
+				if (response.ok) {
+					showMessage('success', 'Project deleted successfully!');
+					closeDeleteModal();
+					// Remove the row from the table
+					const row = document.querySelector(`tr[data-project-id="${projectId}"]`);
+					if (row) {
+						row.remove();
+					}
+				} else {
+					showMessage('error', 'Failed to delete project. Please try again.');
+				}
+			} catch (error) {
+				console.error('Error deleting project:', error);
+				showMessage('error', 'Failed to delete project. Please try again.');
+			}
+		}
+
+		function showMessage(type, text) {
+			const container = document.getElementById('message-container');
+			const successMsg = document.getElementById('success-message');
+			const errorMsg = document.getElementById('error-message');
+
+			container.classList.remove('hidden');
+
+			if (type === 'success') {
+				successMsg.classList.remove('hidden');
+				successMsg.querySelector('p').textContent = text;
+				errorMsg.classList.add('hidden');
+			} else {
+				errorMsg.classList.remove('hidden');
+				errorMsg.querySelector('p').textContent = text;
+				successMsg.classList.add('hidden');
+			}
+
+			// Auto-hide after 3 seconds
+			setTimeout(() => {
+				container.classList.add('hidden');
+				successMsg.classList.add('hidden');
+				errorMsg.classList.add('hidden');
+			}, 3000);
+		}
+
+		// Close modals on escape key
+		document.addEventListener('keydown', function(e) {
+			if (e.key === 'Escape') {
+				closeModal();
+				closeDeleteModal();
+			}
+		});
+
+		// Close modals when clicking outside
+		document.getElementById('project-modal').addEventListener('click', function(e) {
+			if (e.target === this) {
+				closeModal();
+			}
+		});
+
+		document.getElementById('delete-modal').addEventListener('click', function(e) {
+			if (e.target === this) {
+				closeDeleteModal();
+			}
+		});
+	</script>
+}
+
+// Helper function to convert project charges to JSON
+func toProjectChargesJSON(charges []string) string {
+	if charges == nil {
+		charges = []string{}
+	}
+	jsonBytes, _ := json.Marshal(charges)
+	return string(jsonBytes)
+}
+
+// Helper function to escape JavaScript string
+func escapeJS(s string) string {
+	s = strings.ReplaceAll(s, "\\", "\\\\")
+	s = strings.ReplaceAll(s, "'", "\\'")
+	s = strings.ReplaceAll(s, "\"", "\\\"")
+	return s
+}

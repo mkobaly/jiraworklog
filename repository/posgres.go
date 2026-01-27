@@ -152,6 +152,71 @@ func (s *Postgres) CustomerBugProjects() ([]string, error) {
 	return result, err
 }
 
+// AllProjects returns all projects from the database
+func (s *Postgres) AllProjects() ([]types.Project, error) {
+	result := []types.Project{}
+	err := s.DB.Select(&result, `
+		SELECT id, name, visible, projectcharge
+		FROM project
+		ORDER BY name;`)
+	return result, err
+}
+
+// CreateProject creates a new project in the database
+func (s *Postgres) CreateProject(name string, projectCharges []string) error {
+	_, err := s.DB.Exec(`
+		INSERT INTO project (name, projectcharge)
+		VALUES ($1, $2)`,
+		name, types.StringArray(projectCharges))
+	return err
+}
+
+// UpdateProject updates an existing project
+func (s *Postgres) UpdateProject(id int, name string, visible bool, projectCharges []string) error {
+	_, err := s.DB.Exec(`
+		UPDATE project
+		SET name = $2, visible = $3, projectcharge = $4
+		WHERE id = $1`,
+		id, name, visible, types.StringArray(projectCharges))
+	return err
+}
+
+// DeleteProject deletes a project by ID
+func (s *Postgres) DeleteProject(id int) error {
+	_, err := s.DB.Exec(`DELETE FROM project WHERE id = $1`, id)
+	return err
+}
+
+// AllProjectCharges returns all distinct project charges from the issue table
+func (s *Postgres) AllProjectCharges() ([]string, error) {
+	result := []string{}
+	err := s.DB.Select(&result, `
+		SELECT DISTINCT projectcharge
+		FROM issue
+		WHERE projectcharge <> ''
+		ORDER BY projectcharge;`)
+	return result, err
+}
+
+// ProjectChargeHours returns hours worked per project charge and role
+func (s *Postgres) ProjectChargeHours() ([]types.ProjectChargeHours, error) {
+	result := []types.ProjectChargeHours{}
+	err := s.DB.Select(&result, `
+		SELECT
+			p.name as project,
+			j.projectcharge,
+			NULLIF(per.role, 'UNKNOWN') as role,
+			SUM(w.timespenthours) as hours
+		FROM worklog w
+		JOIN issue j ON w.issueid = j.id
+		JOIN project p ON j.projectcharge = ANY(p.projectcharge)
+		LEFT JOIN people per ON w.author = per.name
+		WHERE p.visible = true
+		GROUP BY p.name, j.projectcharge, per.role
+		ORDER BY p.name, j.projectcharge, per.role;`)
+	return result, err
+}
+
 func (s *Postgres) MissingIssues() ([]int, error) {
 	result := []int{}
 	err := s.DB.Select(&result, `	

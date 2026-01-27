@@ -398,3 +398,125 @@ func (h *Handler) GetCustomerBugs(c echo.Context) error {
 		"aggregate":       aggregate,
 	})
 }
+
+func (h *Handler) GetProjects(c echo.Context) error {
+	projects, err := h.repo.AllProjects()
+	if err != nil {
+		h.logger.Error("error fetching projects", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch projects")
+	}
+
+	projectCharges, err := h.repo.AllProjectCharges()
+	if err != nil {
+		h.logger.Error("error fetching project charges", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch project charges")
+	}
+
+	if wantsHTML(c) {
+		return pages.Projects(projects, projectCharges).Render(c.Request().Context(), c.Response().Writer)
+	}
+
+	// JSON response
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"projects":       projects,
+		"projectCharges": projectCharges,
+	})
+}
+
+func (h *Handler) CreateProject(c echo.Context) error {
+	var req struct {
+		Name           string   `json:"name"`
+		ProjectCharges []string `json:"projectCharges"`
+	}
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid request body")
+	}
+
+	if req.Name == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "project name is required")
+	}
+
+	if err := h.repo.CreateProject(req.Name, req.ProjectCharges); err != nil {
+		h.logger.Error("error creating project", "error", err, "name", req.Name)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to create project")
+	}
+
+	h.logger.Info("created project", "name", req.Name, "charges", len(req.ProjectCharges))
+
+	return c.JSON(http.StatusCreated, map[string]string{
+		"status": "ok",
+	})
+}
+
+func (h *Handler) UpdateProject(c echo.Context) error {
+	projectId := c.Param("id")
+	if projectId == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "project id is required")
+	}
+
+	id, err := strconv.Atoi(projectId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid project id")
+	}
+
+	var req struct {
+		Name           string   `json:"name"`
+		Visible        bool     `json:"visible"`
+		ProjectCharges []string `json:"projectCharges"`
+	}
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid request body")
+	}
+
+	if req.Name == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "project name is required")
+	}
+
+	if err := h.repo.UpdateProject(id, req.Name, req.Visible, req.ProjectCharges); err != nil {
+		h.logger.Error("error updating project", "error", err, "id", id, "name", req.Name)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to update project")
+	}
+
+	h.logger.Info("updated project", "id", id, "name", req.Name, "visible", req.Visible)
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"status": "ok",
+	})
+}
+
+func (h *Handler) DeleteProject(c echo.Context) error {
+	projectId := c.Param("id")
+	if projectId == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "project id is required")
+	}
+
+	id, err := strconv.Atoi(projectId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid project id")
+	}
+
+	if err := h.repo.DeleteProject(id); err != nil {
+		h.logger.Error("error deleting project", "error", err, "id", id)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to delete project")
+	}
+
+	h.logger.Info("deleted project", "id", id)
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"status": "ok",
+	})
+}
+
+func (h *Handler) GetProjectChargeHours(c echo.Context) error {
+	data, err := h.repo.ProjectChargeHours()
+	if err != nil {
+		h.logger.Error("error fetching project charge hours", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch project charge hours")
+	}
+
+	if wantsHTML(c) {
+		return pages.ProjectChargeHoursPage(data).Render(c.Request().Context(), c.Response().Writer)
+	}
+
+	return c.JSON(http.StatusOK, data)
+}

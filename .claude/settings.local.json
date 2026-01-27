@@ -12,7 +12,9 @@
       "Bash(fi)",
       "Bash(go get:*)",
       "Bash(curl:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(templ generate:*)",
+      "Bash(bash:*)"
     ]
   }
 }
