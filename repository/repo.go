@@ -31,7 +31,7 @@ type Repo interface {
 	MaitenanceRatio(roles []string) ([]types.MaitenanceRatio, error)
 
 	People() ([]types.People, error)
-	UpdatePersonRole(personId int, role string) error
+	UpdatePerson(personId int, role string, isEmployee bool) error
 
 	AllRoles() ([]string, error)
 

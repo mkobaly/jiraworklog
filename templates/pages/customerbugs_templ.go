@@ -124,7 +124,7 @@ func CustomerBugs(data []types.CustomerBugCount, projects []string, selectedProj
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<div class=\"bg-white rounded-lg shadow-md p-6\"><div class=\"h-96 md:h-[500px]\"><canvas id=\"customerBugsChart\"></canvas></div></div><!-- Data table --> <div class=\"mt-6 bg-white rounded-lg shadow-md overflow-hidden\"><div class=\"px-4 py-3 bg-gray-50 border-b\"><h2 class=\"text-lg font-semibold text-gray-900\">Data Table</h2></div><div class=\"overflow-x-auto max-h-96\"><table class=\"min-w-full divide-y divide-gray-200\"><thead class=\"bg-gray-50 sticky top-0\"><tr><th class=\"px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase\">Project</th>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<div class=\"bg-white rounded-lg shadow-md p-6\"><div class=\"h-96 md:h-[500px]\"><canvas id=\"customerBugsChart\"></canvas></div></div><!-- Data table (hidden on mobile) --> <div class=\"hidden md:block mt-6 bg-white rounded-lg shadow-md overflow-hidden\"><div class=\"px-4 py-3 bg-gray-50 border-b\"><h2 class=\"text-lg font-semibold text-gray-900\">Data Table</h2></div><div class=\"overflow-x-auto max-h-96\"><table class=\"min-w-full divide-y divide-gray-200\"><thead class=\"bg-gray-50 sticky top-0\"><tr><th class=\"px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase\">Project</th>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

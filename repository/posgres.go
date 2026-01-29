@@ -90,17 +90,17 @@ func (s *Postgres) MaitenanceRatio(roles []string) ([]types.MaitenanceRatio, err
 func (s *Postgres) People() ([]types.People, error) {
 	result := []types.People{}
 	err := s.DB.Select(&result, `	
-		SELECT id, name, role FROM people;`)
+		SELECT id, name, isEmployee, role FROM people;`)
 	return result, err
 }
 
-func (s *Postgres) UpdatePersonRole(personId int, role string) error {
+func (s *Postgres) UpdatePerson(personId int, role string, isEmployee bool) error {
 	stmt, err := s.DB.Prepare(`
-		UPDATE people set role = $2 WHERE id = $1`)
+		UPDATE people SET role = $2, isEmployee = $3 WHERE id = $1`)
 	if err != nil {
 		log.Fatal(err)
 	}
-	_, err = stmt.Exec(personId, role)
+	_, err = stmt.Exec(personId, role, isEmployee)
 	return err
 }
 

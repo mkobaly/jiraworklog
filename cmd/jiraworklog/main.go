@@ -138,7 +138,7 @@ func main() {
 
 	// Settings routes
 	e.GET("/settings/people", handler.GetPeople)
-	e.PUT("/settings/people/:id/role", handler.UpdatePersonRole)
+	e.PUT("/settings/people/:id", handler.UpdatePerson)
 
 	// Projects routes
 	e.GET("/settings/projects", handler.GetProjects)

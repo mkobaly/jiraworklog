@@ -262,9 +262,10 @@ func (mr MaitenanceRatio) Ratio() float32 {
 }
 
 type People struct {
-	Id   int    `db:"id"`
-	Name string `db:"name"`
-	Role string `db:"role"`
+	Id         int    `db:"id"`
+	Name       string `db:"name"`
+	IsEmployee bool   `db:"isemployee"`
+	Role       string `db:"role"`
 }
 
 // IssueMissingCharge represents an issue that has no project charge assigned

@@ -313,7 +313,7 @@ func (h *Handler) GetPeople(c echo.Context) error {
 	})
 }
 
-func (h *Handler) UpdatePersonRole(c echo.Context) error {
+func (h *Handler) UpdatePerson(c echo.Context) error {
 	personId := c.Param("id")
 	if personId == "" {
 		return echo.NewHTTPError(http.StatusBadRequest, "person id is required")
@@ -327,7 +327,8 @@ func (h *Handler) UpdatePersonRole(c echo.Context) error {
 
 	// Parse request body
 	var req struct {
-		Role string `json:"role"`
+		Role       string `json:"role"`
+		IsEmployee bool   `json:"isEmployee"`
 	}
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid request body")
@@ -337,17 +338,18 @@ func (h *Handler) UpdatePersonRole(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "role is required")
 	}
 
-	// Update the role
-	if err := h.repo.UpdatePersonRole(id, req.Role); err != nil {
-		h.logger.Error("error updating person role", "error", err, "personId", id, "role", req.Role)
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to update role")
+	// Update the person
+	if err := h.repo.UpdatePerson(id, req.Role, req.IsEmployee); err != nil {
+		h.logger.Error("error updating person", "error", err, "personId", id, "role", req.Role, "isEmployee", req.IsEmployee)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to update person")
 	}
 
-	h.logger.Info("updated person role", "personId", id, "role", req.Role)
+	h.logger.Info("updated person", "personId", id, "role", req.Role, "isEmployee", req.IsEmployee)
 
-	return c.JSON(http.StatusOK, map[string]string{
-		"status": "ok",
-		"role":   req.Role,
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"status":     "ok",
+		"role":       req.Role,
+		"isEmployee": req.IsEmployee,
 	})
 }
 

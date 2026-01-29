@@ -66,12 +66,13 @@ templ People(people []types.People, roles []string) {
 						<tr>
 							<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
 							<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+							<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
 							<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
 						</tr>
 					</thead>
 					<tbody class="bg-white divide-y divide-gray-200" id="people-table-body">
 						for _, person := range people {
-							<tr class="hover:bg-gray-50 person-row" data-person-id={ fmt.Sprintf("%d", person.Id) } data-name={ person.Name } data-role={ person.Role }>
+							<tr class="hover:bg-gray-50 person-row" data-person-id={ fmt.Sprintf("%d", person.Id) } data-name={ person.Name } data-role={ person.Role } data-employee={ fmt.Sprintf("%t", person.IsEmployee) }>
 								<td class="px-6 py-4 whitespace-nowrap">
 									<div class="text-sm font-medium text-gray-900">{ person.Name }</div>
 								</td>
@@ -94,6 +95,27 @@ templ People(people []types.People, roles []string) {
 												}
 											</datalist>
 										</div>
+									</div>
+								</td>
+								<td class="px-6 py-4 whitespace-nowrap">
+									<div class="employee-display">
+										if person.IsEmployee {
+											<span class="employee-badge px-2 py-1 text-sm rounded-full bg-green-100 text-green-800">Yes</span>
+										} else {
+											<span class="employee-badge px-2 py-1 text-sm rounded-full bg-gray-100 text-gray-800">No</span>
+										}
+									</div>
+									<div class="employee-edit hidden">
+										<label class="relative inline-flex items-center cursor-pointer">
+											<input
+												type="checkbox"
+												class="employee-checkbox sr-only peer"
+												if person.IsEmployee {
+													checked
+												}
+											/>
+											<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+										</label>
 									</div>
 								</td>
 								<td class="px-6 py-4 whitespace-nowrap text-sm">
@@ -125,7 +147,7 @@ templ People(people []types.People, roles []string) {
 			<!-- Mobile card view -->
 			<div class="md:hidden space-y-4" id="people-mobile-list">
 				for _, person := range people {
-					<div class="bg-white rounded-lg shadow-md p-4 person-card" data-person-id={ fmt.Sprintf("%d", person.Id) } data-name={ person.Name } data-role={ person.Role }>
+					<div class="bg-white rounded-lg shadow-md p-4 person-card" data-person-id={ fmt.Sprintf("%d", person.Id) } data-name={ person.Name } data-role={ person.Role } data-employee={ fmt.Sprintf("%t", person.IsEmployee) }>
 						<div class="flex justify-between items-start mb-3">
 							<h3 class="text-lg font-semibold text-gray-900">{ person.Name }</h3>
 						</div>
@@ -149,12 +171,35 @@ templ People(people []types.People, roles []string) {
 								</datalist>
 							</div>
 						</div>
+						<div class="mb-3">
+							<label class="text-xs text-gray-500 uppercase">Employee</label>
+							<div class="employee-display mt-1">
+								if person.IsEmployee {
+									<span class="employee-badge px-2 py-1 text-sm rounded-full bg-green-100 text-green-800">Yes</span>
+								} else {
+									<span class="employee-badge px-2 py-1 text-sm rounded-full bg-gray-100 text-gray-800">No</span>
+								}
+							</div>
+							<div class="employee-edit hidden mt-1">
+								<label class="relative inline-flex items-center cursor-pointer">
+									<input
+										type="checkbox"
+										class="employee-checkbox sr-only peer"
+										if person.IsEmployee {
+											checked
+										}
+									/>
+									<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+									<span class="ml-2 text-sm text-gray-700">Employee</span>
+								</label>
+							</div>
+						</div>
 						<div class="flex space-x-3">
 							<button
 								class="edit-btn px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
 								onclick="startEdit(this)"
 							>
-								Edit Role
+								Edit
 							</button>
 							<button
 								class="save-btn hidden px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm"
@@ -239,6 +284,8 @@ templ peopleScript() {
 			const container = btn.closest('[data-person-id]');
 			container.querySelector('.role-display').classList.add('hidden');
 			container.querySelector('.role-edit').classList.remove('hidden');
+			container.querySelector('.employee-display').classList.add('hidden');
+			container.querySelector('.employee-edit').classList.remove('hidden');
 			container.querySelector('.edit-btn').classList.add('hidden');
 			container.querySelector('.save-btn').classList.remove('hidden');
 			container.querySelector('.cancel-btn').classList.remove('hidden');
@@ -248,9 +295,13 @@ templ peopleScript() {
 		function cancelEdit(btn) {
 			const container = btn.closest('[data-person-id]');
 			const originalRole = container.querySelector('.role-text').textContent;
+			const originalEmployee = container.dataset.employee === 'true';
 			container.querySelector('.role-input').value = originalRole;
+			container.querySelector('.employee-checkbox').checked = originalEmployee;
 			container.querySelector('.role-display').classList.remove('hidden');
 			container.querySelector('.role-edit').classList.add('hidden');
+			container.querySelector('.employee-display').classList.remove('hidden');
+			container.querySelector('.employee-edit').classList.add('hidden');
 			container.querySelector('.edit-btn').classList.remove('hidden');
 			container.querySelector('.save-btn').classList.add('hidden');
 			container.querySelector('.cancel-btn').classList.add('hidden');
@@ -260,6 +311,7 @@ templ peopleScript() {
 			const container = btn.closest('[data-person-id]');
 			const personId = container.dataset.personId;
 			const newRole = container.querySelector('.role-input').value.trim();
+			const newIsEmployee = container.querySelector('.employee-checkbox').checked;
 
 			if (!newRole) {
 				showMessage('error', 'Role cannot be empty');
@@ -270,35 +322,49 @@ templ peopleScript() {
 			btn.textContent = 'Saving...';
 
 			try {
-				const response = await fetch('/settings/people/' + personId + '/role', {
+				const response = await fetch('/settings/people/' + personId, {
 					method: 'PUT',
 					headers: {
 						'Content-Type': 'application/json',
 					},
-					body: JSON.stringify({ role: newRole })
+					body: JSON.stringify({ role: newRole, isEmployee: newIsEmployee })
 				});
 
 				if (response.ok) {
-					// Update the display
+					// Update the role display and data attribute
 					container.querySelector('.role-text').textContent = newRole;
+					container.dataset.role = newRole;
+
+					// Update the employee display and data attribute
+					container.dataset.employee = newIsEmployee.toString();
+					const employeeBadge = container.querySelector('.employee-badge');
+					if (newIsEmployee) {
+						employeeBadge.textContent = 'Yes';
+						employeeBadge.className = 'employee-badge px-2 py-1 text-sm rounded-full bg-green-100 text-green-800';
+					} else {
+						employeeBadge.textContent = 'No';
+						employeeBadge.className = 'employee-badge px-2 py-1 text-sm rounded-full bg-gray-100 text-gray-800';
+					}
 
 					// Reset to view mode
 					container.querySelector('.role-display').classList.remove('hidden');
 					container.querySelector('.role-edit').classList.add('hidden');
+					container.querySelector('.employee-display').classList.remove('hidden');
+					container.querySelector('.employee-edit').classList.add('hidden');
 					container.querySelector('.edit-btn').classList.remove('hidden');
 					container.querySelector('.save-btn').classList.add('hidden');
 					container.querySelector('.cancel-btn').classList.add('hidden');
 
-					showMessage('success', 'Role updated successfully!');
+					showMessage('success', 'Changes saved successfully!');
 
 					// Add new role to datalists if it's not already there
 					addRoleToDatalist(newRole);
 				} else {
-					showMessage('error', 'Failed to update role. Please try again.');
+					showMessage('error', 'Failed to save changes. Please try again.');
 				}
 			} catch (error) {
-				console.error('Error updating role:', error);
-				showMessage('error', 'Failed to update role. Please try again.');
+				console.error('Error saving changes:', error);
+				showMessage('error', 'Failed to save changes. Please try again.');
 			} finally {
 				btn.disabled = false;
 				btn.textContent = 'Save';
