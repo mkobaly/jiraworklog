@@ -134,6 +134,7 @@ func (s *Postgres) CustomerBugCounts(project string) ([]types.CustomerBugCount, 
 		FROM issue
 		WHERE type IN ('Customer Bug', 'HW / FW Customer Bug')
 		AND createdate >= now() - INTERVAL '2 years'
+		AND createdate < date_trunc('month', now() AT TIME ZONE 'UTC')
 		AND ($1 = '' OR project = $1)
 		GROUP BY project, priority, to_char(createdate, 'YYYY-MM')
 		ORDER BY year_month, priority;`
@@ -214,6 +215,45 @@ func (s *Postgres) ProjectChargeHours() ([]types.ProjectChargeHours, error) {
 		WHERE p.visible = true
 		GROUP BY p.name, j.projectcharge, per.role
 		ORDER BY p.name, j.projectcharge, per.role;`)
+	return result, err
+}
+
+// DailyHoursByRole returns daily hours breakdown by author for the given date range
+func (s *Postgres) DailyHoursByRole(roles []string, startDate, endDate time.Time) ([]types.DailyHours, error) {
+	result := []types.DailyHours{}
+
+	query := `
+		SELECT
+			role,
+			author,
+			date,
+			SUM(CASE WHEN category = 'NR' THEN hours ELSE 0 END) AS nonrecoverable,
+			SUM(CASE WHEN category = 'AM' THEN hours ELSE 0 END) AS aftermarket,
+			SUM(CASE WHEN category = 'PR' THEN hours ELSE 0 END) AS project,
+			SUM(CASE WHEN category = '--' THEN hours ELSE 0 END) AS missing
+		FROM (
+			SELECT
+				author,
+				p.role,
+				to_char(date, 'YYYY-MM-DD') AS date,
+				timespenthours AS hours,
+				CASE
+					WHEN i.projectcharge = 'Non-Recoverable' THEN 'NR'
+					WHEN i.projectcharge ILIKE '%after market%' THEN 'AM'
+					WHEN i.projectcharge ILIKE 'TD%' THEN 'PR'
+					ELSE '--'
+				END AS category
+			FROM worklog w
+			JOIN issue i ON w.issueid = i.id
+			JOIN people p ON w.author = p.name
+			WHERE w.date >= $2
+			AND w.date <= $3
+			AND p.role = ANY($1)
+		) AS src
+		GROUP BY role, author, date
+		ORDER BY author, date;`
+
+	err := s.DB.Select(&result, query, roles, startDate, endDate)
 	return result, err
 }
 

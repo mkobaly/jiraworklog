@@ -34,7 +34,7 @@ func (j *JiraSyncWorklogsJob) GetName() string {
 }
 
 func (j *JiraSyncWorklogsJob) GetInterval() time.Duration {
-	return time.Second * 20
+	return time.Second * 60
 }
 
 func (j *JiraSyncWorklogsJob) Run() error {

@@ -35,7 +35,7 @@ func (j *JiraSyncIssuesJob) GetName() string {
 }
 
 func (j *JiraSyncIssuesJob) GetInterval() time.Duration {
-	return time.Second * 20
+	return time.Second * 30
 }
 
 func (j *JiraSyncIssuesJob) Run() error {
@@ -85,15 +85,12 @@ func (j *JiraSyncIssuesJob) Run() error {
 	//run for today once an hour as current issues have hours updated
 	if lastUpdated.Compare(today) == 0 {
 		hour := time.Now().Hour()
-		if j.todaysHour == 0 || j.todaysHour%hour == 0 {
+		if j.todaysHour != hour {
 			err = j.syncUpdatedIssues(lastUpdated)
 			if err != nil {
 				return err
 			}
-			j.todaysHour = hour + 1
-			if j.todaysHour > 23 {
-				j.todaysHour = 0
-			}
+			j.todaysHour = hour
 		}
 	}
 

@@ -302,6 +302,38 @@ type ProjectChargeHours struct {
 	Hours         float64        `db:"hours"`
 }
 
+// DailyHours represents hours worked by an author on a specific day
+type DailyHours struct {
+	Role           string  `db:"role"`
+	Author         string  `db:"author"`
+	Date           string  `db:"date"`
+	NonRecoverable float64 `db:"nonrecoverable"`
+	AfterMarket    float64 `db:"aftermarket"`
+	Project        float64 `db:"project"`
+	Missing        float64 `db:"missing"`
+}
+
+// Total returns the total hours for the day
+func (d DailyHours) Total() float64 {
+	return d.NonRecoverable + d.AfterMarket + d.Project + d.Missing
+}
+
+// ProductiveRatio returns the ratio of project work vs (project + aftermarket)
+func (d DailyHours) ProductiveRatio() float64 {
+	if d.AfterMarket+d.Project == 0 {
+		return 0
+	}
+	return d.Project / (d.AfterMarket + d.Project)
+}
+
+// WeekOption represents a week choice for dropdown selection
+type WeekOption struct {
+	Offset int
+	Label  string
+	Start  time.Time
+	End    time.Time
+}
+
 func MustNullInt32(s string) sql.NullInt32 {
 	if s == "" {
 		return sql.NullInt32{}

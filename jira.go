@@ -78,7 +78,7 @@ func (j *Jira) WorklogsDeleted(timestamp int64) (DeletedWorklogs, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return worklog, fmt.Errorf("Not 200 response %d", resp.StatusCode)
+		return worklog, fmt.Errorf("WorklogsDeleted bad response %d, since: %s", resp.StatusCode, since)
 	}
 
 	decoder := json.NewDecoder(resp.Body)
@@ -109,7 +109,7 @@ func (j *Jira) WorklogDetails(ids []int) ([]Worklog, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return worklogs, fmt.Errorf("Not 200 response %d", resp.StatusCode)
+		return worklogs, fmt.Errorf("WorklogDetails bad response: %d. Trying to fetch ids: %v", resp.StatusCode, ids)
 	}
 
 	decoder := json.NewDecoder(resp.Body)

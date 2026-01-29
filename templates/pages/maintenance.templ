@@ -201,7 +201,7 @@ templ maintenanceChartScript() {
 			window.location.href = '/reports/maintenance?' + params.toString();
 		}
 
-		(function() {
+		function initMaintenanceChart() {
 			const chartDataEl = document.getElementById('chartData');
 			if (!chartDataEl) return;
 			const chartData = JSON.parse(chartDataEl.dataset.chart);
@@ -304,7 +304,17 @@ templ maintenanceChartScript() {
 					}
 				}
 			});
-		})();
+		}
+
+		// Wait for Chart.js to be available before initializing
+		function waitForChart() {
+			if (typeof Chart !== 'undefined') {
+				initMaintenanceChart();
+			} else {
+				setTimeout(waitForChart, 50);
+			}
+		}
+		waitForChart();
 	</script>
 }
 

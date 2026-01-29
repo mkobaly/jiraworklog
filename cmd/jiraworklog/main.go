@@ -134,6 +134,7 @@ func main() {
 	e.GET("/reports/missing-charge", handler.GetIssuesMissingProjectCharge)
 	e.GET("/reports/customer-bugs", handler.GetCustomerBugs)
 	e.GET("/reports/project-hours", handler.GetProjectChargeHours)
+	e.GET("/reports/weekly-hours", handler.GetWeeklyHours)
 
 	// Settings routes
 	e.GET("/settings/people", handler.GetPeople)

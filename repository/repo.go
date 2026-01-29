@@ -50,6 +50,9 @@ type Repo interface {
 	// Project charge hours reporting
 	ProjectChargeHours() ([]types.ProjectChargeHours, error)
 
+	// Weekly hours by author
+	DailyHoursByRole(roles []string, startDate, endDate time.Time) ([]types.DailyHours, error)
+
 	//WorklogsPerDay() ([]types.WorklogsPerDay, error)
 	//WorklogsPerDevDay() ([]types.WorklogsPerDevDay, error)
 

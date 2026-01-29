@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -516,6 +517,97 @@ func (h *Handler) GetProjectChargeHours(c echo.Context) error {
 
 	if wantsHTML(c) {
 		return pages.ProjectChargeHoursPage(data).Render(c.Request().Context(), c.Response().Writer)
+	}
+
+	return c.JSON(http.StatusOK, data)
+}
+
+// getWeekBounds returns the Monday (start) and Sunday (end) of the week
+// containing the given date
+func getWeekBounds(t time.Time) (time.Time, time.Time) {
+	// Find Monday of the week
+	weekday := int(t.Weekday())
+	if weekday == 0 {
+		weekday = 7 // Sunday is 7, not 0
+	}
+	monday := t.AddDate(0, 0, -(weekday - 1))
+	monday = time.Date(monday.Year(), monday.Month(), monday.Day(), 0, 0, 0, 0, time.UTC)
+
+	// Sunday is 6 days after Monday
+	sunday := monday.AddDate(0, 0, 6)
+	sunday = time.Date(sunday.Year(), sunday.Month(), sunday.Day(), 23, 59, 59, 0, time.UTC)
+
+	return monday, sunday
+}
+
+// generateWeekOptions generates the last N weeks as options
+func generateWeekOptions(numWeeks int) []types.WeekOption {
+	options := make([]types.WeekOption, numWeeks)
+	now := time.Now()
+
+	for i := 0; i < numWeeks; i++ {
+		// Go back i weeks
+		weekDate := now.AddDate(0, 0, -7*i)
+		start, end := getWeekBounds(weekDate)
+
+		label := ""
+		if i == 0 {
+			label = "This Week"
+		} else if i == 1 {
+			label = "Last Week"
+		} else {
+			label = start.Format("Jan 2") + " - " + end.Format("Jan 2")
+		}
+
+		options[i] = types.WeekOption{
+			Offset: i,
+			Label:  label,
+			Start:  start,
+			End:    end,
+		}
+	}
+	return options
+}
+
+func (h *Handler) GetWeeklyHours(c echo.Context) error {
+	// Get all available roles
+	allRoles, err := h.repo.AllRoles()
+	if err != nil {
+		h.logger.Error("error fetching roles", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch roles")
+	}
+
+	// Get selected roles from query params (default to all roles)
+	selectedRoles := c.QueryParams()["roles"]
+	if len(selectedRoles) == 0 {
+		selectedRoles = allRoles
+	}
+
+	// Get week offset from query param (default to 0 = this week)
+	weekOffset := 0
+	if weekParam := c.QueryParam("week"); weekParam != "" {
+		weekOffset, err = strconv.Atoi(weekParam)
+		if err != nil || weekOffset < 0 {
+			weekOffset = 0
+		}
+	}
+
+	// Generate week options (last 8 weeks)
+	weekOptions := generateWeekOptions(8)
+
+	// Calculate the date range for the selected week
+	selectedWeekDate := time.Now().AddDate(0, 0, -7*weekOffset)
+	startDate, endDate := getWeekBounds(selectedWeekDate)
+
+	fmt.Printf("start: %s end: %s", startDate.String(), endDate.String())
+	data, err := h.repo.DailyHoursByRole(selectedRoles, startDate, endDate)
+	if err != nil {
+		h.logger.Error("error fetching weekly hours", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch weekly hours")
+	}
+
+	if wantsHTML(c) {
+		return pages.WeeklyHours(data, allRoles, selectedRoles, weekOptions, weekOffset).Render(c.Request().Context(), c.Response().Writer)
 	}
 
 	return c.JSON(http.StatusOK, data)

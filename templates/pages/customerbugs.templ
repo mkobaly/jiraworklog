@@ -156,7 +156,7 @@ templ customerBugsChartScript() {
 			window.location.href = '/reports/customer-bugs' + (queryString ? '?' + queryString : '');
 		}
 
-		(function() {
+		function initCustomerBugsChart() {
 			const chartDataEl = document.getElementById('chartData');
 			if (!chartDataEl) return;
 			const chartData = JSON.parse(chartDataEl.dataset.chart);
@@ -294,7 +294,17 @@ templ customerBugsChartScript() {
 					}
 				}
 			});
-		})();
+		}
+
+		// Wait for Chart.js to be available before initializing
+		function waitForChart() {
+			if (typeof Chart !== 'undefined') {
+				initCustomerBugsChart();
+			} else {
+				setTimeout(waitForChart, 50);
+			}
+		}
+		waitForChart();
 	</script>
 }
 
