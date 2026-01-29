@@ -517,8 +517,13 @@ func (h *Handler) GetProjectChargeHours(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch project charge hours")
 	}
 
+	// Get grouping options from query params
+	groupByDate := c.QueryParam("groupByDate") == "true"
+	groupByEmployee := c.QueryParam("groupByEmployee") == "true"
+	groupByRole := c.QueryParam("groupByRole") != "false" // Default to true
+
 	if wantsHTML(c) {
-		return pages.ProjectChargeHoursPage(data).Render(c.Request().Context(), c.Response().Writer)
+		return pages.ProjectChargeHoursPage(data, groupByDate, groupByEmployee, groupByRole).Render(c.Request().Context(), c.Response().Writer)
 	}
 
 	return c.JSON(http.StatusOK, data)

@@ -299,6 +299,8 @@ type Project struct {
 type ProjectChargeHours struct {
 	Project       string         `db:"project"`
 	ProjectCharge string         `db:"projectcharge"`
+	YearMonth     string         `db:"yearmonth"`
+	IsEmployee    bool           `db:"isemployee"`
 	Role          sql.NullString `db:"role"`
 	Hours         float64        `db:"hours"`
 }

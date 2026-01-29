@@ -206,15 +206,17 @@ func (s *Postgres) ProjectChargeHours() ([]types.ProjectChargeHours, error) {
 		SELECT
 			p.name as project,
 			j.projectcharge,
+			to_char(w.date, 'YYYY-MM') AS yearmonth,
 			NULLIF(per.role, 'UNKNOWN') as role,
+			per.isemployee,
 			SUM(w.timespenthours) as hours
 		FROM worklog w
-		JOIN issue j ON w.issueid = j.id
-		JOIN project p ON j.projectcharge = ANY(p.projectcharge)
-		LEFT JOIN people per ON w.author = per.name
+				JOIN issue j ON w.issueid = j.id
+				JOIN project p ON j.projectcharge = ANY(p.projectcharge)
+				LEFT JOIN people per ON w.author = per.name
 		WHERE p.visible = true
-		GROUP BY p.name, j.projectcharge, per.role
-		ORDER BY p.name, j.projectcharge, per.role;`)
+		GROUP BY p.name, j.projectcharge, to_char(w.date, 'YYYY-MM'), per.role, per.isemployee
+		ORDER BY p.name, j.projectcharge;`)
 	return result, err
 }
 
