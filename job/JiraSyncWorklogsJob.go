@@ -17,14 +17,20 @@ type JiraSyncWorklogsJob struct {
 	cfg  *jiraworklog.Config
 	jira jiraworklog.JiraReader
 	repo repository.Repo
+	tz   *time.Location
 	//logger *slog.Logger
 }
 
 func NewJiraSyncWorklogsJob(cfg *jiraworklog.Config, jira jiraworklog.JiraReader, repo repository.Repo) *JiraSyncWorklogsJob {
+	nyc, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		panic(err)
+	}
 	return &JiraSyncWorklogsJob{
 		cfg:  cfg,
 		jira: jira,
 		repo: repo,
+		tz:   nyc,
 		//logger: logger,
 	}
 }
@@ -77,20 +83,22 @@ func (j *JiraSyncWorklogsJob) Run() error {
 		return nil //nothing to do
 	}
 
-	details, err := j.jira.WorklogDetails(ids)
-	if err != nil {
-		return errors.Wrap(err, "failed to fetch worklog details")
-	}
-
-	for _, wd := range details {
-		if !j.okToProcess(wd, j.cfg.UserList) {
-			continue
-		}
-		worklog := types.ToModel(wd)
-
-		err = j.repo.SaveWorklog(worklog)
+	if len(ids) > 0 {
+		details, err := j.jira.WorklogDetails(ids)
 		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("error saving worklog %d", worklog.IssueId))
+			return errors.Wrap(err, "failed to fetch worklog details")
+		}
+
+		for _, wd := range details {
+			if !j.okToProcess(wd, j.cfg.UserList) {
+				continue
+			}
+			worklog := types.ToModel(wd, j.tz)
+
+			err = j.repo.SaveWorklog(worklog)
+			if err != nil {
+				return errors.Wrap(err, fmt.Sprintf("error saving worklog %d", worklog.IssueId))
+			}
 		}
 	}
 

@@ -2,6 +2,7 @@ package test
 
 import (
 	"testing"
+	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/mkobaly/jiraworklog"
@@ -57,6 +58,97 @@ func TestBulkIssueFetchSaveToDB(t *testing.T) {
 		err := repo.UpdateIssue(&issue)
 		if err != nil {
 			t.Fatal("error updating issue")
+		}
+	}
+}
+
+func TestWorklogMapping(t *testing.T) {
+	local, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		panic(err)
+	}
+
+	wl := jiraworklog.Worklog{
+		ID:               "444",
+		IssueID:          "555",
+		TimeSpentSeconds: 6000,
+		Started:          "2026-01-23T21:11:00.000-0600",
+		Author: struct {
+			Self       string "json:\"self\""
+			AccountID  string "json:\"accountId\""
+			AvatarUrls struct {
+				Four8X48  string "json:\"48x48\""
+				Two4X24   string "json:\"24x24\""
+				One6X16   string "json:\"16x16\""
+				Three2X32 string "json:\"32x32\""
+			} "json:\"avatarUrls\""
+			DisplayName string "json:\"displayName\""
+			Active      bool   "json:\"active\""
+			TimeZone    string "json:\"timeZone\""
+			AccountType string "json:\"accountType\""
+		}{
+			DisplayName: "bobsmith",
+		},
+	}
+	model := types.ToModel(wl, local)
+	require.Equal(t, 23, model.Date.Day())
+	require.Equal(t, "Friday", model.WeekDay)
+}
+
+func TestWorklogStartDateValid(t *testing.T) {
+	cfg, err := jiraworklog.LoadConfig("../bin/config.yaml")
+	if err != nil {
+		t.Fail()
+	}
+
+	local, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		panic(err)
+	}
+
+	jira := jiraworklog.NewJira(cfg)
+	ids := []int{304819}
+	worklogs, err := jira.WorklogDetails(ids)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(worklogs))
+
+	// repo, err := repository.NewPostgresRepo(cfg)
+	// if err != nil {
+	// 	t.Fatal("unable to get postgres repo")
+	// }
+	for _, w := range worklogs {
+		wl := types.ToModel(w, local)
+		require.Equal(t, 23, wl.Date.Day())
+		require.Equal(t, "Friday", wl.Date.Weekday().String())
+	}
+}
+
+func TestWorklogFetchAndSave(t *testing.T) {
+	cfg, err := jiraworklog.LoadConfig("../bin/config.yaml")
+	if err != nil {
+		t.Fail()
+	}
+
+	local, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		panic(err)
+	}
+
+	jira := jiraworklog.NewJira(cfg)
+	ids := []int{304819}
+	worklogs, err := jira.WorklogDetails(ids)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(worklogs))
+
+	repo, err := repository.NewPostgresRepo(cfg)
+	if err != nil {
+		t.Fatal("unable to get postgres repo")
+	}
+	for _, w := range worklogs {
+		wl := types.ToModel(w, local)
+		err = repo.SaveWorklog(wl)
+		if err != nil {
+			t.Fatal("unable to save worklog to postgres")
 		}
 	}
 }

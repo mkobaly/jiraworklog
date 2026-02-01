@@ -119,13 +119,11 @@ func main() {
 	e.GET("/dashboard", handler.Dashboard)
 
 	// Worklog routes
-	e.GET("/worklogs", handler.GetWorkLogs)
 	e.GET("/worklogs/groupby", handler.GetWorklogsGroupBy)
 	e.GET("/worklogs/perdev", handler.GetWorklogsPerDev)
 	e.GET("/worklogs/perdevweek", handler.GetWorklogsPerDevWeek)
 
 	// Issue routes
-	e.GET("/issues", handler.GetIssues)
 	e.GET("/issues/groupby", handler.GetIssuesGroupedBy)
 	e.GET("/issues/accuracy", handler.GetIssueAccuracy)
 
@@ -134,6 +132,7 @@ func main() {
 	e.GET("/reports/missing-charge", handler.GetIssuesMissingProjectCharge)
 	e.GET("/reports/customer-bugs", handler.GetCustomerBugs)
 	e.GET("/reports/project-hours", handler.GetProjectChargeHours)
+	e.GET("/reports/project-hours/csv", handler.GetProjectChargeHoursCSV)
 	e.GET("/reports/weekly-hours", handler.GetWeeklyHours)
 
 	// Settings routes

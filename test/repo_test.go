@@ -25,21 +25,6 @@ func GetTestConfig() (*jiraworklog.Config, error) {
 	return cfg, nil
 }
 
-func TestFetch(t *testing.T) {
-	cfg, err := GetTestConfig()
-	if err != nil {
-		t.Fail()
-	}
-	repo, err := repository.NewPostgresRepo(cfg)
-	if err != nil {
-		t.Fail()
-	}
-	_, err = repo.NonResolvedIssues()
-	if err != nil {
-		t.Error("Error executing repository.Fetch()", err.Error())
-	}
-}
-
 func TestMaintenanceRatio(t *testing.T) {
 	cfg, err := GetTestConfig()
 	if err != nil {

@@ -172,7 +172,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, g
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"mb-6\"><h1 class=\"text-3xl font-bold text-gray-900\">Project Charge Hours</h1><p class=\"text-gray-600 mt-2\">Hours worked per project charge</p></div><!-- Grouping Options --> <div class=\"mb-6 bg-white rounded-lg shadow-md p-4\"><div class=\"flex flex-wrap items-center gap-6\"><span class=\"text-sm font-medium text-gray-700\">Group by:</span> <label class=\"flex items-center cursor-pointer\"><input type=\"checkbox\" id=\"groupByDate\" class=\"h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500\" onchange=\"applyGrouping()\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"mb-6\"><h1 class=\"text-3xl font-bold text-gray-900\">Project Charge Hours</h1><p class=\"text-gray-600 mt-2\">Hours worked per project charge</p></div><!-- Grouping Options --> <div class=\"mb-6 bg-white rounded-lg shadow-md p-4\"><div class=\"flex flex-wrap items-center justify-between gap-4\"><div class=\"flex flex-wrap items-center gap-6\"><span class=\"text-sm font-medium text-gray-700\">Group by:</span> <label class=\"flex items-center cursor-pointer\"><input type=\"checkbox\" id=\"groupByDate\" class=\"h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500\" onchange=\"applyGrouping()\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -192,7 +192,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, g
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "> <span class=\"ml-2 text-sm text-gray-700\">Employee Status</span></label> <label class=\"flex items-center cursor-pointer\"><input type=\"checkbox\" id=\"groupByRole\" class=\"h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500\" onchange=\"applyGrouping()\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "> <span class=\"ml-2 text-sm text-gray-700\">Employee Type</span></label> <label class=\"flex items-center cursor-pointer\"><input type=\"checkbox\" id=\"groupByRole\" class=\"h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500\" onchange=\"applyGrouping()\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -202,7 +202,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, g
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "> <span class=\"ml-2 text-sm text-gray-700\">Role</span></label></div></div><script>\n\t\t\tfunction applyGrouping() {\n\t\t\t\tconst groupByDate = document.getElementById('groupByDate').checked;\n\t\t\t\tconst groupByEmployee = document.getElementById('groupByEmployee').checked;\n\t\t\t\tconst groupByRole = document.getElementById('groupByRole').checked;\n\n\t\t\t\tconst params = new URLSearchParams();\n\t\t\t\tif (groupByDate) params.set('groupByDate', 'true');\n\t\t\t\tif (groupByEmployee) params.set('groupByEmployee', 'true');\n\t\t\t\tif (!groupByRole) params.set('groupByRole', 'false');\n\n\t\t\t\tconst queryString = params.toString();\n\t\t\t\twindow.location.href = '/reports/project-hours' + (queryString ? '?' + queryString : '');\n\t\t\t}\n\t\t</script> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "> <span class=\"ml-2 text-sm text-gray-700\">Role</span></label></div><button onclick=\"exportCSV()\" class=\"inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500\"><svg class=\"w-4 h-4 mr-2\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z\"></path></svg> Export CSV</button></div></div><script>\n\t\t\tfunction applyGrouping() {\n\t\t\t\tconst groupByDate = document.getElementById('groupByDate').checked;\n\t\t\t\tconst groupByEmployee = document.getElementById('groupByEmployee').checked;\n\t\t\t\tconst groupByRole = document.getElementById('groupByRole').checked;\n\n\t\t\t\tconst params = new URLSearchParams();\n\t\t\t\tif (groupByDate) params.set('groupByDate', 'true');\n\t\t\t\tif (groupByEmployee) params.set('groupByEmployee', 'true');\n\t\t\t\tif (!groupByRole) params.set('groupByRole', 'false');\n\n\t\t\t\tconst queryString = params.toString();\n\t\t\t\twindow.location.href = '/reports/project-hours' + (queryString ? '?' + queryString : '');\n\t\t\t}\n\n\t\t\tfunction exportCSV() {\n\t\t\t\tconst groupByDate = document.getElementById('groupByDate').checked;\n\t\t\t\tconst groupByEmployee = document.getElementById('groupByEmployee').checked;\n\t\t\t\tconst groupByRole = document.getElementById('groupByRole').checked;\n\n\t\t\t\tconst params = new URLSearchParams();\n\t\t\t\tif (groupByDate) params.set('groupByDate', 'true');\n\t\t\t\tif (groupByEmployee) params.set('groupByEmployee', 'true');\n\t\t\t\tif (!groupByRole) params.set('groupByRole', 'false');\n\n\t\t\t\tconst queryString = params.toString();\n\t\t\t\twindow.location.href = '/reports/project-hours/csv' + (queryString ? '?' + queryString : '');\n\t\t\t}\n\t\t</script> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -224,7 +224,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, g
 					var templ_7745c5c3_Var3 string
 					templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(project.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 211, Col: 55}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 236, Col: 55}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 					if templ_7745c5c3_Err != nil {
@@ -237,7 +237,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, g
 					var templ_7745c5c3_Var4 string
 					templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(formatHours(project.Total))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 212, Col: 67}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 237, Col: 67}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 					if templ_7745c5c3_Err != nil {
@@ -283,7 +283,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, g
 								var templ_7745c5c3_Var5 string
 								templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(charge.DetailRows)))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 236, Col: 103}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 261, Col: 103}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 								if templ_7745c5c3_Err != nil {
@@ -296,7 +296,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, g
 								var templ_7745c5c3_Var6 string
 								templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(charge.Name)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 237, Col: 73}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 262, Col: 73}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 								if templ_7745c5c3_Err != nil {
@@ -309,7 +309,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, g
 								var templ_7745c5c3_Var7 string
 								templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(formatHours(charge.Total))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 238, Col: 85}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 263, Col: 85}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 								if templ_7745c5c3_Err != nil {
@@ -328,7 +328,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, g
 								var templ_7745c5c3_Var8 string
 								templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(detail.YearMonth)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 243, Col: 31}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 268, Col: 31}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 								if templ_7745c5c3_Err != nil {
@@ -374,7 +374,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, g
 							var templ_7745c5c3_Var9 string
 							templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(formatHours(detail.Hours))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 257, Col: 39}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 282, Col: 39}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 							if templ_7745c5c3_Err != nil {
@@ -403,7 +403,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, g
 					var templ_7745c5c3_Var10 string
 					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(project.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 274, Col: 57}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 299, Col: 57}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 					if templ_7745c5c3_Err != nil {
@@ -416,7 +416,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, g
 					var templ_7745c5c3_Var11 string
 					templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(formatHours(project.Total))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 275, Col: 69}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 300, Col: 69}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 					if templ_7745c5c3_Err != nil {
@@ -434,7 +434,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, g
 						var templ_7745c5c3_Var12 string
 						templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(charge.Name)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 282, Col: 71}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 307, Col: 71}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 						if templ_7745c5c3_Err != nil {
@@ -447,7 +447,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, g
 						var templ_7745c5c3_Var13 string
 						templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(formatHours(charge.Total))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 283, Col: 87}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 308, Col: 87}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 						if templ_7745c5c3_Err != nil {
@@ -470,7 +470,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, g
 								var templ_7745c5c3_Var14 string
 								templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(detail.YearMonth)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 290, Col: 68}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 315, Col: 68}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 								if templ_7745c5c3_Err != nil {
@@ -500,7 +500,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, g
 							var templ_7745c5c3_Var15 string
 							templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(formatHours(detail.Hours))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 299, Col: 67}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 324, Col: 67}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 							if templ_7745c5c3_Err != nil {
@@ -528,7 +528,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, g
 				var templ_7745c5c3_Var16 string
 				templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", countUniqueProjects(data)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 316, Col: 98}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 341, Col: 98}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 				if templ_7745c5c3_Err != nil {
@@ -541,7 +541,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, g
 				var templ_7745c5c3_Var17 string
 				templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(formatHours(totalHours(data)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 320, Col: 84}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 345, Col: 84}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 				if templ_7745c5c3_Err != nil {
@@ -554,7 +554,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, g
 				var templ_7745c5c3_Var18 string
 				templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", countUniqueCharges(data)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 324, Col: 99}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 349, Col: 99}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 				if templ_7745c5c3_Err != nil {
@@ -625,7 +625,7 @@ func roleBadge(role string) templ.Component {
 			var templ_7745c5c3_Var20 string
 			templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(role)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 343, Col: 80}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 368, Col: 80}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 			if templ_7745c5c3_Err != nil {

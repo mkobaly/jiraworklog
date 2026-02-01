@@ -26,29 +26,6 @@ func NewPostgresRepo(cfg *jiraworklog.Config) (*Postgres, error) {
 	return repo, nil
 }
 
-// NonResolvedIssues gets all issue keys that are not resolved yet
-func (s *Postgres) NonResolvedIssues() ([]types.ParentIssue, error) {
-	result := []types.ParentIssue{}
-	err := s.DB.Select(&result, `
-	SELECT
-		id,
-		"key",
-		type,
-		summary,
-		priority,
-		status,
-		project,
-		createdate,
-		resolveddate,
-		isresolved,
-		timespent,
-		originalestimate
-	FROM issue
-	WHERE isresolved = FALSE
-	AND dateinserted <= (NOW() AT TIME ZONE 'UTC') - INTERVAL '10 minutes';`)
-	return result, err
-}
-
 func (s *Postgres) MaitenanceRatio(roles []string) ([]types.MaitenanceRatio, error) {
 	result := []types.MaitenanceRatio{}
 
@@ -73,7 +50,7 @@ func (s *Postgres) MaitenanceRatio(roles []string) ([]types.MaitenanceRatio, err
 				JOIN issue i on w.issueid = i.id
 				WHERE i.projectcharge <> ''
 				AND i.projectcharge NOT ILIKE 'SS%'
-				AND date >= DATE '2024-01-01'
+				AND date >= date_trunc('month', CURRENT_DATE) - INTERVAL '2 years'
 				AND date < date_trunc('month', now() AT TIME ZONE 'UTC')
 				AND author IN (
 					SELECT name FROM people WHERE role = ANY($1)
@@ -237,7 +214,7 @@ func (s *Postgres) DailyHoursByRole(roles []string, startDate, endDate time.Time
 			SELECT
 				author,
 				p.role,
-				to_char(date, 'YYYY-MM-DD') AS date,
+				to_char((date AT TIME ZONE 'America/New_York'), 'YYYY-MM-DD') AS date,
 				timespenthours AS hours,
 				CASE
 					WHEN i.projectcharge = 'Non-Recoverable' THEN 'NR'
@@ -248,8 +225,8 @@ func (s *Postgres) DailyHoursByRole(roles []string, startDate, endDate time.Time
 			FROM worklog w
 			JOIN issue i ON w.issueid = i.id
 			JOIN people p ON w.author = p.name
-			WHERE w.date >= $2
-			AND w.date <= $3
+			WHERE w.date >= ($2 AT TIME ZONE 'America/New_York')
+			AND w.date < ($3 AT TIME ZONE 'America/New_York')
 			AND p.role = ANY($1)
 		) AS src
 		GROUP BY role, author, date
@@ -351,57 +328,6 @@ func (s *Postgres) UpdateIssue(issue *types.StoredIssue) error {
 // Close will close the database connection
 func (s *Postgres) Close() {
 	s.DB.Close()
-}
-
-// AllWorkLogs will return all of the work logs from SQL server
-func (s *Postgres) AllWorkLogs() ([]types.WorklogItem, error) {
-	result := []types.WorklogItem{}
-	err := s.DB.Select(&result, `
-		SELECT  [id]
-		,[author]
-		,[date]
-		,weekNumber
-		,weekDay
-		,[timeSpentSeconds]
-		,timeSpentHours
-		,[project]
-		,[issueId]
-		,[issueKey]
-		,[issueType]
-		,[issueSummary]
-		,[issuePriority]
-		,[issueStatus]
-		,[parentIssueId]
-		,[parentIssueKey]
-		,[parentIssueType]
-		,[parentIssueSummary]
-		,[parentIssuePriority]
-		,[parentIssueStatus]
-		FROM worklog`)
-	return result, err
-}
-
-// AllIssues will return all issues from SQL server
-func (s *Postgres) AllIssues() ([]types.ParentIssue, error) {
-	result := []types.ParentIssue{}
-	err := s.DB.Select(&result, `
-	SELECT
-		[id]
-		,[key]
-		,[type]
-		,[summary]
-		,[priority]
-		,[status]
-		,[project]
-		,[createDate]
-		,[resolvedDate]
-		,[isResolved]
-		,daysToResolve
-		,aggregateTimeSpent
-		,aggregateTimeOriginalEstimate
-		,developer
-	FROM [issue]`)
-	return result, err
 }
 
 // IssuesGroupedBy will return issues group by the given groupBy value going

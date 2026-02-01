@@ -17,12 +17,18 @@ import (
 type Handler struct {
 	repo   repository.Repo
 	logger *slog.Logger
+	tz     *time.Location
 }
 
 func NewHandler(r repository.Repo, l *slog.Logger) *Handler {
+	nyc, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		panic(err)
+	}
 	return &Handler{
 		repo:   r,
 		logger: l,
+		tz:     nyc,
 	}
 }
 
@@ -39,36 +45,6 @@ func wantsHTML(c echo.Context) bool {
 
 func (h *Handler) Dashboard(c echo.Context) error {
 	return pages.Dashboard().Render(c.Request().Context(), c.Response().Writer)
-}
-
-func (h *Handler) GetWorkLogs(c echo.Context) error {
-	wl, err := h.repo.AllWorkLogs()
-	if err != nil {
-		h.logger.Error("error fetching all worklogs", "error", err)
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch worklogs")
-	}
-
-	if wantsHTML(c) {
-		return pages.Worklogs(wl).Render(c.Request().Context(), c.Response().Writer)
-	}
-
-	// JSON response
-	return c.JSON(http.StatusOK, wl)
-}
-
-func (h *Handler) GetIssues(c echo.Context) error {
-	issues, err := h.repo.AllIssues()
-	if err != nil {
-		h.logger.Error("error fetching all issues", "error", err)
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch issues")
-	}
-
-	if wantsHTML(c) {
-		return pages.Issues(issues).Render(c.Request().Context(), c.Response().Writer)
-	}
-
-	// JSON response
-	return c.JSON(http.StatusOK, issues)
 }
 
 func (h *Handler) GetIssuesGroupedBy(c echo.Context) error {
@@ -529,33 +505,121 @@ func (h *Handler) GetProjectChargeHours(c echo.Context) error {
 	return c.JSON(http.StatusOK, data)
 }
 
-// getWeekBounds returns the Monday (start) and Sunday (end) of the week
+func (h *Handler) GetProjectChargeHoursCSV(c echo.Context) error {
+	data, err := h.repo.ProjectChargeHours()
+	if err != nil {
+		h.logger.Error("error fetching project charge hours", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch project charge hours")
+	}
+
+	// Get grouping options from query params
+	groupByDate := c.QueryParam("groupByDate") == "true"
+	groupByEmployee := c.QueryParam("groupByEmployee") == "true"
+	groupByRole := c.QueryParam("groupByRole") != "false" // Default to true
+
+	// Build CSV content
+	var csv strings.Builder
+
+	// Write header
+	csv.WriteString("Project,Project Charge")
+	if groupByDate {
+		csv.WriteString(",Month")
+	}
+	if groupByEmployee {
+		csv.WriteString(",Employee Type")
+	}
+	if groupByRole {
+		csv.WriteString(",Role")
+	}
+	csv.WriteString(",Hours\n")
+
+	// Group and aggregate data based on options
+	type rowKey struct {
+		Project       string
+		ProjectCharge string
+		YearMonth     string
+		IsEmployee    bool
+		Role          string
+	}
+	aggregated := make(map[rowKey]float64)
+
+	for _, item := range data {
+		role := "Unknown"
+		if item.Role.Valid && item.Role.String != "" {
+			role = item.Role.String
+		}
+
+		key := rowKey{
+			Project:       item.Project,
+			ProjectCharge: item.ProjectCharge,
+		}
+		if groupByDate {
+			key.YearMonth = item.YearMonth
+		}
+		if groupByEmployee {
+			key.IsEmployee = item.IsEmployee
+		}
+		if groupByRole {
+			key.Role = role
+		}
+
+		aggregated[key] += item.Hours
+	}
+
+	// Write rows
+	for key, hours := range aggregated {
+		csv.WriteString(fmt.Sprintf("%q,%q", key.Project, key.ProjectCharge))
+		if groupByDate {
+			csv.WriteString(fmt.Sprintf(",%q", key.YearMonth))
+		}
+		if groupByEmployee {
+			employeeType := "Contractor"
+			if key.IsEmployee {
+				employeeType = "Employee"
+			}
+			csv.WriteString(fmt.Sprintf(",%q", employeeType))
+		}
+		if groupByRole {
+			csv.WriteString(fmt.Sprintf(",%q", key.Role))
+		}
+		csv.WriteString(fmt.Sprintf(",%.2f\n", hours))
+	}
+
+	// Set headers for CSV download
+	c.Response().Header().Set("Content-Type", "text/csv")
+	c.Response().Header().Set("Content-Disposition", "attachment; filename=project-charge-hours.csv")
+
+	return c.String(http.StatusOK, csv.String())
+}
+
+// getWeekBounds returns the Monday (start) and Monday (end) of the week
 // containing the given date
-func getWeekBounds(t time.Time) (time.Time, time.Time) {
+func getWeekBounds(t time.Time, tz *time.Location) (time.Time, time.Time) {
 	// Find Monday of the week
 	weekday := int(t.Weekday())
 	if weekday == 0 {
 		weekday = 7 // Sunday is 7, not 0
 	}
 	monday := t.AddDate(0, 0, -(weekday - 1))
-	monday = time.Date(monday.Year(), monday.Month(), monday.Day(), 0, 0, 0, 0, time.UTC)
+	monday = time.Date(monday.Year(), monday.Month(), monday.Day(), 0, 0, 0, 0, tz)
 
 	// Sunday is 6 days after Monday
-	sunday := monday.AddDate(0, 0, 6)
-	sunday = time.Date(sunday.Year(), sunday.Month(), sunday.Day(), 23, 59, 59, 0, time.UTC)
+	nextMonday := monday.AddDate(0, 0, 7)
+	nextMonday = time.Date(nextMonday.Year(), nextMonday.Month(), nextMonday.Day(), 0, 0, 0, 0, tz)
 
-	return monday, sunday
+	return monday, nextMonday
 }
 
 // generateWeekOptions generates the last N weeks as options
-func generateWeekOptions(numWeeks int) []types.WeekOption {
+func generateWeekOptions(numWeeks int, tz *time.Location) []types.WeekOption {
 	options := make([]types.WeekOption, numWeeks)
 	now := time.Now()
 
 	for i := 0; i < numWeeks; i++ {
 		// Go back i weeks
 		weekDate := now.AddDate(0, 0, -7*i)
-		start, end := getWeekBounds(weekDate)
+		start, end := getWeekBounds(weekDate, tz)
+		end = end.Add(time.Second * -1)
 
 		label := ""
 		if i == 0 {
@@ -600,11 +664,11 @@ func (h *Handler) GetWeeklyHours(c echo.Context) error {
 	}
 
 	// Generate week options (last 8 weeks)
-	weekOptions := generateWeekOptions(8)
+	weekOptions := generateWeekOptions(8, h.tz)
 
 	// Calculate the date range for the selected week
 	selectedWeekDate := time.Now().AddDate(0, 0, -7*weekOffset)
-	startDate, endDate := getWeekBounds(selectedWeekDate)
+	startDate, endDate := getWeekBounds(selectedWeekDate, h.tz)
 
 	fmt.Printf("start: %s end: %s", startDate.String(), endDate.String())
 	data, err := h.repo.DailyHoursByRole(selectedRoles, startDate, endDate)

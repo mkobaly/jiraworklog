@@ -140,44 +140,55 @@ templ ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, 
 
 		<!-- Grouping Options -->
 		<div class="mb-6 bg-white rounded-lg shadow-md p-4">
-			<div class="flex flex-wrap items-center gap-6">
-				<span class="text-sm font-medium text-gray-700">Group by:</span>
-				<label class="flex items-center cursor-pointer">
-					<input
-						type="checkbox"
-						id="groupByDate"
-						class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-						onchange="applyGrouping()"
-						if groupByDate {
-							checked
-						}
-					/>
-					<span class="ml-2 text-sm text-gray-700">Month</span>
-				</label>
-				<label class="flex items-center cursor-pointer">
-					<input
-						type="checkbox"
-						id="groupByEmployee"
-						class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-						onchange="applyGrouping()"
-						if groupByEmployee {
-							checked
-						}
-					/>
-					<span class="ml-2 text-sm text-gray-700">Employee Status</span>
-				</label>
-				<label class="flex items-center cursor-pointer">
-					<input
-						type="checkbox"
-						id="groupByRole"
-						class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-						onchange="applyGrouping()"
-						if groupByRole {
-							checked
-						}
-					/>
-					<span class="ml-2 text-sm text-gray-700">Role</span>
-				</label>
+			<div class="flex flex-wrap items-center justify-between gap-4">
+				<div class="flex flex-wrap items-center gap-6">
+					<span class="text-sm font-medium text-gray-700">Group by:</span>
+					<label class="flex items-center cursor-pointer">
+						<input
+							type="checkbox"
+							id="groupByDate"
+							class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+							onchange="applyGrouping()"
+							if groupByDate {
+								checked
+							}
+						/>
+						<span class="ml-2 text-sm text-gray-700">Month</span>
+					</label>
+					<label class="flex items-center cursor-pointer">
+						<input
+							type="checkbox"
+							id="groupByEmployee"
+							class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+							onchange="applyGrouping()"
+							if groupByEmployee {
+								checked
+							}
+						/>
+						<span class="ml-2 text-sm text-gray-700">Employee Type</span>
+					</label>
+					<label class="flex items-center cursor-pointer">
+						<input
+							type="checkbox"
+							id="groupByRole"
+							class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+							onchange="applyGrouping()"
+							if groupByRole {
+								checked
+							}
+						/>
+						<span class="ml-2 text-sm text-gray-700">Role</span>
+					</label>
+				</div>
+				<button
+					onclick="exportCSV()"
+					class="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+				>
+					<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+					</svg>
+					Export CSV
+				</button>
 			</div>
 		</div>
 
@@ -194,6 +205,20 @@ templ ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, 
 
 				const queryString = params.toString();
 				window.location.href = '/reports/project-hours' + (queryString ? '?' + queryString : '');
+			}
+
+			function exportCSV() {
+				const groupByDate = document.getElementById('groupByDate').checked;
+				const groupByEmployee = document.getElementById('groupByEmployee').checked;
+				const groupByRole = document.getElementById('groupByRole').checked;
+
+				const params = new URLSearchParams();
+				if (groupByDate) params.set('groupByDate', 'true');
+				if (groupByEmployee) params.set('groupByEmployee', 'true');
+				if (!groupByRole) params.set('groupByRole', 'false');
+
+				const queryString = params.toString();
+				window.location.href = '/reports/project-hours/csv' + (queryString ? '?' + queryString : '');
 			}
 		</script>
 

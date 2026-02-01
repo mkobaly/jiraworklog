@@ -52,13 +52,16 @@ type WorklogItem struct {
 }
 
 // ConvertToModels will take rest api results from JIRA and transform them into a model we can work with
-func ToModel(w jiraworklog.Worklog) *Worklog {
+func ToModel(w jiraworklog.Worklog, tz *time.Location) *Worklog {
 	id, _ := strconv.Atoi(w.ID)
 	started, _ := time.Parse("2006-01-02T15:04:05.000-0700", w.Started)
 	_, week := started.ISOWeek()
 	timespent := float64(w.TimeSpentSeconds) / 3600
 
 	issueId, _ := strconv.Atoi(w.IssueID)
+
+	//ensure all dates logged are EST (nyc) since that's what Jira reports does
+	started = started.In(tz)
 
 	worklogResult := &Worklog{
 		ID:               id,
