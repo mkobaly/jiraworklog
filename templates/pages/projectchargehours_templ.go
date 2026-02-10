@@ -33,10 +33,12 @@ type ChargeGroup struct {
 
 // DetailRow represents a row with optional grouping dimensions
 type DetailRow struct {
-	YearMonth  string
-	IsEmployee bool
-	Role       string
-	Hours      float64
+	YearMonth     string
+	IsEmployee    bool
+	Role          string
+	ProjectCharge string
+	Location      string
+	Hours         float64
 }
 
 // GroupingOptions holds the current grouping settings
@@ -44,6 +46,8 @@ type GroupingOptions struct {
 	ByDate     bool
 	ByEmployee bool
 	ByRole     bool
+	ByCharge   bool
+	ByLocation bool
 }
 
 func groupProjectChargeHours(data []types.ProjectChargeHours, opts GroupingOptions) []ProjectGroup {
@@ -62,16 +66,27 @@ func groupProjectChargeHours(data []types.ProjectChargeHours, opts GroupingOptio
 			projectOrder = append(projectOrder, item.Project)
 		}
 
+		// Determine charge group name based on ByCharge option
+		chargeGroupName := item.ProjectCharge
+		if !opts.ByCharge {
+			chargeGroupName = "All Project Charges"
+		}
+
 		// Initialize charge if needed
-		if _, exists := chargeMap[item.Project][item.ProjectCharge]; !exists {
-			chargeMap[item.Project][item.ProjectCharge] = &ChargeGroup{Name: item.ProjectCharge}
-			detailMap[item.Project][item.ProjectCharge] = make(map[string]*DetailRow)
+		if _, exists := chargeMap[item.Project][chargeGroupName]; !exists {
+			chargeMap[item.Project][chargeGroupName] = &ChargeGroup{Name: chargeGroupName}
+			detailMap[item.Project][chargeGroupName] = make(map[string]*DetailRow)
 		}
 
 		// Build grouping key based on options
 		role := "Unknown"
 		if item.Role.Valid && item.Role.String != "" {
 			role = item.Role.String
+		}
+
+		location := "Unknown"
+		if item.Location.Valid && item.Location.String != "" {
+			location = item.Location.String
 		}
 
 		var keyParts []string
@@ -87,6 +102,14 @@ func groupProjectChargeHours(data []types.ProjectChargeHours, opts GroupingOptio
 		if opts.ByRole {
 			keyParts = append(keyParts, role)
 		}
+		projectCharge := ""
+		if opts.ByCharge {
+			projectCharge = item.ProjectCharge
+			keyParts = append(keyParts, item.ProjectCharge)
+		}
+		if opts.ByLocation {
+			keyParts = append(keyParts, location)
+		}
 
 		key := strings.Join(keyParts, "|")
 		if key == "" {
@@ -94,18 +117,20 @@ func groupProjectChargeHours(data []types.ProjectChargeHours, opts GroupingOptio
 		}
 
 		// Aggregate hours for this key
-		if existing, exists := detailMap[item.Project][item.ProjectCharge][key]; exists {
+		if existing, exists := detailMap[item.Project][chargeGroupName][key]; exists {
 			existing.Hours += item.Hours
 		} else {
-			detailMap[item.Project][item.ProjectCharge][key] = &DetailRow{
-				YearMonth:  yearMonth,
-				IsEmployee: isEmployee,
-				Role:       role,
-				Hours:      item.Hours,
+			detailMap[item.Project][chargeGroupName][key] = &DetailRow{
+				YearMonth:     yearMonth,
+				IsEmployee:    isEmployee,
+				Role:          role,
+				ProjectCharge: projectCharge,
+				Location:      location,
+				Hours:         item.Hours,
 			}
 		}
 
-		chargeMap[item.Project][item.ProjectCharge].Total += item.Hours
+		chargeMap[item.Project][chargeGroupName].Total += item.Hours
 		projectMap[item.Project].Total += item.Hours
 	}
 
@@ -120,15 +145,21 @@ func groupProjectChargeHours(data []types.ProjectChargeHours, opts GroupingOptio
 			for _, detail := range detailMap[projectName][charge.Name] {
 				details = append(details, *detail)
 			}
-			// Sort by yearmonth, then employee status, then role
+			// Sort by yearmonth, then employee status, then role, then location
 			sort.Slice(details, func(i, j int) bool {
 				if details[i].YearMonth != details[j].YearMonth {
 					return details[i].YearMonth < details[j].YearMonth
 				}
+				if details[i].ProjectCharge != details[j].ProjectCharge {
+					return details[i].ProjectCharge < details[j].ProjectCharge
+				}
 				if details[i].IsEmployee != details[j].IsEmployee {
 					return details[i].IsEmployee // employees first
 				}
-				return details[i].Role < details[j].Role
+				if details[i].Role != details[j].Role {
+					return details[i].Role < details[j].Role
+				}
+				return details[i].Location < details[j].Location
 			})
 			charge.DetailRows = details
 			project.Charges = append(project.Charges, *charge)
@@ -139,7 +170,7 @@ func groupProjectChargeHours(data []types.ProjectChargeHours, opts GroupingOptio
 	return result
 }
 
-func ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, groupByEmployee bool, groupByRole bool) templ.Component {
+func ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, groupByEmployee bool, groupByRole bool, groupByCharge bool, groupByLocation bool) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -182,165 +213,191 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, g
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "> <span class=\"ml-2 text-sm text-gray-700\">Month</span></label> <label class=\"flex items-center cursor-pointer\"><input type=\"checkbox\" id=\"groupByEmployee\" class=\"h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500\" onchange=\"applyGrouping()\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "> <span class=\"ml-2 text-sm text-gray-700\">Month</span></label> <label class=\"flex items-center cursor-pointer\"><input type=\"checkbox\" id=\"groupByCharge\" class=\"h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500\" onchange=\"applyGrouping()\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if groupByEmployee {
+			if groupByCharge {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, " checked")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "> <span class=\"ml-2 text-sm text-gray-700\">Employee Type</span></label> <label class=\"flex items-center cursor-pointer\"><input type=\"checkbox\" id=\"groupByRole\" class=\"h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500\" onchange=\"applyGrouping()\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "> <span class=\"ml-2 text-sm text-gray-700\">Project Charge</span></label> <label class=\"flex items-center cursor-pointer\"><input type=\"checkbox\" id=\"groupByEmployee\" class=\"h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500\" onchange=\"applyGrouping()\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if groupByRole {
+			if groupByEmployee {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, " checked")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "> <span class=\"ml-2 text-sm text-gray-700\">Role</span></label></div><button onclick=\"exportCSV()\" class=\"inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500\"><svg class=\"w-4 h-4 mr-2\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z\"></path></svg> Export CSV</button></div></div><script>\n\t\t\tfunction applyGrouping() {\n\t\t\t\tconst groupByDate = document.getElementById('groupByDate').checked;\n\t\t\t\tconst groupByEmployee = document.getElementById('groupByEmployee').checked;\n\t\t\t\tconst groupByRole = document.getElementById('groupByRole').checked;\n\n\t\t\t\tconst params = new URLSearchParams();\n\t\t\t\tif (groupByDate) params.set('groupByDate', 'true');\n\t\t\t\tif (groupByEmployee) params.set('groupByEmployee', 'true');\n\t\t\t\tif (!groupByRole) params.set('groupByRole', 'false');\n\n\t\t\t\tconst queryString = params.toString();\n\t\t\t\twindow.location.href = '/reports/project-hours' + (queryString ? '?' + queryString : '');\n\t\t\t}\n\n\t\t\tfunction exportCSV() {\n\t\t\t\tconst groupByDate = document.getElementById('groupByDate').checked;\n\t\t\t\tconst groupByEmployee = document.getElementById('groupByEmployee').checked;\n\t\t\t\tconst groupByRole = document.getElementById('groupByRole').checked;\n\n\t\t\t\tconst params = new URLSearchParams();\n\t\t\t\tif (groupByDate) params.set('groupByDate', 'true');\n\t\t\t\tif (groupByEmployee) params.set('groupByEmployee', 'true');\n\t\t\t\tif (!groupByRole) params.set('groupByRole', 'false');\n\n\t\t\t\tconst queryString = params.toString();\n\t\t\t\twindow.location.href = '/reports/project-hours/csv' + (queryString ? '?' + queryString : '');\n\t\t\t}\n\t\t</script> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "> <span class=\"ml-2 text-sm text-gray-700\">Employee Type</span></label> <label class=\"flex items-center cursor-pointer\"><input type=\"checkbox\" id=\"groupByRole\" class=\"h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500\" onchange=\"applyGrouping()\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if groupByRole {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, " checked")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "> <span class=\"ml-2 text-sm text-gray-700\">Role</span></label> <label class=\"flex items-center cursor-pointer\"><input type=\"checkbox\" id=\"groupByLocation\" class=\"h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500\" onchange=\"applyGrouping()\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if groupByLocation {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, " checked")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "> <span class=\"ml-2 text-sm text-gray-700\">Location</span></label></div><button onclick=\"exportCSV()\" class=\"inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500\"><svg class=\"w-4 h-4 mr-2\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z\"></path></svg> Export CSV</button></div></div><script>\n\t\t\tfunction applyGrouping() {\n\t\t\t\tconst groupByDate = document.getElementById('groupByDate').checked;\n\t\t\t\tconst groupByCharge = document.getElementById('groupByCharge').checked;\n\t\t\t\tconst groupByEmployee = document.getElementById('groupByEmployee').checked;\n\t\t\t\tconst groupByRole = document.getElementById('groupByRole').checked;\n\t\t\t\tconst groupByLocation = document.getElementById('groupByLocation').checked;\n\n\t\t\t\tconst params = new URLSearchParams();\n\t\t\t\tif (groupByDate) params.set('groupByDate', 'true');\n\t\t\t\tif (!groupByCharge) params.set('groupByCharge', 'false');\n\t\t\t\tif (groupByEmployee) params.set('groupByEmployee', 'true');\n\t\t\t\tif (!groupByRole) params.set('groupByRole', 'false');\n\t\t\t\tif (groupByLocation) params.set('groupByLocation', 'true');\n\n\t\t\t\tconst queryString = params.toString();\n\t\t\t\twindow.location.href = '/reports/project-hours' + (queryString ? '?' + queryString : '');\n\t\t\t}\n\n\t\t\tfunction exportCSV() {\n\t\t\t\tconst groupByDate = document.getElementById('groupByDate').checked;\n\t\t\t\tconst groupByCharge = document.getElementById('groupByCharge').checked;\n\t\t\t\tconst groupByEmployee = document.getElementById('groupByEmployee').checked;\n\t\t\t\tconst groupByRole = document.getElementById('groupByRole').checked;\n\t\t\t\tconst groupByLocation = document.getElementById('groupByLocation').checked;\n\n\t\t\t\tconst params = new URLSearchParams();\n\t\t\t\tif (groupByDate) params.set('groupByDate', 'true');\n\t\t\t\tif (!groupByCharge) params.set('groupByCharge', 'false');\n\t\t\t\tif (groupByEmployee) params.set('groupByEmployee', 'true');\n\t\t\t\tif (!groupByRole) params.set('groupByRole', 'false');\n\t\t\t\tif (groupByLocation) params.set('groupByLocation', 'true');\n\n\t\t\t\tconst queryString = params.toString();\n\t\t\t\twindow.location.href = '/reports/project-hours/csv' + (queryString ? '?' + queryString : '');\n\t\t\t}\n\t\t</script> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if len(data) == 0 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<div class=\"bg-yellow-50 border-l-4 border-yellow-400 p-4\"><p class=\"text-yellow-700\">No project charge hours data found.</p></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<div class=\"bg-yellow-50 border-l-4 border-yellow-400 p-4\"><p class=\"text-yellow-700\">No project charge hours data found.</p></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<!-- Desktop view --> <div class=\"hidden md:block space-y-6\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<!-- Desktop view --> <div class=\"hidden md:block space-y-6\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				for _, project := range groupProjectChargeHours(data, GroupingOptions{ByDate: groupByDate, ByEmployee: groupByEmployee, ByRole: groupByRole}) {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<div class=\"bg-white rounded-lg shadow-md overflow-hidden\"><!-- Project header --><div class=\"bg-blue-600 text-white px-6 py-3 flex justify-between items-center\"><h2 class=\"text-lg font-semibold\">")
+				for _, project := range groupProjectChargeHours(data, GroupingOptions{ByDate: groupByDate, ByEmployee: groupByEmployee, ByRole: groupByRole, ByCharge: groupByCharge, ByLocation: groupByLocation}) {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<div class=\"bg-white rounded-lg shadow-md overflow-hidden\"><!-- Project header --><div class=\"bg-blue-600 text-white px-6 py-3 flex justify-between items-center\"><h2 class=\"text-lg font-semibold\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var3 string
 					templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(project.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 236, Col: 55}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 299, Col: 55}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</h2><span class=\"text-lg font-bold\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</h2><span class=\"text-lg font-bold\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var4 string
 					templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(formatHours(project.Total))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 237, Col: 67}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 300, Col: 67}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, " hrs</span></div><table class=\"min-w-full divide-y divide-gray-200\"><thead class=\"bg-gray-50\"><tr><th class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">Project Charge</th>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, " hrs</span></div><table class=\"min-w-full divide-y divide-gray-200\"><thead class=\"bg-gray-50\"><tr><th class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">Project Charge</th>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					if groupByDate {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<th class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">Month</th>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<th class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">Month</th>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
 					if groupByEmployee {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<th class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">Employee</th>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<th class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">Employee</th>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
 					if groupByRole {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<th class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">Role</th>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<th class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">Role</th>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<th class=\"px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider\">Hours</th></tr></thead> <tbody class=\"bg-white divide-y divide-gray-200\">")
+					if groupByLocation {
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<th class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">Location</th>")
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "<th class=\"px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider\">Hours</th></tr></thead> <tbody class=\"bg-white divide-y divide-gray-200\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					for _, charge := range project.Charges {
 						for i, detail := range charge.DetailRows {
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<tr class=\"hover:bg-gray-50\">")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<tr class=\"hover:bg-gray-50\">")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 							if i == 0 {
-								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<td class=\"px-6 py-3 whitespace-nowrap\" rowspan=\"")
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<td class=\"px-6 py-3 whitespace-nowrap\" rowspan=\"")
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
 								var templ_7745c5c3_Var5 string
 								templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(charge.DetailRows)))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 261, Col: 103}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 327, Col: 103}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
-								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\"><div class=\"text-sm font-medium text-gray-900\">")
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\"><div class=\"text-sm font-medium text-gray-900\">")
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
 								var templ_7745c5c3_Var6 string
 								templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(charge.Name)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 262, Col: 73}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 328, Col: 73}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
-								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</div><div class=\"text-xs text-gray-500\">Subtotal: ")
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</div><div class=\"text-xs text-gray-500\">Subtotal: ")
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
 								var templ_7745c5c3_Var7 string
 								templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(formatHours(charge.Total))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 263, Col: 85}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 329, Col: 85}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
-								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, " hrs</div></td>")
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, " hrs</div></td>")
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
 							}
 							if groupByDate {
-								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<td class=\"px-6 py-3 whitespace-nowrap text-sm text-gray-900\">")
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<td class=\"px-6 py-3 whitespace-nowrap text-sm text-gray-900\">")
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
 								var templ_7745c5c3_Var8 string
 								templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(detail.YearMonth)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 268, Col: 31}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 334, Col: 31}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
-								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</td>")
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "</td>")
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
 							}
 							if groupByEmployee {
-								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<td class=\"px-6 py-3 whitespace-nowrap\">")
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<td class=\"px-6 py-3 whitespace-nowrap\">")
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
@@ -348,13 +405,13 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, g
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
-								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</td>")
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</td>")
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
 							}
 							if groupByRole {
-								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<td class=\"px-6 py-3 whitespace-nowrap\">")
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<td class=\"px-6 py-3 whitespace-nowrap\">")
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
@@ -362,121 +419,135 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, g
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
-								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</td>")
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "</td>")
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
 							}
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<td class=\"px-6 py-3 whitespace-nowrap text-right text-sm text-gray-900\">")
+							if groupByLocation {
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<td class=\"px-6 py-3 whitespace-nowrap\">")
+								if templ_7745c5c3_Err != nil {
+									return templ_7745c5c3_Err
+								}
+								templ_7745c5c3_Err = locationBadge(detail.Location).Render(ctx, templ_7745c5c3_Buffer)
+								if templ_7745c5c3_Err != nil {
+									return templ_7745c5c3_Err
+								}
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</td>")
+								if templ_7745c5c3_Err != nil {
+									return templ_7745c5c3_Err
+								}
+							}
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<td class=\"px-6 py-3 whitespace-nowrap text-right text-sm text-gray-900\">")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 							var templ_7745c5c3_Var9 string
 							templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(formatHours(detail.Hours))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 282, Col: 39}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 353, Col: 39}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "</td></tr>")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</td></tr>")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</tbody></table></div>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "</tbody></table></div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "</div><!-- Mobile view --> <div class=\"md:hidden space-y-4\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "</div><!-- Mobile view --> <div class=\"md:hidden space-y-4\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				for _, project := range groupProjectChargeHours(data, GroupingOptions{ByDate: groupByDate, ByEmployee: groupByEmployee, ByRole: groupByRole}) {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<div class=\"bg-white rounded-lg shadow-md overflow-hidden\"><!-- Project header --><div class=\"bg-blue-600 text-white px-4 py-3 flex justify-between items-center\"><h2 class=\"text-base font-semibold\">")
+				for _, project := range groupProjectChargeHours(data, GroupingOptions{ByDate: groupByDate, ByEmployee: groupByEmployee, ByRole: groupByRole, ByCharge: groupByCharge, ByLocation: groupByLocation}) {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<div class=\"bg-white rounded-lg shadow-md overflow-hidden\"><!-- Project header --><div class=\"bg-blue-600 text-white px-4 py-3 flex justify-between items-center\"><h2 class=\"text-base font-semibold\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var10 string
 					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(project.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 299, Col: 57}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 370, Col: 57}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "</h2><span class=\"text-base font-bold\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "</h2><span class=\"text-base font-bold\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var11 string
 					templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(formatHours(project.Total))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 300, Col: 69}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 371, Col: 69}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, " hrs</span></div><div class=\"divide-y divide-gray-200\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, " hrs</span></div><div class=\"divide-y divide-gray-200\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					for _, charge := range project.Charges {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<div class=\"p-4\"><div class=\"flex justify-between items-start mb-2\"><span class=\"text-sm font-medium text-gray-900\">")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "<div class=\"p-4\"><div class=\"flex justify-between items-start mb-2\"><span class=\"text-sm font-medium text-gray-900\">")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 						var templ_7745c5c3_Var12 string
 						templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(charge.Name)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 307, Col: 71}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 378, Col: 71}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</span> <span class=\"text-sm font-semibold text-blue-600\">")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "</span> <span class=\"text-sm font-semibold text-blue-600\">")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 						var templ_7745c5c3_Var13 string
 						templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(formatHours(charge.Total))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 308, Col: 87}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 379, Col: 87}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, " hrs</span></div><div class=\"space-y-2\">")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, " hrs</span></div><div class=\"space-y-2\">")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 						for _, detail := range charge.DetailRows {
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<div class=\"flex flex-wrap justify-between items-center text-sm gap-1\"><div class=\"flex flex-wrap items-center gap-2\">")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "<div class=\"flex flex-wrap justify-between items-center text-sm gap-1\"><div class=\"flex flex-wrap items-center gap-2\">")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 							if groupByDate {
-								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<span class=\"text-xs text-gray-500\">")
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "<span class=\"text-xs text-gray-500\">")
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
 								var templ_7745c5c3_Var14 string
 								templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(detail.YearMonth)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 315, Col: 68}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 386, Col: 68}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
-								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "</span> ")
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "</span> ")
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}
@@ -493,74 +564,80 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, g
 									return templ_7745c5c3_Err
 								}
 							}
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "</div><span class=\"text-gray-700\">")
+							if groupByLocation {
+								templ_7745c5c3_Err = locationBadge(detail.Location).Render(ctx, templ_7745c5c3_Buffer)
+								if templ_7745c5c3_Err != nil {
+									return templ_7745c5c3_Err
+								}
+							}
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "</div><span class=\"text-gray-700\">")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 							var templ_7745c5c3_Var15 string
 							templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(formatHours(detail.Hours))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 324, Col: 67}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 398, Col: 67}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, " hrs</span></div>")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, " hrs</span></div>")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "</div></div>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "</div></div>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "</div></div>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "</div></div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "</div><!-- Summary stats --> <div class=\"mt-6 bg-white rounded-lg shadow-md p-6\"><h3 class=\"text-lg font-semibold text-gray-900 mb-4\">Summary</h3><div class=\"grid grid-cols-1 md:grid-cols-3 gap-4\"><div class=\"bg-blue-50 rounded-lg p-4\"><div class=\"text-sm text-blue-600 font-medium\">Total Projects</div><div class=\"text-2xl font-bold text-blue-900\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "</div><!-- Summary stats --> <div class=\"mt-6 bg-white rounded-lg shadow-md p-6\"><h3 class=\"text-lg font-semibold text-gray-900 mb-4\">Summary</h3><div class=\"grid grid-cols-1 md:grid-cols-3 gap-4\"><div class=\"bg-blue-50 rounded-lg p-4\"><div class=\"text-sm text-blue-600 font-medium\">Total Projects</div><div class=\"text-2xl font-bold text-blue-900\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var16 string
 				templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", countUniqueProjects(data)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 341, Col: 98}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 415, Col: 98}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "</div></div><div class=\"bg-green-50 rounded-lg p-4\"><div class=\"text-sm text-green-600 font-medium\">Total Hours</div><div class=\"text-2xl font-bold text-green-900\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "</div></div><div class=\"bg-green-50 rounded-lg p-4\"><div class=\"text-sm text-green-600 font-medium\">Total Hours</div><div class=\"text-2xl font-bold text-green-900\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var17 string
 				templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(formatHours(totalHours(data)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 345, Col: 84}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 419, Col: 84}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "</div></div><div class=\"bg-purple-50 rounded-lg p-4\"><div class=\"text-sm text-purple-600 font-medium\">Project Charges</div><div class=\"text-2xl font-bold text-purple-900\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "</div></div><div class=\"bg-purple-50 rounded-lg p-4\"><div class=\"text-sm text-purple-600 font-medium\">Project Charges</div><div class=\"text-2xl font-bold text-purple-900\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var18 string
 				templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", countUniqueCharges(data)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 349, Col: 99}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 423, Col: 99}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "</div></div></div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "</div></div></div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -598,40 +675,40 @@ func roleBadge(role string) templ.Component {
 		ctx = templ.ClearChildren(ctx)
 		switch role {
 		case "dev":
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "<span class=\"px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800\">dev</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "<span class=\"px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800\">dev</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		case "qa":
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "<span class=\"px-2 py-1 text-xs rounded-full bg-green-100 text-green-800\">qa</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "<span class=\"px-2 py-1 text-xs rounded-full bg-green-100 text-green-800\">qa</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		case "devOps":
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "<span class=\"px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-800\">devOps</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "<span class=\"px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-800\">devOps</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		case "mgmt":
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "<span class=\"px-2 py-1 text-xs rounded-full bg-orange-100 text-orange-800\">mgmt</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "<span class=\"px-2 py-1 text-xs rounded-full bg-orange-100 text-orange-800\">mgmt</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		default:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "<span class=\"px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "<span class=\"px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var20 string
 			templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(role)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 368, Col: 80}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 442, Col: 80}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -662,12 +739,61 @@ func employeeBadge(isEmployee bool) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		if isEmployee {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "<span class=\"px-2 py-1 text-xs rounded-full bg-green-100 text-green-800\">Employee</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "<span class=\"px-2 py-1 text-xs rounded-full bg-green-100 text-green-800\">Employee</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "<span class=\"px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800\">Contractor</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "<span class=\"px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800\">Contractor</span>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		return nil
+	})
+}
+
+func locationBadge(location string) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var22 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var22 == nil {
+			templ_7745c5c3_Var22 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		if location == "" || location == "Unknown" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "<span class=\"px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800\">Unknown</span>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "<span class=\"px-2 py-1 text-xs rounded-full bg-indigo-100 text-indigo-800\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var23 string
+			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(location)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 458, Col: 87}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

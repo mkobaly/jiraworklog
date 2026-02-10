@@ -71,7 +71,7 @@ func People(people []types.People, roles []string) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\" style=\"display:none;\"></div><!-- Search filter --> <div class=\"mb-4\"><div class=\"relative\"><input type=\"text\" id=\"search-filter\" class=\"w-full md:w-96 px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent\" placeholder=\"Search by name or role...\" oninput=\"filterPeople(this.value)\"> <svg class=\"absolute left-3 top-2.5 h-5 w-5 text-gray-400\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z\"></path></svg> <button type=\"button\" id=\"clear-search\" class=\"hidden absolute right-3 top-2.5 text-gray-400 hover:text-gray-600\" onclick=\"clearSearch()\"><svg class=\"h-5 w-5\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M6 18L18 6M6 6l12 12\"></path></svg></button></div><p id=\"filter-count\" class=\"text-sm text-gray-500 mt-1\"></p></div><!-- Success/Error message container --> <div id=\"message-container\" class=\"hidden mb-4\"><div id=\"success-message\" class=\"hidden bg-green-50 border-l-4 border-green-400 p-4\"><p class=\"text-green-700\">Role updated successfully!</p></div><div id=\"error-message\" class=\"hidden bg-red-50 border-l-4 border-red-400 p-4\"><p class=\"text-red-700\">Failed to update role. Please try again.</p></div></div><!-- Desktop table view --> <div class=\"hidden md:block bg-white rounded-lg shadow-md overflow-hidden\"><table class=\"min-w-full divide-y divide-gray-200\"><thead class=\"bg-gray-50\"><tr><th class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">Name</th><th class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">Role</th><th class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">Employee</th><th class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">Actions</th></tr></thead> <tbody class=\"bg-white divide-y divide-gray-200\" id=\"people-table-body\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\" style=\"display:none;\"></div><!-- Search filter --> <div class=\"mb-4\"><div class=\"relative\"><input type=\"text\" id=\"search-filter\" class=\"w-full md:w-96 px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent\" placeholder=\"Search by name or role...\" oninput=\"filterPeople(this.value)\"> <svg class=\"absolute left-3 top-2.5 h-5 w-5 text-gray-400\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z\"></path></svg> <button type=\"button\" id=\"clear-search\" class=\"hidden absolute right-3 top-2.5 text-gray-400 hover:text-gray-600\" onclick=\"clearSearch()\"><svg class=\"h-5 w-5\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M6 18L18 6M6 6l12 12\"></path></svg></button></div><p id=\"filter-count\" class=\"text-sm text-gray-500 mt-1\"></p></div><!-- Success/Error message container --> <div id=\"message-container\" class=\"hidden mb-4\"><div id=\"success-message\" class=\"hidden bg-green-50 border-l-4 border-green-400 p-4\"><p class=\"text-green-700\">Role updated successfully!</p></div><div id=\"error-message\" class=\"hidden bg-red-50 border-l-4 border-red-400 p-4\"><p class=\"text-red-700\">Failed to update role. Please try again.</p></div></div><!-- Desktop table view --> <div class=\"hidden md:block bg-white rounded-lg shadow-md overflow-hidden\"><table class=\"min-w-full divide-y divide-gray-200\"><thead class=\"bg-gray-50\"><tr><th class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">Name</th><th class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">Role</th><th class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">Employee</th><th class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">Location</th><th class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">Actions</th></tr></thead> <tbody class=\"bg-white divide-y divide-gray-200\" id=\"people-table-body\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -83,7 +83,7 @@ func People(people []types.People, roles []string) templ.Component {
 					var templ_7745c5c3_Var4 string
 					templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", person.Id))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 75, Col: 92}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 76, Col: 92}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 					if templ_7745c5c3_Err != nil {
@@ -96,7 +96,7 @@ func People(people []types.People, roles []string) templ.Component {
 					var templ_7745c5c3_Var5 string
 					templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(person.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 75, Col: 118}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 76, Col: 118}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 					if templ_7745c5c3_Err != nil {
@@ -109,7 +109,7 @@ func People(people []types.People, roles []string) templ.Component {
 					var templ_7745c5c3_Var6 string
 					templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(person.Role)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 75, Col: 144}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 76, Col: 144}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 					if templ_7745c5c3_Err != nil {
@@ -122,306 +122,384 @@ func People(people []types.People, roles []string) templ.Component {
 					var templ_7745c5c3_Var7 string
 					templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%t", person.IsEmployee))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 75, Col: 199}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 76, Col: 199}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\"><td class=\"px-6 py-4 whitespace-nowrap\"><div class=\"text-sm font-medium text-gray-900\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" data-location=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var8 string
-					templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(person.Name)
+					templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(person.GetLocation())
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 77, Col: 69}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 76, Col: 238}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</div></td><td class=\"px-6 py-4 whitespace-nowrap\"><div class=\"role-display\"><span class=\"role-text px-2 py-1 text-sm rounded-full bg-blue-100 text-blue-800\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\"><td class=\"px-6 py-4 whitespace-nowrap\"><div class=\"text-sm font-medium text-gray-900\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var9 string
-					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(person.Role)
+					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(person.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 81, Col: 104}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 78, Col: 69}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</span></div><div class=\"role-edit hidden\"><div class=\"relative\"><input type=\"text\" class=\"role-input w-48 px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500\" value=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</div></td><td class=\"px-6 py-4 whitespace-nowrap\"><div class=\"role-display\"><span class=\"role-text px-2 py-1 text-sm rounded-full bg-blue-100 text-blue-800\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var10 string
 					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(person.Role)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 88, Col: 31}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 82, Col: 104}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" list=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</span></div><div class=\"role-edit hidden\"><div class=\"relative\"><input type=\"text\" class=\"role-input w-48 px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500\" value=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var11 string
-					templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("roles-%d", person.Id))
+					templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(person.Role)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 89, Col: 53}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 89, Col: 31}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\" placeholder=\"Enter or select role\"> <datalist id=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\" list=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var12 string
 					templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("roles-%d", person.Id))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 92, Col: 60}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 90, Col: 53}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" placeholder=\"Enter or select role\"> <datalist id=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var13 string
+					templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("roles-%d", person.Id))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 93, Col: 60}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					for _, role := range roles {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<option value=\"")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<option value=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var13 string
-						templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(role)
+						var templ_7745c5c3_Var14 string
+						templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(role)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 94, Col: 33}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 95, Col: 33}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\"></option>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\"></option>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</datalist></div></div></td><td class=\"px-6 py-4 whitespace-nowrap\"><div class=\"employee-display\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</datalist></div></div></td><td class=\"px-6 py-4 whitespace-nowrap\"><div class=\"employee-display\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					if person.IsEmployee {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<span class=\"employee-badge px-2 py-1 text-sm rounded-full bg-green-100 text-green-800\">Yes</span>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<span class=\"employee-badge px-2 py-1 text-sm rounded-full bg-green-100 text-green-800\">Yes</span>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					} else {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<span class=\"employee-badge px-2 py-1 text-sm rounded-full bg-gray-100 text-gray-800\">No</span>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<span class=\"employee-badge px-2 py-1 text-sm rounded-full bg-gray-100 text-gray-800\">No</span>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</div><div class=\"employee-edit hidden\"><label class=\"relative inline-flex items-center cursor-pointer\"><input type=\"checkbox\" class=\"employee-checkbox sr-only peer\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</div><div class=\"employee-edit hidden\"><label class=\"relative inline-flex items-center cursor-pointer\"><input type=\"checkbox\" class=\"employee-checkbox sr-only peer\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					if person.IsEmployee {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, " checked")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, " checked")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "><div class=\"w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600\"></div></label></div></td><td class=\"px-6 py-4 whitespace-nowrap text-sm\"><button class=\"edit-btn text-blue-600 hover:text-blue-800 font-medium mr-3\" onclick=\"startEdit(this)\">Edit</button> <button class=\"save-btn hidden text-green-600 hover:text-green-800 font-medium mr-3\" onclick=\"saveRole(this)\">Save</button> <button class=\"cancel-btn hidden text-gray-600 hover:text-gray-800 font-medium\" onclick=\"cancelEdit(this)\">Cancel</button></td></tr>")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</tbody></table></div><!-- Mobile card view --> <div class=\"md:hidden space-y-4\" id=\"people-mobile-list\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				for _, person := range people {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<div class=\"bg-white rounded-lg shadow-md p-4 person-card\" data-person-id=\"")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var14 string
-					templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", person.Id))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 150, Col: 109}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\" data-name=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "><div class=\"w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600\"></div></label></div></td><td class=\"px-6 py-4 whitespace-nowrap\"><div class=\"location-display\"><span class=\"location-text text-sm text-gray-900\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var15 string
-					templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(person.Name)
+					templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(person.GetLocation())
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 150, Col: 135}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 124, Col: 82}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\" data-role=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</span></div><div class=\"location-edit hidden\"><input type=\"text\" class=\"location-input w-32 px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500\" value=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var16 string
-					templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(person.Role)
+					templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(person.GetLocation())
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 150, Col: 161}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 130, Col: 39}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\" data-employee=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\" placeholder=\"Enter location\"></div></td><td class=\"px-6 py-4 whitespace-nowrap text-sm\"><button class=\"edit-btn text-blue-600 hover:text-blue-800 font-medium mr-3\" onclick=\"startEdit(this)\">Edit</button> <button class=\"save-btn hidden text-green-600 hover:text-green-800 font-medium mr-3\" onclick=\"saveRole(this)\">Save</button> <button class=\"cancel-btn hidden text-gray-600 hover:text-gray-800 font-medium\" onclick=\"cancelEdit(this)\">Cancel</button></td></tr>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</tbody></table></div><!-- Mobile card view --> <div class=\"md:hidden space-y-4\" id=\"people-mobile-list\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				for _, person := range people {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<div class=\"bg-white rounded-lg shadow-md p-4 person-card\" data-person-id=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var17 string
-					templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%t", person.IsEmployee))
+					templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", person.Id))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 150, Col: 216}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 164, Col: 109}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "\"><div class=\"flex justify-between items-start mb-3\"><h3 class=\"text-lg font-semibold text-gray-900\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "\" data-name=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var18 string
 					templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(person.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 152, Col: 68}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 164, Col: 135}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "</h3></div><div class=\"mb-3\"><label class=\"text-xs text-gray-500 uppercase\">Role</label><div class=\"role-display mt-1\"><span class=\"role-text px-2 py-1 text-sm rounded-full bg-blue-100 text-blue-800\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "\" data-role=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var19 string
 					templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(person.Role)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 157, Col: 102}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 164, Col: 161}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</span></div><div class=\"role-edit hidden mt-1\"><input type=\"text\" class=\"role-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500\" value=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "\" data-employee=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var20 string
-					templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(person.Role)
+					templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%t", person.IsEmployee))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 163, Col: 28}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 164, Col: 216}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "\" list=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "\" data-location=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var21 string
-					templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("roles-mobile-%d", person.Id))
+					templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(person.GetLocation())
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 164, Col: 57}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 164, Col: 255}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\" placeholder=\"Enter or select role\"> <datalist id=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\"><div class=\"flex justify-between items-start mb-3\"><h3 class=\"text-lg font-semibold text-gray-900\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var22 string
-					templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("roles-mobile-%d", person.Id))
+					templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(person.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 167, Col: 64}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 166, Col: 68}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "</h3></div><div class=\"mb-3\"><label class=\"text-xs text-gray-500 uppercase\">Role</label><div class=\"role-display mt-1\"><span class=\"role-text px-2 py-1 text-sm rounded-full bg-blue-100 text-blue-800\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var23 string
+					templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(person.Role)
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 171, Col: 102}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</span></div><div class=\"role-edit hidden mt-1\"><input type=\"text\" class=\"role-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500\" value=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var24 string
+					templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(person.Role)
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 177, Col: 28}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "\" list=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var25 string
+					templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("roles-mobile-%d", person.Id))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 178, Col: 57}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "\" placeholder=\"Enter or select role\"> <datalist id=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var26 string
+					templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("roles-mobile-%d", person.Id))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 181, Col: 64}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					for _, role := range roles {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "<option value=\"")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<option value=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var23 string
-						templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(role)
+						var templ_7745c5c3_Var27 string
+						templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(role)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 169, Col: 30}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 183, Col: 30}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "\"></option>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "\"></option>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</datalist></div></div><div class=\"mb-3\"><label class=\"text-xs text-gray-500 uppercase\">Employee</label><div class=\"employee-display mt-1\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "</datalist></div></div><div class=\"mb-3\"><label class=\"text-xs text-gray-500 uppercase\">Employee</label><div class=\"employee-display mt-1\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					if person.IsEmployee {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "<span class=\"employee-badge px-2 py-1 text-sm rounded-full bg-green-100 text-green-800\">Yes</span>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "<span class=\"employee-badge px-2 py-1 text-sm rounded-full bg-green-100 text-green-800\">Yes</span>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					} else {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<span class=\"employee-badge px-2 py-1 text-sm rounded-full bg-gray-100 text-gray-800\">No</span>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "<span class=\"employee-badge px-2 py-1 text-sm rounded-full bg-gray-100 text-gray-800\">No</span>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "</div><div class=\"employee-edit hidden mt-1\"><label class=\"relative inline-flex items-center cursor-pointer\"><input type=\"checkbox\" class=\"employee-checkbox sr-only peer\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "</div><div class=\"employee-edit hidden mt-1\"><label class=\"relative inline-flex items-center cursor-pointer\"><input type=\"checkbox\" class=\"employee-checkbox sr-only peer\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					if person.IsEmployee {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, " checked")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, " checked")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "><div class=\"w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600\"></div><span class=\"ml-2 text-sm text-gray-700\">Employee</span></label></div></div><div class=\"flex space-x-3\"><button class=\"edit-btn px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm\" onclick=\"startEdit(this)\">Edit</button> <button class=\"save-btn hidden px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm\" onclick=\"saveRole(this)\">Save</button> <button class=\"cancel-btn hidden px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm\" onclick=\"cancelEdit(this)\">Cancel</button></div></div>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "><div class=\"w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600\"></div><span class=\"ml-2 text-sm text-gray-700\">Employee</span></label></div></div><div class=\"mb-3\"><label class=\"text-xs text-gray-500 uppercase\">Location</label><div class=\"location-display mt-1\"><span class=\"location-text text-sm text-gray-900\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var28 string
+					templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(person.GetLocation())
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 214, Col: 80}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "</span></div><div class=\"location-edit hidden mt-1\"><input type=\"text\" class=\"location-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500\" value=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var29 string
+					templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(person.GetLocation())
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 220, Col: 37}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "\" placeholder=\"Enter location\"></div></div><div class=\"flex space-x-3\"><button class=\"edit-btn px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm\" onclick=\"startEdit(this)\">Edit</button> <button class=\"save-btn hidden px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm\" onclick=\"saveRole(this)\">Save</button> <button class=\"cancel-btn hidden px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm\" onclick=\"cancelEdit(this)\">Cancel</button></div></div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "</div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "</div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -456,12 +534,12 @@ func peopleScript() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var24 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var24 == nil {
-			templ_7745c5c3_Var24 = templ.NopComponent
+		templ_7745c5c3_Var30 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var30 == nil {
+			templ_7745c5c3_Var30 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "<script>\r\n\t\t// Filter functionality\r\n\t\tfunction filterPeople(searchTerm) {\r\n\t\t\tconst term = searchTerm.toLowerCase().trim();\r\n\t\t\tconst clearBtn = document.getElementById('clear-search');\r\n\t\t\tconst filterCount = document.getElementById('filter-count');\r\n\r\n\t\t\t// Show/hide clear button\r\n\t\t\tif (term) {\r\n\t\t\t\tclearBtn.classList.remove('hidden');\r\n\t\t\t} else {\r\n\t\t\t\tclearBtn.classList.add('hidden');\r\n\t\t\t}\r\n\r\n\t\t\t// Filter table rows\r\n\t\t\tconst rows = document.querySelectorAll('.person-row');\r\n\t\t\tlet visibleCount = 0;\r\n\t\t\trows.forEach(row => {\r\n\t\t\t\tconst name = (row.dataset.name || '').toLowerCase();\r\n\t\t\t\tconst role = (row.dataset.role || '').toLowerCase();\r\n\t\t\t\tif (name.includes(term) || role.includes(term)) {\r\n\t\t\t\t\trow.classList.remove('hidden');\r\n\t\t\t\t\tvisibleCount++;\r\n\t\t\t\t} else {\r\n\t\t\t\t\trow.classList.add('hidden');\r\n\t\t\t\t}\r\n\t\t\t});\r\n\r\n\t\t\t// Filter mobile cards\r\n\t\t\tconst cards = document.querySelectorAll('.person-card');\r\n\t\t\tcards.forEach(card => {\r\n\t\t\t\tconst name = (card.dataset.name || '').toLowerCase();\r\n\t\t\t\tconst role = (card.dataset.role || '').toLowerCase();\r\n\t\t\t\tif (name.includes(term) || role.includes(term)) {\r\n\t\t\t\t\tcard.classList.remove('hidden');\r\n\t\t\t\t} else {\r\n\t\t\t\t\tcard.classList.add('hidden');\r\n\t\t\t\t}\r\n\t\t\t});\r\n\r\n\t\t\t// Update count\r\n\t\t\tconst totalCount = rows.length;\r\n\t\t\tif (term) {\r\n\t\t\t\tfilterCount.textContent = `Showing ${visibleCount} of ${totalCount} people`;\r\n\t\t\t} else {\r\n\t\t\t\tfilterCount.textContent = '';\r\n\t\t\t}\r\n\t\t}\r\n\r\n\t\tfunction clearSearch() {\r\n\t\t\tconst searchInput = document.getElementById('search-filter');\r\n\t\t\tsearchInput.value = '';\r\n\t\t\tfilterPeople('');\r\n\t\t\tsearchInput.focus();\r\n\t\t}\r\n\r\n\t\tfunction startEdit(btn) {\r\n\t\t\tconst container = btn.closest('[data-person-id]');\r\n\t\t\tcontainer.querySelector('.role-display').classList.add('hidden');\r\n\t\t\tcontainer.querySelector('.role-edit').classList.remove('hidden');\r\n\t\t\tcontainer.querySelector('.employee-display').classList.add('hidden');\r\n\t\t\tcontainer.querySelector('.employee-edit').classList.remove('hidden');\r\n\t\t\tcontainer.querySelector('.edit-btn').classList.add('hidden');\r\n\t\t\tcontainer.querySelector('.save-btn').classList.remove('hidden');\r\n\t\t\tcontainer.querySelector('.cancel-btn').classList.remove('hidden');\r\n\t\t\tcontainer.querySelector('.role-input').focus();\r\n\t\t}\r\n\r\n\t\tfunction cancelEdit(btn) {\r\n\t\t\tconst container = btn.closest('[data-person-id]');\r\n\t\t\tconst originalRole = container.querySelector('.role-text').textContent;\r\n\t\t\tconst originalEmployee = container.dataset.employee === 'true';\r\n\t\t\tcontainer.querySelector('.role-input').value = originalRole;\r\n\t\t\tcontainer.querySelector('.employee-checkbox').checked = originalEmployee;\r\n\t\t\tcontainer.querySelector('.role-display').classList.remove('hidden');\r\n\t\t\tcontainer.querySelector('.role-edit').classList.add('hidden');\r\n\t\t\tcontainer.querySelector('.employee-display').classList.remove('hidden');\r\n\t\t\tcontainer.querySelector('.employee-edit').classList.add('hidden');\r\n\t\t\tcontainer.querySelector('.edit-btn').classList.remove('hidden');\r\n\t\t\tcontainer.querySelector('.save-btn').classList.add('hidden');\r\n\t\t\tcontainer.querySelector('.cancel-btn').classList.add('hidden');\r\n\t\t}\r\n\r\n\t\tasync function saveRole(btn) {\r\n\t\t\tconst container = btn.closest('[data-person-id]');\r\n\t\t\tconst personId = container.dataset.personId;\r\n\t\t\tconst newRole = container.querySelector('.role-input').value.trim();\r\n\t\t\tconst newIsEmployee = container.querySelector('.employee-checkbox').checked;\r\n\r\n\t\t\tif (!newRole) {\r\n\t\t\t\tshowMessage('error', 'Role cannot be empty');\r\n\t\t\t\treturn;\r\n\t\t\t}\r\n\r\n\t\t\tbtn.disabled = true;\r\n\t\t\tbtn.textContent = 'Saving...';\r\n\r\n\t\t\ttry {\r\n\t\t\t\tconst response = await fetch('/settings/people/' + personId, {\r\n\t\t\t\t\tmethod: 'PUT',\r\n\t\t\t\t\theaders: {\r\n\t\t\t\t\t\t'Content-Type': 'application/json',\r\n\t\t\t\t\t},\r\n\t\t\t\t\tbody: JSON.stringify({ role: newRole, isEmployee: newIsEmployee })\r\n\t\t\t\t});\r\n\r\n\t\t\t\tif (response.ok) {\r\n\t\t\t\t\t// Update the role display and data attribute\r\n\t\t\t\t\tcontainer.querySelector('.role-text').textContent = newRole;\r\n\t\t\t\t\tcontainer.dataset.role = newRole;\r\n\r\n\t\t\t\t\t// Update the employee display and data attribute\r\n\t\t\t\t\tcontainer.dataset.employee = newIsEmployee.toString();\r\n\t\t\t\t\tconst employeeBadge = container.querySelector('.employee-badge');\r\n\t\t\t\t\tif (newIsEmployee) {\r\n\t\t\t\t\t\temployeeBadge.textContent = 'Yes';\r\n\t\t\t\t\t\temployeeBadge.className = 'employee-badge px-2 py-1 text-sm rounded-full bg-green-100 text-green-800';\r\n\t\t\t\t\t} else {\r\n\t\t\t\t\t\temployeeBadge.textContent = 'No';\r\n\t\t\t\t\t\temployeeBadge.className = 'employee-badge px-2 py-1 text-sm rounded-full bg-gray-100 text-gray-800';\r\n\t\t\t\t\t}\r\n\r\n\t\t\t\t\t// Reset to view mode\r\n\t\t\t\t\tcontainer.querySelector('.role-display').classList.remove('hidden');\r\n\t\t\t\t\tcontainer.querySelector('.role-edit').classList.add('hidden');\r\n\t\t\t\t\tcontainer.querySelector('.employee-display').classList.remove('hidden');\r\n\t\t\t\t\tcontainer.querySelector('.employee-edit').classList.add('hidden');\r\n\t\t\t\t\tcontainer.querySelector('.edit-btn').classList.remove('hidden');\r\n\t\t\t\t\tcontainer.querySelector('.save-btn').classList.add('hidden');\r\n\t\t\t\t\tcontainer.querySelector('.cancel-btn').classList.add('hidden');\r\n\r\n\t\t\t\t\tshowMessage('success', 'Changes saved successfully!');\r\n\r\n\t\t\t\t\t// Add new role to datalists if it's not already there\r\n\t\t\t\t\taddRoleToDatalist(newRole);\r\n\t\t\t\t} else {\r\n\t\t\t\t\tshowMessage('error', 'Failed to save changes. Please try again.');\r\n\t\t\t\t}\r\n\t\t\t} catch (error) {\r\n\t\t\t\tconsole.error('Error saving changes:', error);\r\n\t\t\t\tshowMessage('error', 'Failed to save changes. Please try again.');\r\n\t\t\t} finally {\r\n\t\t\t\tbtn.disabled = false;\r\n\t\t\t\tbtn.textContent = 'Save';\r\n\t\t\t}\r\n\t\t}\r\n\r\n\t\tfunction showMessage(type, text) {\r\n\t\t\tconst container = document.getElementById('message-container');\r\n\t\t\tconst successMsg = document.getElementById('success-message');\r\n\t\t\tconst errorMsg = document.getElementById('error-message');\r\n\r\n\t\t\tcontainer.classList.remove('hidden');\r\n\r\n\t\t\tif (type === 'success') {\r\n\t\t\t\tsuccessMsg.classList.remove('hidden');\r\n\t\t\t\tsuccessMsg.querySelector('p').textContent = text;\r\n\t\t\t\terrorMsg.classList.add('hidden');\r\n\t\t\t} else {\r\n\t\t\t\terrorMsg.classList.remove('hidden');\r\n\t\t\t\terrorMsg.querySelector('p').textContent = text;\r\n\t\t\t\tsuccessMsg.classList.add('hidden');\r\n\t\t\t}\r\n\r\n\t\t\t// Auto-hide after 3 seconds\r\n\t\t\tsetTimeout(() => {\r\n\t\t\t\tcontainer.classList.add('hidden');\r\n\t\t\t\tsuccessMsg.classList.add('hidden');\r\n\t\t\t\terrorMsg.classList.add('hidden');\r\n\t\t\t}, 3000);\r\n\t\t}\r\n\r\n\t\tfunction addRoleToDatalist(newRole) {\r\n\t\t\t// Get all datalists and add the new role if not present\r\n\t\t\tconst datalists = document.querySelectorAll('datalist');\r\n\t\t\tdatalists.forEach(datalist => {\r\n\t\t\t\tconst options = Array.from(datalist.options).map(opt => opt.value);\r\n\t\t\t\tif (!options.includes(newRole)) {\r\n\t\t\t\t\tconst option = document.createElement('option');\r\n\t\t\t\t\toption.value = newRole;\r\n\t\t\t\t\tdatalist.appendChild(option);\r\n\t\t\t\t}\r\n\t\t\t});\r\n\t\t}\r\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "<script>\r\n\t\t// Filter functionality\r\n\t\tfunction filterPeople(searchTerm) {\r\n\t\t\tconst term = searchTerm.toLowerCase().trim();\r\n\t\t\tconst clearBtn = document.getElementById('clear-search');\r\n\t\t\tconst filterCount = document.getElementById('filter-count');\r\n\r\n\t\t\t// Show/hide clear button\r\n\t\t\tif (term) {\r\n\t\t\t\tclearBtn.classList.remove('hidden');\r\n\t\t\t} else {\r\n\t\t\t\tclearBtn.classList.add('hidden');\r\n\t\t\t}\r\n\r\n\t\t\t// Filter table rows\r\n\t\t\tconst rows = document.querySelectorAll('.person-row');\r\n\t\t\tlet visibleCount = 0;\r\n\t\t\trows.forEach(row => {\r\n\t\t\t\tconst name = (row.dataset.name || '').toLowerCase();\r\n\t\t\t\tconst role = (row.dataset.role || '').toLowerCase();\r\n\t\t\t\tif (name.includes(term) || role.includes(term)) {\r\n\t\t\t\t\trow.classList.remove('hidden');\r\n\t\t\t\t\tvisibleCount++;\r\n\t\t\t\t} else {\r\n\t\t\t\t\trow.classList.add('hidden');\r\n\t\t\t\t}\r\n\t\t\t});\r\n\r\n\t\t\t// Filter mobile cards\r\n\t\t\tconst cards = document.querySelectorAll('.person-card');\r\n\t\t\tcards.forEach(card => {\r\n\t\t\t\tconst name = (card.dataset.name || '').toLowerCase();\r\n\t\t\t\tconst role = (card.dataset.role || '').toLowerCase();\r\n\t\t\t\tif (name.includes(term) || role.includes(term)) {\r\n\t\t\t\t\tcard.classList.remove('hidden');\r\n\t\t\t\t} else {\r\n\t\t\t\t\tcard.classList.add('hidden');\r\n\t\t\t\t}\r\n\t\t\t});\r\n\r\n\t\t\t// Update count\r\n\t\t\tconst totalCount = rows.length;\r\n\t\t\tif (term) {\r\n\t\t\t\tfilterCount.textContent = `Showing ${visibleCount} of ${totalCount} people`;\r\n\t\t\t} else {\r\n\t\t\t\tfilterCount.textContent = '';\r\n\t\t\t}\r\n\t\t}\r\n\r\n\t\tfunction clearSearch() {\r\n\t\t\tconst searchInput = document.getElementById('search-filter');\r\n\t\t\tsearchInput.value = '';\r\n\t\t\tfilterPeople('');\r\n\t\t\tsearchInput.focus();\r\n\t\t}\r\n\r\n\t\tfunction startEdit(btn) {\r\n\t\t\tconst container = btn.closest('[data-person-id]');\r\n\t\t\tcontainer.querySelector('.role-display').classList.add('hidden');\r\n\t\t\tcontainer.querySelector('.role-edit').classList.remove('hidden');\r\n\t\t\tcontainer.querySelector('.employee-display').classList.add('hidden');\r\n\t\t\tcontainer.querySelector('.employee-edit').classList.remove('hidden');\r\n\t\t\tcontainer.querySelector('.location-display').classList.add('hidden');\r\n\t\t\tcontainer.querySelector('.location-edit').classList.remove('hidden');\r\n\t\t\tcontainer.querySelector('.edit-btn').classList.add('hidden');\r\n\t\t\tcontainer.querySelector('.save-btn').classList.remove('hidden');\r\n\t\t\tcontainer.querySelector('.cancel-btn').classList.remove('hidden');\r\n\t\t\tcontainer.querySelector('.role-input').focus();\r\n\t\t}\r\n\r\n\t\tfunction cancelEdit(btn) {\r\n\t\t\tconst container = btn.closest('[data-person-id]');\r\n\t\t\tconst originalRole = container.querySelector('.role-text').textContent;\r\n\t\t\tconst originalEmployee = container.dataset.employee === 'true';\r\n\t\t\tconst originalLocation = container.dataset.location || '';\r\n\t\t\tcontainer.querySelector('.role-input').value = originalRole;\r\n\t\t\tcontainer.querySelector('.employee-checkbox').checked = originalEmployee;\r\n\t\t\tcontainer.querySelector('.location-input').value = originalLocation;\r\n\t\t\tcontainer.querySelector('.role-display').classList.remove('hidden');\r\n\t\t\tcontainer.querySelector('.role-edit').classList.add('hidden');\r\n\t\t\tcontainer.querySelector('.employee-display').classList.remove('hidden');\r\n\t\t\tcontainer.querySelector('.employee-edit').classList.add('hidden');\r\n\t\t\tcontainer.querySelector('.location-display').classList.remove('hidden');\r\n\t\t\tcontainer.querySelector('.location-edit').classList.add('hidden');\r\n\t\t\tcontainer.querySelector('.edit-btn').classList.remove('hidden');\r\n\t\t\tcontainer.querySelector('.save-btn').classList.add('hidden');\r\n\t\t\tcontainer.querySelector('.cancel-btn').classList.add('hidden');\r\n\t\t}\r\n\r\n\t\tasync function saveRole(btn) {\r\n\t\t\tconst container = btn.closest('[data-person-id]');\r\n\t\t\tconst personId = container.dataset.personId;\r\n\t\t\tconst newRole = container.querySelector('.role-input').value.trim();\r\n\t\t\tconst newIsEmployee = container.querySelector('.employee-checkbox').checked;\r\n\t\t\tconst newLocation = container.querySelector('.location-input').value.trim();\r\n\r\n\t\t\tif (!newRole) {\r\n\t\t\t\tshowMessage('error', 'Role cannot be empty');\r\n\t\t\t\treturn;\r\n\t\t\t}\r\n\r\n\t\t\tbtn.disabled = true;\r\n\t\t\tbtn.textContent = 'Saving...';\r\n\r\n\t\t\ttry {\r\n\t\t\t\tconst response = await fetch('/settings/people/' + personId, {\r\n\t\t\t\t\tmethod: 'PUT',\r\n\t\t\t\t\theaders: {\r\n\t\t\t\t\t\t'Content-Type': 'application/json',\r\n\t\t\t\t\t},\r\n\t\t\t\t\tbody: JSON.stringify({ role: newRole, isEmployee: newIsEmployee, location: newLocation })\r\n\t\t\t\t});\r\n\r\n\t\t\t\tif (response.ok) {\r\n\t\t\t\t\t// Update the role display and data attribute\r\n\t\t\t\t\tcontainer.querySelector('.role-text').textContent = newRole;\r\n\t\t\t\t\tcontainer.dataset.role = newRole;\r\n\r\n\t\t\t\t\t// Update the employee display and data attribute\r\n\t\t\t\t\tcontainer.dataset.employee = newIsEmployee.toString();\r\n\t\t\t\t\tconst employeeBadge = container.querySelector('.employee-badge');\r\n\t\t\t\t\tif (newIsEmployee) {\r\n\t\t\t\t\t\temployeeBadge.textContent = 'Yes';\r\n\t\t\t\t\t\temployeeBadge.className = 'employee-badge px-2 py-1 text-sm rounded-full bg-green-100 text-green-800';\r\n\t\t\t\t\t} else {\r\n\t\t\t\t\t\temployeeBadge.textContent = 'No';\r\n\t\t\t\t\t\temployeeBadge.className = 'employee-badge px-2 py-1 text-sm rounded-full bg-gray-100 text-gray-800';\r\n\t\t\t\t\t}\r\n\r\n\t\t\t\t\t// Update the location display and data attribute\r\n\t\t\t\t\tcontainer.querySelector('.location-text').textContent = newLocation;\r\n\t\t\t\t\tcontainer.dataset.location = newLocation;\r\n\r\n\t\t\t\t\t// Reset to view mode\r\n\t\t\t\t\tcontainer.querySelector('.role-display').classList.remove('hidden');\r\n\t\t\t\t\tcontainer.querySelector('.role-edit').classList.add('hidden');\r\n\t\t\t\t\tcontainer.querySelector('.employee-display').classList.remove('hidden');\r\n\t\t\t\t\tcontainer.querySelector('.employee-edit').classList.add('hidden');\r\n\t\t\t\t\tcontainer.querySelector('.location-display').classList.remove('hidden');\r\n\t\t\t\t\tcontainer.querySelector('.location-edit').classList.add('hidden');\r\n\t\t\t\t\tcontainer.querySelector('.edit-btn').classList.remove('hidden');\r\n\t\t\t\t\tcontainer.querySelector('.save-btn').classList.add('hidden');\r\n\t\t\t\t\tcontainer.querySelector('.cancel-btn').classList.add('hidden');\r\n\r\n\t\t\t\t\tshowMessage('success', 'Changes saved successfully!');\r\n\r\n\t\t\t\t\t// Add new role to datalists if it's not already there\r\n\t\t\t\t\taddRoleToDatalist(newRole);\r\n\t\t\t\t} else {\r\n\t\t\t\t\tshowMessage('error', 'Failed to save changes. Please try again.');\r\n\t\t\t\t}\r\n\t\t\t} catch (error) {\r\n\t\t\t\tconsole.error('Error saving changes:', error);\r\n\t\t\t\tshowMessage('error', 'Failed to save changes. Please try again.');\r\n\t\t\t} finally {\r\n\t\t\t\tbtn.disabled = false;\r\n\t\t\t\tbtn.textContent = 'Save';\r\n\t\t\t}\r\n\t\t}\r\n\r\n\t\tfunction showMessage(type, text) {\r\n\t\t\tconst container = document.getElementById('message-container');\r\n\t\t\tconst successMsg = document.getElementById('success-message');\r\n\t\t\tconst errorMsg = document.getElementById('error-message');\r\n\r\n\t\t\tcontainer.classList.remove('hidden');\r\n\r\n\t\t\tif (type === 'success') {\r\n\t\t\t\tsuccessMsg.classList.remove('hidden');\r\n\t\t\t\tsuccessMsg.querySelector('p').textContent = text;\r\n\t\t\t\terrorMsg.classList.add('hidden');\r\n\t\t\t} else {\r\n\t\t\t\terrorMsg.classList.remove('hidden');\r\n\t\t\t\terrorMsg.querySelector('p').textContent = text;\r\n\t\t\t\tsuccessMsg.classList.add('hidden');\r\n\t\t\t}\r\n\r\n\t\t\t// Auto-hide after 3 seconds\r\n\t\t\tsetTimeout(() => {\r\n\t\t\t\tcontainer.classList.add('hidden');\r\n\t\t\t\tsuccessMsg.classList.add('hidden');\r\n\t\t\t\terrorMsg.classList.add('hidden');\r\n\t\t\t}, 3000);\r\n\t\t}\r\n\r\n\t\tfunction addRoleToDatalist(newRole) {\r\n\t\t\t// Get all datalists and add the new role if not present\r\n\t\t\tconst datalists = document.querySelectorAll('datalist');\r\n\t\t\tdatalists.forEach(datalist => {\r\n\t\t\t\tconst options = Array.from(datalist.options).map(opt => opt.value);\r\n\t\t\t\tif (!options.includes(newRole)) {\r\n\t\t\t\t\tconst option = document.createElement('option');\r\n\t\t\t\t\toption.value = newRole;\r\n\t\t\t\t\tdatalist.appendChild(option);\r\n\t\t\t\t}\r\n\t\t\t});\r\n\t\t}\r\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

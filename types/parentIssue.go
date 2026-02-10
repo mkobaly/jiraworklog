@@ -262,10 +262,18 @@ func (mr MaitenanceRatio) Ratio() float32 {
 }
 
 type People struct {
-	Id         int    `db:"id"`
-	Name       string `db:"name"`
-	IsEmployee bool   `db:"isemployee"`
-	Role       string `db:"role"`
+	Id         int            `db:"id"`
+	Name       string         `db:"name"`
+	IsEmployee bool           `db:"isemployee"`
+	Role       string         `db:"role"`
+	Location   sql.NullString `db:"location"`
+}
+
+func (p People) GetLocation() string {
+	if p.Location.Valid {
+		return p.Location.String
+	}
+	return ""
 }
 
 // IssueMissingCharge represents an issue that has no project charge assigned
@@ -302,6 +310,7 @@ type ProjectChargeHours struct {
 	YearMonth     string         `db:"yearmonth"`
 	IsEmployee    bool           `db:"isemployee"`
 	Role          sql.NullString `db:"role"`
+	Location      sql.NullString `db:"location"`
 	Hours         float64        `db:"hours"`
 }
 

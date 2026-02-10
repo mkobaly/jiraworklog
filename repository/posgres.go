@@ -67,17 +67,17 @@ func (s *Postgres) MaitenanceRatio(roles []string) ([]types.MaitenanceRatio, err
 func (s *Postgres) People() ([]types.People, error) {
 	result := []types.People{}
 	err := s.DB.Select(&result, `	
-		SELECT id, name, isEmployee, role FROM people;`)
+		SELECT id, name, isEmployee, role, location FROM people order by name;`)
 	return result, err
 }
 
-func (s *Postgres) UpdatePerson(personId int, role string, isEmployee bool) error {
+func (s *Postgres) UpdatePerson(personId int, role string, isEmployee bool, location string) error {
 	stmt, err := s.DB.Prepare(`
-		UPDATE people SET role = $2, isEmployee = $3 WHERE id = $1`)
+		UPDATE people SET role = $2, isEmployee = $3, location = $4 WHERE id = $1`)
 	if err != nil {
 		log.Fatal(err)
 	}
-	_, err = stmt.Exec(personId, role, isEmployee)
+	_, err = stmt.Exec(personId, role, isEmployee, location)
 	return err
 }
 
@@ -181,18 +181,20 @@ func (s *Postgres) ProjectChargeHours() ([]types.ProjectChargeHours, error) {
 	result := []types.ProjectChargeHours{}
 	err := s.DB.Select(&result, `
 		SELECT
-			p.name as project,
-			j.projectcharge,
+			COALESCE(p.name, 'UNDEFINED') as project,
+			COALESCE(NULLIF(j.projectcharge, ''), 'PROJECT CHARGE MISSING') as projectcharge,
 			to_char(w.date, 'YYYY-MM') AS yearmonth,
 			NULLIF(per.role, 'UNKNOWN') as role,
 			per.isemployee,
+			per.location,
 			SUM(w.timespenthours) as hours
 		FROM worklog w
 				JOIN issue j ON w.issueid = j.id
-				JOIN project p ON j.projectcharge = ANY(p.projectcharge)
+				LEFT JOIN project p ON j.projectcharge = ANY(p.projectcharge)
 				LEFT JOIN people per ON w.author = per.name
-		WHERE p.visible = true
-		GROUP BY p.name, j.projectcharge, to_char(w.date, 'YYYY-MM'), per.role, per.isemployee
+		WHERE w.date >= now() - INTERVAL '13 months'
+		AND COALESCE(p.visible, true)  = true
+		GROUP BY p.name, j.projectcharge, to_char(w.date, 'YYYY-MM'), per.role, per.isemployee, per.location
 		ORDER BY p.name, j.projectcharge;`)
 	return result, err
 }
@@ -225,8 +227,8 @@ func (s *Postgres) DailyHoursByRole(roles []string, startDate, endDate time.Time
 			FROM worklog w
 			JOIN issue i ON w.issueid = i.id
 			JOIN people p ON w.author = p.name
-			WHERE w.date >= ($2 AT TIME ZONE 'America/New_York')
-			AND w.date < ($3 AT TIME ZONE 'America/New_York')
+			WHERE w.date >= ($2 AT TIME ZONE 'UTC')
+			AND w.date <= ($3 AT TIME ZONE 'UTC')
 			AND p.role = ANY($1)
 		) AS src
 		GROUP BY role, author, date

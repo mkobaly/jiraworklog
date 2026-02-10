@@ -44,7 +44,42 @@ func wantsHTML(c echo.Context) bool {
 }
 
 func (h *Handler) Dashboard(c echo.Context) error {
-	return pages.Dashboard().Render(c.Request().Context(), c.Response().Writer)
+	// Fetch maintenance ratio data (all roles)
+	allRoles, _ := h.repo.AllRoles()
+	maintenanceData, err := h.repo.MaitenanceRatio(allRoles)
+	if err != nil {
+		h.logger.Error("error fetching maintenance ratio for dashboard", "error", err)
+		maintenanceData = nil
+	}
+
+	// Get the most recent month's data
+	var latestMaintenance *types.MaitenanceRatio
+	if len(maintenanceData) > 0 {
+		latestMaintenance = &maintenanceData[len(maintenanceData)-1]
+	}
+
+	// Fetch missing project charges count
+	missingCharges, err := h.repo.IssuesMissingProjectCharge()
+	if err != nil {
+		h.logger.Error("error fetching missing charges for dashboard", "error", err)
+		missingCharges = nil
+	}
+	missingChargesCount := len(missingCharges)
+
+	// Fetch people without roles count
+	people, err := h.repo.People()
+	if err != nil {
+		h.logger.Error("error fetching people for dashboard", "error", err)
+		people = nil
+	}
+	peopleMissingRolesCount := 0
+	for _, p := range people {
+		if p.Role == "" || p.Role == "Unknown" {
+			peopleMissingRolesCount++
+		}
+	}
+
+	return pages.Dashboard(latestMaintenance, missingChargesCount, peopleMissingRolesCount).Render(c.Request().Context(), c.Response().Writer)
 }
 
 func (h *Handler) GetIssuesGroupedBy(c echo.Context) error {
@@ -305,6 +340,7 @@ func (h *Handler) UpdatePerson(c echo.Context) error {
 	var req struct {
 		Role       string `json:"role"`
 		IsEmployee bool   `json:"isEmployee"`
+		Location   string `json:"location"`
 	}
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid request body")
@@ -315,17 +351,18 @@ func (h *Handler) UpdatePerson(c echo.Context) error {
 	}
 
 	// Update the person
-	if err := h.repo.UpdatePerson(id, req.Role, req.IsEmployee); err != nil {
-		h.logger.Error("error updating person", "error", err, "personId", id, "role", req.Role, "isEmployee", req.IsEmployee)
+	if err := h.repo.UpdatePerson(id, req.Role, req.IsEmployee, req.Location); err != nil {
+		h.logger.Error("error updating person", "error", err, "personId", id, "role", req.Role, "isEmployee", req.IsEmployee, "location", req.Location)
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to update person")
 	}
 
-	h.logger.Info("updated person", "personId", id, "role", req.Role, "isEmployee", req.IsEmployee)
+	h.logger.Info("updated person", "personId", id, "role", req.Role, "isEmployee", req.IsEmployee, "location", req.Location)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status":     "ok",
 		"role":       req.Role,
 		"isEmployee": req.IsEmployee,
+		"location":   req.Location,
 	})
 }
 
@@ -495,11 +532,13 @@ func (h *Handler) GetProjectChargeHours(c echo.Context) error {
 
 	// Get grouping options from query params
 	groupByDate := c.QueryParam("groupByDate") == "true"
+	groupByCharge := c.QueryParam("groupByCharge") != "false"   // Default to true
 	groupByEmployee := c.QueryParam("groupByEmployee") == "true"
-	groupByRole := c.QueryParam("groupByRole") != "false" // Default to true
+	groupByRole := c.QueryParam("groupByRole") != "false"       // Default to true
+	groupByLocation := c.QueryParam("groupByLocation") == "true"
 
 	if wantsHTML(c) {
-		return pages.ProjectChargeHoursPage(data, groupByDate, groupByEmployee, groupByRole).Render(c.Request().Context(), c.Response().Writer)
+		return pages.ProjectChargeHoursPage(data, groupByDate, groupByEmployee, groupByRole, groupByCharge, groupByLocation).Render(c.Request().Context(), c.Response().Writer)
 	}
 
 	return c.JSON(http.StatusOK, data)
@@ -514,14 +553,19 @@ func (h *Handler) GetProjectChargeHoursCSV(c echo.Context) error {
 
 	// Get grouping options from query params
 	groupByDate := c.QueryParam("groupByDate") == "true"
+	groupByCharge := c.QueryParam("groupByCharge") != "false"   // Default to true
 	groupByEmployee := c.QueryParam("groupByEmployee") == "true"
-	groupByRole := c.QueryParam("groupByRole") != "false" // Default to true
+	groupByRole := c.QueryParam("groupByRole") != "false"       // Default to true
+	groupByLocation := c.QueryParam("groupByLocation") == "true"
 
 	// Build CSV content
 	var csv strings.Builder
 
 	// Write header
-	csv.WriteString("Project,Project Charge")
+	csv.WriteString("Project")
+	if groupByCharge {
+		csv.WriteString(",Project Charge")
+	}
 	if groupByDate {
 		csv.WriteString(",Month")
 	}
@@ -530,6 +574,9 @@ func (h *Handler) GetProjectChargeHoursCSV(c echo.Context) error {
 	}
 	if groupByRole {
 		csv.WriteString(",Role")
+	}
+	if groupByLocation {
+		csv.WriteString(",Location")
 	}
 	csv.WriteString(",Hours\n")
 
@@ -540,6 +587,7 @@ func (h *Handler) GetProjectChargeHoursCSV(c echo.Context) error {
 		YearMonth     string
 		IsEmployee    bool
 		Role          string
+		Location      string
 	}
 	aggregated := make(map[rowKey]float64)
 
@@ -549,9 +597,16 @@ func (h *Handler) GetProjectChargeHoursCSV(c echo.Context) error {
 			role = item.Role.String
 		}
 
+		location := "Unknown"
+		if item.Location.Valid && item.Location.String != "" {
+			location = item.Location.String
+		}
+
 		key := rowKey{
-			Project:       item.Project,
-			ProjectCharge: item.ProjectCharge,
+			Project: item.Project,
+		}
+		if groupByCharge {
+			key.ProjectCharge = item.ProjectCharge
 		}
 		if groupByDate {
 			key.YearMonth = item.YearMonth
@@ -562,13 +617,19 @@ func (h *Handler) GetProjectChargeHoursCSV(c echo.Context) error {
 		if groupByRole {
 			key.Role = role
 		}
+		if groupByLocation {
+			key.Location = location
+		}
 
 		aggregated[key] += item.Hours
 	}
 
 	// Write rows
 	for key, hours := range aggregated {
-		csv.WriteString(fmt.Sprintf("%q,%q", key.Project, key.ProjectCharge))
+		csv.WriteString(fmt.Sprintf("%q", key.Project))
+		if groupByCharge {
+			csv.WriteString(fmt.Sprintf(",%q", key.ProjectCharge))
+		}
 		if groupByDate {
 			csv.WriteString(fmt.Sprintf(",%q", key.YearMonth))
 		}
@@ -581,6 +642,9 @@ func (h *Handler) GetProjectChargeHoursCSV(c echo.Context) error {
 		}
 		if groupByRole {
 			csv.WriteString(fmt.Sprintf(",%q", key.Role))
+		}
+		if groupByLocation {
+			csv.WriteString(fmt.Sprintf(",%q", key.Location))
 		}
 		csv.WriteString(fmt.Sprintf(",%.2f\n", hours))
 	}
@@ -607,7 +671,10 @@ func getWeekBounds(t time.Time, tz *time.Location) (time.Time, time.Time) {
 	nextMonday := monday.AddDate(0, 0, 7)
 	nextMonday = time.Date(nextMonday.Year(), nextMonday.Month(), nextMonday.Day(), 0, 0, 0, 0, tz)
 
-	return monday, nextMonday
+	sunday := monday.AddDate(0, 0, 6)
+	sunday = time.Date(sunday.Year(), sunday.Month(), sunday.Day(), 23, 59, 59, 999_999_999, tz)
+
+	return monday, sunday
 }
 
 // generateWeekOptions generates the last N weeks as options
@@ -619,7 +686,7 @@ func generateWeekOptions(numWeeks int, tz *time.Location) []types.WeekOption {
 		// Go back i weeks
 		weekDate := now.AddDate(0, 0, -7*i)
 		start, end := getWeekBounds(weekDate, tz)
-		end = end.Add(time.Second * -1)
+		///end = end.Add(time.Second * -1)
 
 		label := ""
 		if i == 0 {
@@ -670,7 +737,7 @@ func (h *Handler) GetWeeklyHours(c echo.Context) error {
 	selectedWeekDate := time.Now().AddDate(0, 0, -7*weekOffset)
 	startDate, endDate := getWeekBounds(selectedWeekDate, h.tz)
 
-	fmt.Printf("start: %s end: %s", startDate.String(), endDate.String())
+	fmt.Printf("start: %s end: %s\n", startDate.String(), endDate.String())
 	data, err := h.repo.DailyHoursByRole(selectedRoles, startDate, endDate)
 	if err != nil {
 		h.logger.Error("error fetching weekly hours", "error", err)

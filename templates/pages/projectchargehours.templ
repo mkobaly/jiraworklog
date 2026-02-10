@@ -25,10 +25,12 @@ type ChargeGroup struct {
 
 // DetailRow represents a row with optional grouping dimensions
 type DetailRow struct {
-	YearMonth  string
-	IsEmployee bool
-	Role       string
-	Hours      float64
+	YearMonth     string
+	IsEmployee    bool
+	Role          string
+	ProjectCharge string
+	Location      string
+	Hours         float64
 }
 
 // GroupingOptions holds the current grouping settings
@@ -36,6 +38,8 @@ type GroupingOptions struct {
 	ByDate     bool
 	ByEmployee bool
 	ByRole     bool
+	ByCharge   bool
+	ByLocation bool
 }
 
 func groupProjectChargeHours(data []types.ProjectChargeHours, opts GroupingOptions) []ProjectGroup {
@@ -54,16 +58,27 @@ func groupProjectChargeHours(data []types.ProjectChargeHours, opts GroupingOptio
 			projectOrder = append(projectOrder, item.Project)
 		}
 
+		// Determine charge group name based on ByCharge option
+		chargeGroupName := item.ProjectCharge
+		if !opts.ByCharge {
+			chargeGroupName = "All Project Charges"
+		}
+
 		// Initialize charge if needed
-		if _, exists := chargeMap[item.Project][item.ProjectCharge]; !exists {
-			chargeMap[item.Project][item.ProjectCharge] = &ChargeGroup{Name: item.ProjectCharge}
-			detailMap[item.Project][item.ProjectCharge] = make(map[string]*DetailRow)
+		if _, exists := chargeMap[item.Project][chargeGroupName]; !exists {
+			chargeMap[item.Project][chargeGroupName] = &ChargeGroup{Name: chargeGroupName}
+			detailMap[item.Project][chargeGroupName] = make(map[string]*DetailRow)
 		}
 
 		// Build grouping key based on options
 		role := "Unknown"
 		if item.Role.Valid && item.Role.String != "" {
 			role = item.Role.String
+		}
+
+		location := "Unknown"
+		if item.Location.Valid && item.Location.String != "" {
+			location = item.Location.String
 		}
 
 		var keyParts []string
@@ -79,6 +94,14 @@ func groupProjectChargeHours(data []types.ProjectChargeHours, opts GroupingOptio
 		if opts.ByRole {
 			keyParts = append(keyParts, role)
 		}
+		projectCharge := ""
+		if opts.ByCharge {
+			projectCharge = item.ProjectCharge
+			keyParts = append(keyParts, item.ProjectCharge)
+		}
+		if opts.ByLocation {
+			keyParts = append(keyParts, location)
+		}
 
 		key := strings.Join(keyParts, "|")
 		if key == "" {
@@ -86,18 +109,20 @@ func groupProjectChargeHours(data []types.ProjectChargeHours, opts GroupingOptio
 		}
 
 		// Aggregate hours for this key
-		if existing, exists := detailMap[item.Project][item.ProjectCharge][key]; exists {
+		if existing, exists := detailMap[item.Project][chargeGroupName][key]; exists {
 			existing.Hours += item.Hours
 		} else {
-			detailMap[item.Project][item.ProjectCharge][key] = &DetailRow{
-				YearMonth:  yearMonth,
-				IsEmployee: isEmployee,
-				Role:       role,
-				Hours:      item.Hours,
+			detailMap[item.Project][chargeGroupName][key] = &DetailRow{
+				YearMonth:     yearMonth,
+				IsEmployee:    isEmployee,
+				Role:          role,
+				ProjectCharge: projectCharge,
+				Location:      location,
+				Hours:         item.Hours,
 			}
 		}
 
-		chargeMap[item.Project][item.ProjectCharge].Total += item.Hours
+		chargeMap[item.Project][chargeGroupName].Total += item.Hours
 		projectMap[item.Project].Total += item.Hours
 	}
 
@@ -112,15 +137,21 @@ func groupProjectChargeHours(data []types.ProjectChargeHours, opts GroupingOptio
 			for _, detail := range detailMap[projectName][charge.Name] {
 				details = append(details, *detail)
 			}
-			// Sort by yearmonth, then employee status, then role
+			// Sort by yearmonth, then employee status, then role, then location
 			sort.Slice(details, func(i, j int) bool {
 				if details[i].YearMonth != details[j].YearMonth {
 					return details[i].YearMonth < details[j].YearMonth
 				}
+				if details[i].ProjectCharge != details[j].ProjectCharge {
+					return details[i].ProjectCharge < details[j].ProjectCharge
+				}
 				if details[i].IsEmployee != details[j].IsEmployee {
 					return details[i].IsEmployee // employees first
 				}
-				return details[i].Role < details[j].Role
+				if details[i].Role != details[j].Role {
+					return details[i].Role < details[j].Role
+				}
+				return details[i].Location < details[j].Location
 			})
 			charge.DetailRows = details
 			project.Charges = append(project.Charges, *charge)
@@ -131,7 +162,7 @@ func groupProjectChargeHours(data []types.ProjectChargeHours, opts GroupingOptio
 	return result
 }
 
-templ ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, groupByEmployee bool, groupByRole bool) {
+templ ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, groupByEmployee bool, groupByRole bool, groupByCharge bool, groupByLocation bool) {
 	@layouts.Base("Project Charge Hours") {
 		<div class="mb-6">
 			<h1 class="text-3xl font-bold text-gray-900">Project Charge Hours</h1>
@@ -158,6 +189,18 @@ templ ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, 
 					<label class="flex items-center cursor-pointer">
 						<input
 							type="checkbox"
+							id="groupByCharge"
+							class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+							onchange="applyGrouping()"
+							if groupByCharge {
+								checked
+							}
+						/>
+						<span class="ml-2 text-sm text-gray-700">Project Charge</span>
+					</label>
+					<label class="flex items-center cursor-pointer">
+						<input
+							type="checkbox"
 							id="groupByEmployee"
 							class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
 							onchange="applyGrouping()"
@@ -179,6 +222,18 @@ templ ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, 
 						/>
 						<span class="ml-2 text-sm text-gray-700">Role</span>
 					</label>
+					<label class="flex items-center cursor-pointer">
+						<input
+							type="checkbox"
+							id="groupByLocation"
+							class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+							onchange="applyGrouping()"
+							if groupByLocation {
+								checked
+							}
+						/>
+						<span class="ml-2 text-sm text-gray-700">Location</span>
+					</label>
 				</div>
 				<button
 					onclick="exportCSV()"
@@ -195,13 +250,17 @@ templ ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, 
 		<script>
 			function applyGrouping() {
 				const groupByDate = document.getElementById('groupByDate').checked;
+				const groupByCharge = document.getElementById('groupByCharge').checked;
 				const groupByEmployee = document.getElementById('groupByEmployee').checked;
 				const groupByRole = document.getElementById('groupByRole').checked;
+				const groupByLocation = document.getElementById('groupByLocation').checked;
 
 				const params = new URLSearchParams();
 				if (groupByDate) params.set('groupByDate', 'true');
+				if (!groupByCharge) params.set('groupByCharge', 'false');
 				if (groupByEmployee) params.set('groupByEmployee', 'true');
 				if (!groupByRole) params.set('groupByRole', 'false');
+				if (groupByLocation) params.set('groupByLocation', 'true');
 
 				const queryString = params.toString();
 				window.location.href = '/reports/project-hours' + (queryString ? '?' + queryString : '');
@@ -209,13 +268,17 @@ templ ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, 
 
 			function exportCSV() {
 				const groupByDate = document.getElementById('groupByDate').checked;
+				const groupByCharge = document.getElementById('groupByCharge').checked;
 				const groupByEmployee = document.getElementById('groupByEmployee').checked;
 				const groupByRole = document.getElementById('groupByRole').checked;
+				const groupByLocation = document.getElementById('groupByLocation').checked;
 
 				const params = new URLSearchParams();
 				if (groupByDate) params.set('groupByDate', 'true');
+				if (!groupByCharge) params.set('groupByCharge', 'false');
 				if (groupByEmployee) params.set('groupByEmployee', 'true');
 				if (!groupByRole) params.set('groupByRole', 'false');
+				if (groupByLocation) params.set('groupByLocation', 'true');
 
 				const queryString = params.toString();
 				window.location.href = '/reports/project-hours/csv' + (queryString ? '?' + queryString : '');
@@ -229,7 +292,7 @@ templ ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, 
 		} else {
 			<!-- Desktop view -->
 			<div class="hidden md:block space-y-6">
-				for _, project := range groupProjectChargeHours(data, GroupingOptions{ByDate: groupByDate, ByEmployee: groupByEmployee, ByRole: groupByRole}) {
+				for _, project := range groupProjectChargeHours(data, GroupingOptions{ByDate: groupByDate, ByEmployee: groupByEmployee, ByRole: groupByRole, ByCharge: groupByCharge, ByLocation: groupByLocation}) {
 					<div class="bg-white rounded-lg shadow-md overflow-hidden">
 						<!-- Project header -->
 						<div class="bg-blue-600 text-white px-6 py-3 flex justify-between items-center">
@@ -249,6 +312,9 @@ templ ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, 
 									}
 									if groupByRole {
 										<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+									}
+									if groupByLocation {
+										<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
 									}
 									<th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Hours</th>
 								</tr>
@@ -278,6 +344,11 @@ templ ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, 
 													@roleBadge(detail.Role)
 												</td>
 											}
+											if groupByLocation {
+												<td class="px-6 py-3 whitespace-nowrap">
+													@locationBadge(detail.Location)
+												</td>
+											}
 											<td class="px-6 py-3 whitespace-nowrap text-right text-sm text-gray-900">
 												{ formatHours(detail.Hours) }
 											</td>
@@ -292,7 +363,7 @@ templ ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, 
 
 			<!-- Mobile view -->
 			<div class="md:hidden space-y-4">
-				for _, project := range groupProjectChargeHours(data, GroupingOptions{ByDate: groupByDate, ByEmployee: groupByEmployee, ByRole: groupByRole}) {
+				for _, project := range groupProjectChargeHours(data, GroupingOptions{ByDate: groupByDate, ByEmployee: groupByEmployee, ByRole: groupByRole, ByCharge: groupByCharge, ByLocation: groupByLocation}) {
 					<div class="bg-white rounded-lg shadow-md overflow-hidden">
 						<!-- Project header -->
 						<div class="bg-blue-600 text-white px-4 py-3 flex justify-between items-center">
@@ -319,6 +390,9 @@ templ ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, 
 													}
 													if groupByRole {
 														@roleBadge(detail.Role)
+													}
+													if groupByLocation {
+														@locationBadge(detail.Location)
 													}
 												</div>
 												<span class="text-gray-700">{ formatHours(detail.Hours) } hrs</span>
@@ -374,6 +448,14 @@ templ employeeBadge(isEmployee bool) {
 		<span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Employee</span>
 	} else {
 		<span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">Contractor</span>
+	}
+}
+
+templ locationBadge(location string) {
+	if location == "" || location == "Unknown" {
+		<span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">Unknown</span>
+	} else {
+		<span class="px-2 py-1 text-xs rounded-full bg-indigo-100 text-indigo-800">{ location }</span>
 	}
 }
 
