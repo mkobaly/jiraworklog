@@ -259,6 +259,46 @@ func (s *Postgres) DailyHoursByRole(roles []string, startDate, endDate time.Time
 	return result, err
 }
 
+// ProjectTimeTracking returns time tracking data for issues in a given fixed version
+func (s *Postgres) ProjectTimeTracking(fixedVersion string) ([]types.ProjectTimeTracking, error) {
+	result := []types.ProjectTimeTracking{}
+	query := `
+		SELECT i.id, i.parentid, i.key, i.type, i.summary, i.status, i.projectcharge,
+			i.originalestimate as estimateseconds,
+			format_seconds(i.originalestimate, 7.5) as estimate,
+			w.timespentseconds as devseconds,
+			format_seconds(w.timespentseconds, 7.5) as devtimespent
+		FROM issue i
+		LEFT JOIN (
+			SELECT issueId, cast(sum(timespentseconds) as integer) timespentseconds
+			FROM worklog as w
+			JOIN people p on w.author = p.name
+			WHERE p.role = 'dev'
+			GROUP BY issueId
+		) w on i.id = w.issueid
+		WHERE i.type not in ('Epic', 'Release Candidate')
+		AND $1 = any(fixedversions)
+		UNION
+		SELECT i.id, i.parentid, i.key, i.type, i.summary, i.status, i.projectcharge,
+			i.originalestimate as estimateseconds,
+			format_seconds(i.originalestimate, 7.5) as estimate,
+			w.timespentseconds as devseconds,
+			format_seconds(w.timespentseconds, 7.5) as devtimespent
+		FROM issue i
+		JOIN issue i2 on i.parentid = i2.id
+		LEFT JOIN (
+			SELECT issueId, cast(sum(timespentseconds) as integer) as timespentseconds
+			FROM worklog as w
+			JOIN people p on w.author = p.name
+			WHERE p.role = 'dev'
+			GROUP BY issueId
+		) w on i.id = w.issueid
+		WHERE i2.type not in ('Release Candidate')
+		AND $1 = any(i2.fixedversions);`
+	err := s.DB.Select(&result, query, fixedVersion)
+	return result, err
+}
+
 func (s *Postgres) MissingIssues() ([]int, error) {
 	result := []int{}
 	err := s.DB.Select(&result, `	

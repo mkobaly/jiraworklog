@@ -773,3 +773,25 @@ func (h *Handler) GetWeeklyHours(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, data)
 }
+
+func (h *Handler) GetProjectTimeTracking(c echo.Context) error {
+	// Get fixed version from query param
+	fixedVersion := c.QueryParam("version")
+
+	var data []types.ProjectTimeTracking
+	var err error
+
+	if fixedVersion != "" {
+		data, err = h.repo.ProjectTimeTracking(fixedVersion)
+		if err != nil {
+			h.logger.Error("error fetching project time tracking", "error", err)
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch time tracking data")
+		}
+	}
+
+	if wantsHTML(c) {
+		return pages.ProjectTimeTracking(data, fixedVersion).Render(c.Request().Context(), c.Response().Writer)
+	}
+
+	return c.JSON(http.StatusOK, data)
+}

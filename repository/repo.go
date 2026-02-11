@@ -54,6 +54,9 @@ type Repo interface {
 	// Weekly hours by author
 	DailyHoursByRole(roles []string, startDate, endDate time.Time) ([]types.DailyHours, error)
 
+	// Project time tracking
+	ProjectTimeTracking(fixedVersion string) ([]types.ProjectTimeTracking, error)
+
 	//WorklogsPerDay() ([]types.WorklogsPerDay, error)
 	//WorklogsPerDevDay() ([]types.WorklogsPerDevDay, error)
 

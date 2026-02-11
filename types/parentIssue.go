@@ -358,6 +358,38 @@ type IssueMismatchedCharge struct {
 	Summary             string `db:"summary"`
 }
 
+// ProjectTimeTracking represents time tracking data for issues in a project/version
+type ProjectTimeTracking struct {
+	ID              int            `db:"id"`
+	ParentID        sql.NullInt32  `db:"parentid"`
+	Key             string         `db:"key"`
+	Type            string         `db:"type"`
+	Summary         string         `db:"summary"`
+	Status          string         `db:"status"`
+	ProjectCharge   string         `db:"projectcharge"`
+	EstimateSeconds sql.NullInt32  `db:"estimateseconds"`
+	Estimate        sql.NullString `db:"estimate"`
+	DevSeconds      sql.NullInt32  `db:"devseconds"`
+	DevTimeSpent    sql.NullString `db:"devtimespent"`
+}
+
+// Progress returns the percentage of time spent vs estimate (0-100+)
+func (p ProjectTimeTracking) Progress() float64 {
+	if !p.EstimateSeconds.Valid || p.EstimateSeconds.Int32 == 0 {
+		return 0
+	}
+	devSecs := int32(0)
+	if p.DevSeconds.Valid {
+		devSecs = p.DevSeconds.Int32
+	}
+	return float64(devSecs) / float64(p.EstimateSeconds.Int32) * 100
+}
+
+// IsOverBudget returns true if time spent exceeds estimate
+func (p ProjectTimeTracking) IsOverBudget() bool {
+	return p.Progress() > 100
+}
+
 func MustNullInt32(s string) sql.NullInt32 {
 	if s == "" {
 		return sql.NullInt32{}
