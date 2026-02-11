@@ -346,6 +346,18 @@ type WeekOption struct {
 	End    time.Time
 }
 
+// IssueMismatchedCharge represents an issue where the project charge differs from its parent
+type IssueMismatchedCharge struct {
+	ParentKey           string `db:"parentkey"`
+	ParentType          string `db:"parenttype"`
+	ParentProjectCharge string `db:"parentprojectcharge"`
+	ParentSummary       string `db:"parentsummary"`
+	Key                 string `db:"key"`
+	Type                string `db:"type"`
+	ProjectCharge       string `db:"projectcharge"`
+	Summary             string `db:"summary"`
+}
+
 func MustNullInt32(s string) sql.NullInt32 {
 	if s == "" {
 		return sql.NullInt32{}

@@ -6,7 +6,7 @@ import (
 	"github.com/mkobaly/jiraworklog/types"
 )
 
-templ Dashboard(latestMaintenance *types.MaitenanceRatio, missingChargesCount int, peopleMissingRolesCount int) {
+templ Dashboard(latestMaintenance *types.MaitenanceRatio, missingChargesCount int, mismatchedChargesCount int, peopleMissingRolesCount int) {
 	@layouts.Base("Dashboard") {
 		<div class="mb-6">
 			<h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
@@ -90,6 +90,35 @@ templ Dashboard(latestMaintenance *types.MaitenanceRatio, missingChargesCount in
 				} else {
 					<div class="mt-4 text-center">
 						<span class="text-sm text-green-600">All issues have charges assigned</span>
+					</div>
+				}
+			</a>
+
+			<!-- Mismatched Project Charges Widget -->
+			<a href="/reports/mismatched-charge" class={ "block bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition", mismatchedChargesBorder(mismatchedChargesCount) }>
+				<div class="flex items-center justify-between mb-4">
+					<h2 class="text-lg font-semibold text-gray-900">Mismatched Project Charges</h2>
+					<svg class={ "w-6 h-6", mismatchedChargesIconColor(mismatchedChargesCount) } fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						if mismatchedChargesCount == 0 {
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+						} else {
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+						}
+					</svg>
+				</div>
+				<div class="text-center">
+					<span class={ "text-4xl font-bold", mismatchedChargesTextColor(mismatchedChargesCount) }>
+						{ fmt.Sprintf("%d", mismatchedChargesCount) }
+					</span>
+					<p class="text-gray-600 text-sm mt-1">Child issues with different charge than parent</p>
+				</div>
+				if mismatchedChargesCount > 0 {
+					<div class="mt-4 text-center">
+						<span class="text-sm text-blue-600 hover:text-blue-800">Click to view and fix →</span>
+					</div>
+				} else {
+					<div class="mt-4 text-center">
+						<span class="text-sm text-green-600">All charges match parents</span>
 					</div>
 				}
 			</a>
@@ -234,4 +263,31 @@ func peopleMissingRolesTextColor(count int) string {
 		return "text-yellow-600"
 	}
 	return "text-red-600"
+}
+
+func mismatchedChargesBorder(count int) string {
+	if count == 0 {
+		return "border-l-4 border-green-500"
+	} else if count <= 5 {
+		return "border-l-4 border-yellow-500"
+	}
+	return "border-l-4 border-orange-500"
+}
+
+func mismatchedChargesIconColor(count int) string {
+	if count == 0 {
+		return "text-green-500"
+	} else if count <= 5 {
+		return "text-yellow-500"
+	}
+	return "text-orange-500"
+}
+
+func mismatchedChargesTextColor(count int) string {
+	if count == 0 {
+		return "text-green-600"
+	} else if count <= 5 {
+		return "text-yellow-600"
+	}
+	return "text-orange-600"
 }

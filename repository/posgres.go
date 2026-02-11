@@ -100,6 +100,27 @@ func (s *Postgres) IssuesMissingProjectCharge() ([]types.IssueMissingCharge, err
 	return result, err
 }
 
+func (s *Postgres) IssuesMismatchedProjectCharge() ([]types.IssueMismatchedCharge, error) {
+	result := []types.IssueMismatchedCharge{}
+	err := s.DB.Select(&result, `
+		SELECT
+			i2.key as parentkey,
+			i2.type as parenttype,
+			i2.projectcharge as parentprojectcharge,
+			i2.summary as parentsummary,
+			i.key,
+			i.type,
+			i.projectcharge,
+			i.summary
+		FROM issue i
+		JOIN issue i2 ON i.parentid = i2.id
+		WHERE i2.projectcharge != i.projectcharge
+		AND i.createdate >= now() - INTERVAL '2 months'
+		AND i.project IN ('IDM', 'SYM', 'ESG')
+		ORDER BY i2.projectcharge;`)
+	return result, err
+}
+
 func (s *Postgres) CustomerBugCounts(project string) ([]types.CustomerBugCount, error) {
 	result := []types.CustomerBugCount{}
 	query := `

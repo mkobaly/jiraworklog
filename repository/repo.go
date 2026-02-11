@@ -36,6 +36,7 @@ type Repo interface {
 	AllRoles() ([]string, error)
 
 	IssuesMissingProjectCharge() ([]types.IssueMissingCharge, error)
+	IssuesMismatchedProjectCharge() ([]types.IssueMismatchedCharge, error)
 
 	CustomerBugCounts(project string) ([]types.CustomerBugCount, error)
 	CustomerBugProjects() ([]string, error)

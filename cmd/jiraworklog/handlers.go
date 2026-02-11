@@ -66,6 +66,14 @@ func (h *Handler) Dashboard(c echo.Context) error {
 	}
 	missingChargesCount := len(missingCharges)
 
+	// Fetch mismatched project charges count
+	mismatchedCharges, err := h.repo.IssuesMismatchedProjectCharge()
+	if err != nil {
+		h.logger.Error("error fetching mismatched charges for dashboard", "error", err)
+		mismatchedCharges = nil
+	}
+	mismatchedChargesCount := len(mismatchedCharges)
+
 	// Fetch people without roles count
 	people, err := h.repo.People()
 	if err != nil {
@@ -79,7 +87,7 @@ func (h *Handler) Dashboard(c echo.Context) error {
 		}
 	}
 
-	return pages.Dashboard(latestMaintenance, missingChargesCount, peopleMissingRolesCount).Render(c.Request().Context(), c.Response().Writer)
+	return pages.Dashboard(latestMaintenance, missingChargesCount, mismatchedChargesCount, peopleMissingRolesCount).Render(c.Request().Context(), c.Response().Writer)
 }
 
 func (h *Handler) GetIssuesGroupedBy(c echo.Context) error {
@@ -375,6 +383,21 @@ func (h *Handler) GetIssuesMissingProjectCharge(c echo.Context) error {
 
 	if wantsHTML(c) {
 		return pages.MissingProjectCharge(issues).Render(c.Request().Context(), c.Response().Writer)
+	}
+
+	// JSON response
+	return c.JSON(http.StatusOK, issues)
+}
+
+func (h *Handler) GetIssuesMismatchedProjectCharge(c echo.Context) error {
+	issues, err := h.repo.IssuesMismatchedProjectCharge()
+	if err != nil {
+		h.logger.Error("error fetching issues with mismatched project charge", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch issues")
+	}
+
+	if wantsHTML(c) {
+		return pages.MismatchedProjectCharge(issues).Render(c.Request().Context(), c.Response().Writer)
 	}
 
 	// JSON response

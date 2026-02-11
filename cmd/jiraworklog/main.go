@@ -130,6 +130,7 @@ func main() {
 	// Reports routes
 	e.GET("/reports/maintenance", handler.GetMaintenanceRatio)
 	e.GET("/reports/missing-charge", handler.GetIssuesMissingProjectCharge)
+	e.GET("/reports/mismatched-charge", handler.GetIssuesMismatchedProjectCharge)
 	e.GET("/reports/customer-bugs", handler.GetCustomerBugs)
 	e.GET("/reports/project-hours", handler.GetProjectChargeHours)
 	e.GET("/reports/project-hours/csv", handler.GetProjectChargeHoursCSV)
