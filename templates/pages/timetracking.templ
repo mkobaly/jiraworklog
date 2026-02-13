@@ -12,6 +12,25 @@ type IssueGroup struct {
 	Children []types.ProjectTimeTracking
 }
 
+// AggregatedTotals holds the combined estimate and dev time for a group
+type AggregatedTotals struct {
+	EstimateSeconds int32
+	DevSeconds      int32
+}
+
+// Progress returns the percentage of dev time vs estimate
+func (a AggregatedTotals) Progress() float64 {
+	if a.EstimateSeconds == 0 {
+		return 0
+	}
+	return float64(a.DevSeconds) / float64(a.EstimateSeconds) * 100
+}
+
+// IsOverBudget returns true if dev time exceeds estimate
+func (a AggregatedTotals) IsOverBudget() bool {
+	return a.Progress() > 100
+}
+
 templ ProjectTimeTracking(issues []types.ProjectTimeTracking, fixedVersion string) {
 	@layouts.Base("Project Time Tracking") {
 		<style>
@@ -83,8 +102,32 @@ templ ProjectTimeTracking(issues []types.ProjectTimeTracking, fixedVersion strin
 				<h2 class="text-lg font-semibold text-gray-900">
 					{ fmt.Sprintf("%d", len(issues)) } Issues in { fixedVersion }
 				</h2>
-				<span class="hidden md:inline text-sm text-gray-500">Click on issue key to open in Jira</span>
+				<div class="flex items-center gap-4">
+					<label class="flex items-center gap-2 cursor-pointer">
+						<input
+							type="checkbox"
+							id="show-parents-only"
+							class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+							onchange="toggleChildItems(this.checked)"
+						/>
+						<span class="text-sm text-gray-700">Show parents only</span>
+					</label>
+					<span class="hidden md:inline text-sm text-gray-500">Click on issue key to open in Jira</span>
+				</div>
 			</div>
+
+			<script>
+				function toggleChildItems(hideChildren) {
+					const childRows = document.querySelectorAll('.child-row');
+					const childCards = document.querySelectorAll('.child-card');
+					childRows.forEach(row => {
+						row.style.display = hideChildren ? 'none' : '';
+					});
+					childCards.forEach(card => {
+						card.style.display = hideChildren ? 'none' : '';
+					});
+				}
+			</script>
 
 			<!-- Desktop table view -->
 			<div class="hidden md:block bg-white rounded-b-lg shadow-md overflow-hidden">
@@ -105,7 +148,11 @@ templ ProjectTimeTracking(issues []types.ProjectTimeTracking, fixedVersion strin
 						<tbody class="bg-white divide-y divide-gray-200">
 							for _, group := range groupIssuesByParent(issues) {
 								if group.Parent != nil {
-									@issueRow(*group.Parent, false)
+									if len(group.Children) > 0 {
+										@parentIssueRow(*group.Parent, calcGroupTotals(group))
+									} else {
+										@issueRow(*group.Parent, false)
+									}
 								}
 								for _, child := range group.Children {
 									@issueRow(child, true)
@@ -120,7 +167,11 @@ templ ProjectTimeTracking(issues []types.ProjectTimeTracking, fixedVersion strin
 			<div class="md:hidden space-y-4">
 				for _, group := range groupIssuesByParent(issues) {
 					if group.Parent != nil {
-						@issueCard(*group.Parent, false)
+						if len(group.Children) > 0 {
+							@parentIssueCard(*group.Parent, calcGroupTotals(group))
+						} else {
+							@issueCard(*group.Parent, false)
+						}
 					}
 					for _, child := range group.Children {
 						@issueCard(child, true)
@@ -132,7 +183,7 @@ templ ProjectTimeTracking(issues []types.ProjectTimeTracking, fixedVersion strin
 }
 
 templ issueRow(issue types.ProjectTimeTracking, isChild bool) {
-	<tr class={ "hover:bg-gray-50", templ.KV("bg-red-50", issue.IsOverBudget()), templ.KV("bg-gray-50/50", isChild) }>
+	<tr class={ "hover:bg-gray-50", templ.KV("bg-red-50", issue.IsOverBudget()), templ.KV("bg-gray-50/50", isChild), templ.KV("child-row", isChild) }>
 		<td class={ "px-4 py-3 text-sm whitespace-nowrap", templ.KV("pl-10", isChild) }>
 			<a
 				href={ templ.SafeURL("https://amagsymmetry.atlassian.net/browse/" + issue.Key) }
@@ -181,7 +232,7 @@ templ issueRow(issue types.ProjectTimeTracking, isChild bool) {
 }
 
 templ issueCard(issue types.ProjectTimeTracking, isChild bool) {
-	<div class={ "bg-white rounded-lg shadow-md overflow-hidden", templ.KV("border-l-4 border-red-500", issue.IsOverBudget()), templ.KV("ml-6 border-l-4 border-gray-300", isChild && !issue.IsOverBudget()) }>
+	<div class={ "bg-white rounded-lg shadow-md overflow-hidden", templ.KV("border-l-4 border-red-500", issue.IsOverBudget()), templ.KV("ml-6 border-l-4 border-gray-300", isChild && !issue.IsOverBudget()), templ.KV("child-card", isChild) }>
 		<div class="px-4 py-3 bg-gray-50 border-b flex items-center justify-between">
 			<a
 				href={ templ.SafeURL("https://amagsymmetry.atlassian.net/browse/" + issue.Key) }
@@ -229,6 +280,122 @@ templ issueCard(issue types.ProjectTimeTracking, isChild bool) {
 	</div>
 }
 
+templ parentIssueRow(issue types.ProjectTimeTracking, totals AggregatedTotals) {
+	<tr class={ "hover:bg-gray-50 font-semibold bg-blue-50/30", templ.KV("bg-red-50", totals.IsOverBudget()) }>
+		<td class="px-4 py-3 text-sm whitespace-nowrap">
+			<a
+				href={ templ.SafeURL("https://amagsymmetry.atlassian.net/browse/" + issue.Key) }
+				target="_blank"
+				class="text-blue-600 hover:text-blue-800 hover:underline font-medium"
+			>
+				{ issue.Key }
+			</a>
+		</td>
+		<td class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
+			@issueTypeBadge(issue.Type)
+		</td>
+		<td class="px-4 py-3 text-sm text-gray-900" title={ issue.Summary }>
+			{ issue.Summary }
+		</td>
+		<td class="px-4 py-3 text-sm whitespace-nowrap">
+			@statusBadge(issue.Status)
+		</td>
+		<td class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
+			if issue.ProjectCharge != "" {
+				<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+					{ issue.ProjectCharge }
+				</span>
+			}
+		</td>
+		<td class="px-4 py-3 text-sm text-gray-900 text-right font-mono whitespace-nowrap">
+			if totals.EstimateSeconds > 0 {
+				{ formatSeconds(totals.EstimateSeconds) }
+			} else {
+				<span class="text-gray-400">-</span>
+			}
+		</td>
+		<td class="px-4 py-3 text-sm text-right font-mono whitespace-nowrap">
+			if totals.DevSeconds > 0 {
+				<span class={ templ.KV("text-red-600 font-semibold", totals.IsOverBudget()), templ.KV("text-gray-900", !totals.IsOverBudget()) }>
+					{ formatSeconds(totals.DevSeconds) }
+				</span>
+			} else {
+				<span class="text-gray-400">-</span>
+			}
+		</td>
+		<td class="px-4 py-3 text-sm min-w-[120px]">
+			@aggregatedProgressBar(totals)
+		</td>
+	</tr>
+}
+
+templ parentIssueCard(issue types.ProjectTimeTracking, totals AggregatedTotals) {
+	<div class={ "bg-white rounded-lg shadow-md overflow-hidden border-l-4 border-blue-500", templ.KV("border-red-500", totals.IsOverBudget()) }>
+		<div class="px-4 py-3 bg-blue-50 border-b flex items-center justify-between">
+			<a
+				href={ templ.SafeURL("https://amagsymmetry.atlassian.net/browse/" + issue.Key) }
+				target="_blank"
+				class="text-blue-600 hover:text-blue-800 hover:underline font-semibold"
+			>
+				{ issue.Key }
+			</a>
+			@issueTypeBadge(issue.Type)
+		</div>
+		<div class="px-4 py-3">
+			<p class="text-sm text-gray-900 font-semibold mb-3">{ issue.Summary }</p>
+			<div class="flex flex-wrap gap-2 items-center mb-3">
+				@statusBadge(issue.Status)
+				if issue.ProjectCharge != "" {
+					<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+						{ issue.ProjectCharge }
+					</span>
+				}
+			</div>
+			<div class="grid grid-cols-2 gap-2 text-sm mb-2">
+				<div>
+					<span class="text-gray-500">Total Estimate:</span>
+					<span class="font-mono font-semibold ml-1">
+						if totals.EstimateSeconds > 0 {
+							{ formatSeconds(totals.EstimateSeconds) }
+						} else {
+							-
+						}
+					</span>
+				</div>
+				<div>
+					<span class="text-gray-500">Total Dev Time:</span>
+					<span class={ "font-mono font-semibold ml-1", templ.KV("text-red-600", totals.IsOverBudget()) }>
+						if totals.DevSeconds > 0 {
+							{ formatSeconds(totals.DevSeconds) }
+						} else {
+							-
+						}
+					</span>
+				</div>
+			</div>
+			@aggregatedProgressBar(totals)
+		</div>
+	</div>
+}
+
+templ aggregatedProgressBar(totals AggregatedTotals) {
+	if totals.EstimateSeconds == 0 {
+		<div class="text-xs text-gray-400">No estimate</div>
+	} else {
+		<div class="flex items-center gap-2">
+			<div class="flex-grow bg-gray-200 rounded-full h-2 overflow-hidden">
+				<div
+					class={ "h-2 rounded-full", progressBarColor(totals.Progress()) }
+					style={ fmt.Sprintf("width: %.0f%%", min(totals.Progress(), 100)) }
+				></div>
+			</div>
+			<span class={ "text-xs font-medium w-12 text-right", progressTextColor(totals.Progress()) }>
+				{ fmt.Sprintf("%.0f%%", totals.Progress()) }
+			</span>
+		</div>
+	}
+}
+
 templ timeTrackingSummary(issues []types.ProjectTimeTracking) {
 	<!-- Total Issues -->
 	<div class="bg-white rounded-lg shadow-md p-4">
@@ -239,13 +406,13 @@ templ timeTrackingSummary(issues []types.ProjectTimeTracking) {
 	<!-- Total Estimated -->
 	<div class="bg-white rounded-lg shadow-md p-4">
 		<div class="text-sm text-gray-500">Total Estimated</div>
-		<div class="text-2xl font-bold text-blue-600">{ formatTotalTime(sumEstimates(issues)) }</div>
+		<div class="text-2xl font-bold text-blue-600">{ formatSeconds(sumEstimates(issues)) }</div>
 	</div>
 
 	<!-- Total Dev Time -->
 	<div class="bg-white rounded-lg shadow-md p-4">
 		<div class="text-sm text-gray-500">Total Dev Time</div>
-		<div class="text-2xl font-bold text-green-600">{ formatTotalTime(sumDevTime(issues)) }</div>
+		<div class="text-2xl font-bold text-green-600">{ formatSeconds(sumDevTime(issues)) }</div>
 	</div>
 
 	<!-- Over Budget Count -->
@@ -295,6 +462,33 @@ templ issueTypeBadge(issueType string) {
 }
 
 // Helper functions
+
+// calcGroupTotals calculates the aggregated estimate and dev time for a parent + all its children
+func calcGroupTotals(group IssueGroup) AggregatedTotals {
+	var totals AggregatedTotals
+
+	// Add parent's values
+	if group.Parent != nil {
+		if group.Parent.EstimateSeconds.Valid {
+			totals.EstimateSeconds += group.Parent.EstimateSeconds.Int32
+		}
+		if group.Parent.DevSeconds.Valid {
+			totals.DevSeconds += group.Parent.DevSeconds.Int32
+		}
+	}
+
+	// Add children's values
+	for _, child := range group.Children {
+		if child.EstimateSeconds.Valid {
+			totals.EstimateSeconds += child.EstimateSeconds.Int32
+		}
+		if child.DevSeconds.Valid {
+			totals.DevSeconds += child.DevSeconds.Int32
+		}
+	}
+
+	return totals
+}
 
 // groupIssuesByParent organizes issues so parents come first followed by their children
 func groupIssuesByParent(issues []types.ProjectTimeTracking) []IssueGroup {
@@ -426,15 +620,6 @@ func countOverBudget(issues []types.ProjectTimeTracking) int {
 		}
 	}
 	return count
-}
-
-func formatTotalTime(seconds int32) string {
-	hours := float64(seconds) / 3600.0
-	if hours >= 8 {
-		days := hours / 7.5
-		return fmt.Sprintf("%.1fd", days)
-	}
-	return fmt.Sprintf("%.1fh", hours)
 }
 
 func overBudgetColor(count int) string {
