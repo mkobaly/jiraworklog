@@ -38,6 +38,42 @@ templ Base(title string) {
 	</html>
 }
 
+templ BasePublic(title string) {
+	<!DOCTYPE html>
+	<html lang="en" data-turbo-refresh-scroll="preserve">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<meta name="turbo-cache-control" content="no-cache"/>
+			<title>{ title } - Jira Worklog</title>
+
+			<!-- Hotwire Turbo -->
+			<script type="module">
+				import hotwiredTurbo from 'https://cdn.jsdelivr.net/npm/@hotwired/turbo@8.0.4/+esm'
+			</script>
+
+			<!-- Tailwind CSS for mobile-friendly styling -->
+			<script src="https://cdn.tailwindcss.com"></script>
+
+			<!-- Custom CSS -->
+			<link rel="stylesheet" href="/static/css/app.css"/>
+
+			<!-- Mobile optimizations -->
+			<meta name="apple-mobile-web-app-capable" content="yes"/>
+			<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+		</head>
+		<body class="bg-gray-50 min-h-screen flex flex-col">
+			<main class="container mx-auto px-4 py-6 max-w-7xl flex-grow">
+				{ children... }
+			</main>
+
+			<footer class="py-6 bg-gray-800 text-white text-center mt-auto">
+				<p class="text-sm">Jira Worklog Tracker</p>
+			</footer>
+		</body>
+	</html>
+}
+
 templ Navigation() {
 	<nav class="bg-blue-600 text-white shadow-lg">
 		<div class="container mx-auto px-4">

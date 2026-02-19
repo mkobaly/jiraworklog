@@ -3,7 +3,7 @@ package pages
 import "github.com/mkobaly/jiraworklog/templates/layouts"
 
 templ Login(msg string) {
-	@layouts.Base("Login") {
+	@layouts.BasePublic("Login") {
 		<div class="flex items-center justify-center min-h-[60vh]">
 			<div class="bg-white rounded-lg shadow-md p-8 w-full max-w-md">
 				<h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">Login to Jira Manager</h2>
@@ -37,7 +37,7 @@ templ Login(msg string) {
 }
 
 templ FailedLogin() {
-	@layouts.Base("Unauthorized") {
+	@layouts.BasePublic("Unauthorized") {
 		<div class="flex items-center justify-center min-h-[60vh]">
 			<div class="bg-white rounded-lg shadow-md p-8 w-full max-w-md text-center">
 				<div class="mb-4">
@@ -59,7 +59,7 @@ templ FailedLogin() {
 }
 
 templ LoginConfirm(email, msg string) {
-	@layouts.Base("Confirm Login") {
+	@layouts.BasePublic("Confirm Login") {
 		<div class="flex items-center justify-center min-h-[60vh]">
 			<div class="bg-white rounded-lg shadow-md p-8 w-full max-w-md">
 				<h2 class="text-2xl font-bold text-gray-900 mb-2 text-center">Enter Email Code</h2>
