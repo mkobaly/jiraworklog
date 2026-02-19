@@ -4,6 +4,7 @@ go 1.25.5
 
 require (
 	github.com/a-h/templ v0.3.977
+	github.com/alexflint/go-arg v1.6.1
 	github.com/denisenkom/go-mssqldb v0.12.3
 	github.com/fatih/color v1.18.0
 	github.com/galdor/go-cmdline v1.2.0
@@ -12,11 +13,13 @@ require (
 	github.com/labstack/echo/v4 v4.15.0
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.11.1
+	github.com/wneessen/go-mail v0.7.2
 	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
 	github.com/a-h/parse v0.0.0-20250122154542-74294addb73e // indirect
+	github.com/alexflint/go-scalar v1.2.0 // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cli/browser v1.3.0 // indirect

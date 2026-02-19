@@ -340,7 +340,7 @@ func bugPriorityBadge(priority string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		case "High":
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<span class=\"inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<span class=\"inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -358,7 +358,7 @@ func bugPriorityBadge(priority string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		case "Medium":
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<span class=\"inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<span class=\"inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -393,8 +393,8 @@ func bugPriorityBadge(priority string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-		default:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<span class=\"inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800\">")
+		case "Hotfix":
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<span class=\"inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-800\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -408,6 +408,24 @@ func bugPriorityBadge(priority string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "</span>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		default:
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "<span class=\"inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var19 string
+			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(priority)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/customerbugs.templ`, Line: 141, Col: 14}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -432,12 +450,12 @@ func customerBugsChartScript() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var19 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var19 == nil {
-			templ_7745c5c3_Var19 = templ.NopComponent
+		templ_7745c5c3_Var20 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var20 == nil {
+			templ_7745c5c3_Var20 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "<script>\n\t\tfunction applyFilters() {\n\t\t\tconst project = document.getElementById('project-select').value;\n\t\t\tconst aggregate = document.getElementById('aggregate-checkbox').checked;\n\n\t\t\tconst params = new URLSearchParams();\n\t\t\tif (project) {\n\t\t\t\tparams.set('project', project);\n\t\t\t}\n\t\t\tif (aggregate) {\n\t\t\t\tparams.set('aggregate', 'true');\n\t\t\t}\n\t\t\tconst queryString = params.toString();\n\t\t\twindow.location.href = '/reports/customer-bugs' + (queryString ? '?' + queryString : '');\n\t\t}\n\n\t\tfunction initCustomerBugsChart() {\n\t\t\tconst chartDataEl = document.getElementById('chartData');\n\t\t\tif (!chartDataEl) return;\n\t\t\tconst chartData = JSON.parse(chartDataEl.dataset.chart);\n\t\t\tconst isAggregated = chartDataEl.dataset.aggregate === 'true';\n\n\t\t\t// Priority colors (for non-aggregated view)\n\t\t\tconst priorityColors = {\n\t\t\t\t'Highest': '#dc2626',\n\t\t\t\t'Critical': '#dc2626',\n\t\t\t\t'High': '#ea580c',\n\t\t\t\t'Medium': '#ca8a04',\n\t\t\t\t'Low': '#16a34a',\n\t\t\t\t'Lowest': '#22c55e'\n\t\t\t};\n\n\t\t\t// Project colors (for aggregated view)\n\t\t\tconst projectColors = [\n\t\t\t\t'#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',\n\t\t\t\t'#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1',\n\t\t\t\t'#14b8a6', '#a855f7', '#22c55e', '#eab308', '#0ea5e9'\n\t\t\t];\n\n\t\t\tconst defaultColor = '#6b7280';\n\n\t\t\tlet datasets;\n\t\t\tlet chartTitle;\n\n\t\t\tif (isAggregated) {\n\t\t\t\t// Aggregated view: one line per project (or single line if project selected)\n\t\t\t\tchartTitle = 'Customer Bugs by Project Over Time';\n\t\t\t\tdatasets = Object.keys(chartData.series).map((key, index) => {\n\t\t\t\t\tconst color = projectColors[index % projectColors.length];\n\t\t\t\t\treturn {\n\t\t\t\t\t\tlabel: key,\n\t\t\t\t\t\tdata: chartData.labels.map(month => chartData.series[key][month] || 0),\n\t\t\t\t\t\tborderColor: color,\n\t\t\t\t\t\tbackgroundColor: color,\n\t\t\t\t\t\tborderWidth: 2,\n\t\t\t\t\t\ttension: 0.3,\n\t\t\t\t\t\tpointRadius: 4,\n\t\t\t\t\t\tpointHoverRadius: 6,\n\t\t\t\t\t\tfill: false,\n\t\t\t\t\t\ttrendlineLinear: {\n\t\t\t\t\t\t\tcolorMin: color,\n\t\t\t\t\t\t\tcolorMax: color,\n\t\t\t\t\t\t\tlineStyle: 'dashed',\n\t\t\t\t\t\t\twidth: 2\n\t\t\t\t\t\t}\n\t\t\t\t\t};\n\t\t\t\t});\n\t\t\t} else {\n\t\t\t\t// Normal view: one line per priority\n\t\t\t\tchartTitle = 'Customer Bugs by Priority Over Time';\n\t\t\t\tdatasets = Object.keys(chartData.priorities).map(priority => {\n\t\t\t\t\tconst color = priorityColors[priority] || defaultColor;\n\t\t\t\t\treturn {\n\t\t\t\t\t\tlabel: priority,\n\t\t\t\t\t\tdata: chartData.labels.map(month => chartData.priorities[priority][month] || 0),\n\t\t\t\t\t\tborderColor: color,\n\t\t\t\t\t\tbackgroundColor: color,\n\t\t\t\t\t\tborderWidth: 2,\n\t\t\t\t\t\ttension: 0.3,\n\t\t\t\t\t\tpointRadius: 4,\n\t\t\t\t\t\tpointHoverRadius: 6,\n\t\t\t\t\t\tfill: false,\n\t\t\t\t\t\ttrendlineLinear: {\n\t\t\t\t\t\t\tcolorMin: color,\n\t\t\t\t\t\t\tcolorMax: color,\n\t\t\t\t\t\t\tlineStyle: 'dashed',\n\t\t\t\t\t\t\twidth: 2\n\t\t\t\t\t\t}\n\t\t\t\t\t};\n\t\t\t\t});\n\t\t\t}\n\n\t\t\tconst ctx = document.getElementById('customerBugsChart').getContext('2d');\n\t\t\tnew Chart(ctx, {\n\t\t\t\ttype: 'line',\n\t\t\t\tdata: {\n\t\t\t\t\tlabels: chartData.labels,\n\t\t\t\t\tdatasets: datasets\n\t\t\t\t},\n\t\t\t\toptions: {\n\t\t\t\t\tresponsive: true,\n\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\tinteraction: {\n\t\t\t\t\t\tintersect: false,\n\t\t\t\t\t\tmode: 'index'\n\t\t\t\t\t},\n\t\t\t\t\tplugins: {\n\t\t\t\t\t\ttitle: {\n\t\t\t\t\t\t\tdisplay: true,\n\t\t\t\t\t\t\ttext: chartTitle,\n\t\t\t\t\t\t\tfont: {\n\t\t\t\t\t\t\t\tsize: 18\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t},\n\t\t\t\t\t\tlegend: {\n\t\t\t\t\t\t\tposition: 'bottom'\n\t\t\t\t\t\t},\n\t\t\t\t\t\ttooltip: {\n\t\t\t\t\t\t\tcallbacks: {\n\t\t\t\t\t\t\t\tlabel: function(context) {\n\t\t\t\t\t\t\t\t\tif (context.dataset.label === 'Trend (Total)') {\n\t\t\t\t\t\t\t\t\t\treturn context.dataset.label + ': ' + context.parsed.y.toFixed(1);\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t\treturn context.dataset.label + ': ' + context.parsed.y + ' bugs';\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\tscales: {\n\t\t\t\t\t\tx: {\n\t\t\t\t\t\t\ttitle: {\n\t\t\t\t\t\t\t\tdisplay: true,\n\t\t\t\t\t\t\t\ttext: 'Month'\n\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\tgrid: {\n\t\t\t\t\t\t\t\tdisplay: false\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t},\n\t\t\t\t\t\ty: {\n\t\t\t\t\t\t\ttitle: {\n\t\t\t\t\t\t\t\tdisplay: true,\n\t\t\t\t\t\t\t\ttext: 'Bug Count'\n\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\tbeginAtZero: true,\n\t\t\t\t\t\t\tticks: {\n\t\t\t\t\t\t\t\tstepSize: 1\n\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\tgrid: {\n\t\t\t\t\t\t\t\tcolor: 'rgba(0, 0, 0, 0.1)'\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t});\n\t\t}\n\n\t\t// Wait for Chart.js to be available before initializing\n\t\tfunction waitForChart() {\n\t\t\tif (typeof Chart !== 'undefined') {\n\t\t\t\tinitCustomerBugsChart();\n\t\t\t} else {\n\t\t\t\tsetTimeout(waitForChart, 50);\n\t\t\t}\n\t\t}\n\t\twaitForChart();\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "<script>\n\t\tfunction applyFilters() {\n\t\t\tconst project = document.getElementById('project-select').value;\n\t\t\tconst aggregate = document.getElementById('aggregate-checkbox').checked;\n\n\t\t\tconst params = new URLSearchParams();\n\t\t\tif (project) {\n\t\t\t\tparams.set('project', project);\n\t\t\t}\n\t\t\tif (aggregate) {\n\t\t\t\tparams.set('aggregate', 'true');\n\t\t\t}\n\t\t\tconst queryString = params.toString();\n\t\t\twindow.location.href = '/reports/customer-bugs' + (queryString ? '?' + queryString : '');\n\t\t}\n\n\t\tfunction initCustomerBugsChart() {\n\t\t\tconst chartDataEl = document.getElementById('chartData');\n\t\t\tif (!chartDataEl) return;\n\t\t\tconst chartData = JSON.parse(chartDataEl.dataset.chart);\n\t\t\tconst isAggregated = chartDataEl.dataset.aggregate === 'true';\n\n\t\t\t// Priority colors (for non-aggregated view)\n\t\t\tconst priorityColors = {\n\t\t\t\t'Highest': '#dc2626',\n\t\t\t\t'Critical': '#dc2626',\n\t\t\t\t'High': '#fff02b',\n\t\t\t\t'Medium': '#2b47ff',\n\t\t\t\t'Low': '#16a34a',\n\t\t\t\t'Lowest': '#22c55e',\n\t\t\t\t'Hotfix': '#ff282f',\n\t\t\t\t'Blocker / Urgent': '#000000'\n\t\t\t};\n\n\t\t\t// Project colors (for aggregated view)\n\t\t\tconst projectColors = [\n\t\t\t\t'#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',\n\t\t\t\t'#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1',\n\t\t\t\t'#14b8a6', '#a855f7', '#22c55e', '#eab308', '#0ea5e9'\n\t\t\t];\n\n\t\t\tconst defaultColor = '#6b7280';\n\n\t\t\tlet datasets;\n\t\t\tlet chartTitle;\n\n\t\t\tif (isAggregated) {\n\t\t\t\t// Aggregated view: one line per project (or single line if project selected)\n\t\t\t\tchartTitle = 'Customer Bugs by Project Over Time';\n\t\t\t\tdatasets = Object.keys(chartData.series).map((key, index) => {\n\t\t\t\t\tconst color = projectColors[index % projectColors.length];\n\t\t\t\t\treturn {\n\t\t\t\t\t\tlabel: key,\n\t\t\t\t\t\tdata: chartData.labels.map(month => chartData.series[key][month] || 0),\n\t\t\t\t\t\tborderColor: color,\n\t\t\t\t\t\tbackgroundColor: color,\n\t\t\t\t\t\tborderWidth: 2,\n\t\t\t\t\t\ttension: 0.3,\n\t\t\t\t\t\tpointRadius: 4,\n\t\t\t\t\t\tpointHoverRadius: 6,\n\t\t\t\t\t\tfill: false,\n\t\t\t\t\t\ttrendlineLinear: {\n\t\t\t\t\t\t\tcolorMin: color,\n\t\t\t\t\t\t\tcolorMax: color,\n\t\t\t\t\t\t\tlineStyle: 'dashed',\n\t\t\t\t\t\t\twidth: 2\n\t\t\t\t\t\t}\n\t\t\t\t\t};\n\t\t\t\t});\n\t\t\t} else {\n\t\t\t\t// Normal view: one line per priority\n\t\t\t\tchartTitle = 'Customer Bugs by Priority Over Time';\n\t\t\t\tdatasets = Object.keys(chartData.priorities).map(priority => {\n\t\t\t\t\tconst color = priorityColors[priority] || defaultColor;\n\t\t\t\t\treturn {\n\t\t\t\t\t\tlabel: priority,\n\t\t\t\t\t\tdata: chartData.labels.map(month => chartData.priorities[priority][month] || 0),\n\t\t\t\t\t\tborderColor: color,\n\t\t\t\t\t\tbackgroundColor: color,\n\t\t\t\t\t\tborderWidth: 2,\n\t\t\t\t\t\ttension: 0.3,\n\t\t\t\t\t\tpointRadius: 4,\n\t\t\t\t\t\tpointHoverRadius: 6,\n\t\t\t\t\t\tfill: false,\n\t\t\t\t\t\ttrendlineLinear: {\n\t\t\t\t\t\t\tcolorMin: color,\n\t\t\t\t\t\t\tcolorMax: color,\n\t\t\t\t\t\t\tlineStyle: 'dashed',\n\t\t\t\t\t\t\twidth: 2\n\t\t\t\t\t\t}\n\t\t\t\t\t};\n\t\t\t\t});\n\t\t\t}\n\n\t\t\tconst ctx = document.getElementById('customerBugsChart').getContext('2d');\n\t\t\tnew Chart(ctx, {\n\t\t\t\ttype: 'line',\n\t\t\t\tdata: {\n\t\t\t\t\tlabels: chartData.labels,\n\t\t\t\t\tdatasets: datasets\n\t\t\t\t},\n\t\t\t\toptions: {\n\t\t\t\t\tresponsive: true,\n\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\tinteraction: {\n\t\t\t\t\t\tintersect: false,\n\t\t\t\t\t\tmode: 'index'\n\t\t\t\t\t},\n\t\t\t\t\tplugins: {\n\t\t\t\t\t\ttitle: {\n\t\t\t\t\t\t\tdisplay: true,\n\t\t\t\t\t\t\ttext: chartTitle,\n\t\t\t\t\t\t\tfont: {\n\t\t\t\t\t\t\t\tsize: 18\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t},\n\t\t\t\t\t\tlegend: {\n\t\t\t\t\t\t\tposition: 'bottom'\n\t\t\t\t\t\t},\n\t\t\t\t\t\ttooltip: {\n\t\t\t\t\t\t\tcallbacks: {\n\t\t\t\t\t\t\t\tlabel: function(context) {\n\t\t\t\t\t\t\t\t\tif (context.dataset.label === 'Trend (Total)') {\n\t\t\t\t\t\t\t\t\t\treturn context.dataset.label + ': ' + context.parsed.y.toFixed(1);\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t\treturn context.dataset.label + ': ' + context.parsed.y + ' bugs';\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\tscales: {\n\t\t\t\t\t\tx: {\n\t\t\t\t\t\t\ttitle: {\n\t\t\t\t\t\t\t\tdisplay: true,\n\t\t\t\t\t\t\t\ttext: 'Month'\n\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\tgrid: {\n\t\t\t\t\t\t\t\tdisplay: false\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t},\n\t\t\t\t\t\ty: {\n\t\t\t\t\t\t\ttitle: {\n\t\t\t\t\t\t\t\tdisplay: true,\n\t\t\t\t\t\t\t\ttext: 'Bug Count'\n\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\tbeginAtZero: true,\n\t\t\t\t\t\t\tticks: {\n\t\t\t\t\t\t\t\tstepSize: 1\n\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\tgrid: {\n\t\t\t\t\t\t\t\tcolor: 'rgba(0, 0, 0, 0.1)'\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t});\n\t\t}\n\n\t\t// Wait for Chart.js to be available before initializing\n\t\tfunction waitForChart() {\n\t\t\tif (typeof Chart !== 'undefined') {\n\t\t\t\tinitCustomerBugsChart();\n\t\t\t} else {\n\t\t\t\tsetTimeout(waitForChart, 50);\n\t\t\t}\n\t\t}\n\t\twaitForChart();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

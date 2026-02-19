@@ -277,7 +277,7 @@ func (s *Postgres) ProjectTimeTracking(fixedVersion string) ([]types.ProjectTime
 			GROUP BY issueId
 		) w on i.id = w.issueid
 		WHERE i.type not in ('Epic', 'Release Candidate')
-		AND $1 = any(fixedversions)
+		AND ($1 = any(fixedversions) OR i.parentid in (SELECT id from issue where key = $1))
 		UNION
 		SELECT i.id, i.parentid, i.key, i.type, i.summary, i.status, i.projectcharge,
 			i.originalestimate as estimateseconds,
@@ -294,7 +294,7 @@ func (s *Postgres) ProjectTimeTracking(fixedVersion string) ([]types.ProjectTime
 			GROUP BY issueId
 		) w on i.id = w.issueid
 		WHERE i2.type not in ('Release Candidate')
-		AND $1 = any(i2.fixedversions);`
+		AND ($1 = any(i2.fixedversions) OR i2.parentid in (SELECT id from issue where key = $1));`
 	err := s.DB.Select(&result, query, fixedVersion)
 	return result, err
 }

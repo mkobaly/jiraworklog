@@ -14,7 +14,9 @@
       "Bash(curl:*)",
       "Bash(pkill:*)",
       "Bash(templ generate:*)",
-      "Bash(bash:*)"
+      "Bash(bash:*)",
+      "Bash(grep:*)",
+      "Bash(head:*)"
     ]
   }
 }

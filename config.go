@@ -2,7 +2,6 @@ package jiraworklog
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 	"sync"
 	"time"
@@ -19,11 +18,19 @@ type JiraSettings struct {
 	Password string
 }
 
+type SmtpSettings struct {
+	Host     string
+	Port     int
+	UserName string
+	Password string
+}
+
 // Config holds info needed for connecting to Jira and SQL
 type Config struct {
 	mu            sync.Mutex `yaml:"-"`
 	path          string
 	Jira          JiraSettings
+	Smtp          SmtpSettings
 	SQLConnection string
 	//MaxWorklogID  int
 	WorklogUpdatedLastTimestamp int64
@@ -33,6 +40,8 @@ type Config struct {
 	UserList         []string
 	DoneStatus       []string
 	ExcludedProjects []string
+	AuthorizedUsers  []string
+	HTTPSecureCookie bool
 }
 
 // Save will persist the configuration information
@@ -65,14 +74,14 @@ func LoadConfig(path string) (*Config, error) {
 		cfg := newConfig()
 		bytes, err := yaml.Marshal(cfg)
 		if err == nil {
-			ioutil.WriteFile(path, bytes, 0644)
+			os.WriteFile(path, bytes, 0644)
 		}
 		return nil, ErrNoConfigFile
 	}
 
 	var config = new(Config)
 	config.path = path
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}

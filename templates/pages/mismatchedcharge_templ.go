@@ -70,7 +70,7 @@ func MismatchedProjectCharge(issues []types.IssueMismatchedCharge) templ.Compone
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, " Mismatched Issues Found</h2><span class=\"hidden md:inline text-sm text-gray-500\">Click on issue key to open in Jira</span></div><!-- Desktop table view --> <div class=\"hidden md:block bg-white rounded-b-lg shadow-md overflow-hidden\"><div class=\"overflow-x-auto\"><table class=\"min-w-full divide-y divide-gray-200\"><thead class=\"bg-gray-50\"><tr><th colspan=\"4\" class=\"px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider bg-blue-50 border-b\">Parent Issue</th><th colspan=\"4\" class=\"px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider bg-orange-50 border-b\">Child Issue</th></tr><tr><th class=\"px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-blue-50\">Key</th><th class=\"px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-blue-50\">Type</th><th class=\"px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-blue-50\">Project Charge</th><th class=\"px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-blue-50\">Summary</th><th class=\"px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-orange-50\">Key</th><th class=\"px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-orange-50\">Type</th><th class=\"px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-orange-50\">Project Charge</th><th class=\"px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-orange-50\">Summary</th></tr></thead> <tbody class=\"bg-white divide-y divide-gray-200\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, " Mismatched Issues Found</h2></div><!-- Desktop table view --> <div class=\"hidden md:block bg-white rounded-b-lg shadow-md overflow-hidden\"><div class=\"overflow-x-auto\"><table class=\"min-w-full divide-y divide-gray-200\"><thead class=\"bg-gray-50\"><tr><th colspan=\"4\" class=\"px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider bg-blue-50 border-b\">Parent Issue</th><th colspan=\"4\" class=\"px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider bg-orange-50 border-b\">Child Issue</th></tr><tr><th class=\"px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-blue-50\">Key</th><th class=\"px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-blue-50\">Type</th><th class=\"px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-blue-50\">Project Charge</th><th class=\"px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-blue-50\">Summary</th><th class=\"px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-orange-50\">Key</th><th class=\"px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-orange-50\">Type</th><th class=\"px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-orange-50\">Project Charge</th><th class=\"px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-orange-50\">Summary</th></tr></thead> <tbody class=\"bg-white divide-y divide-gray-200\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -82,7 +82,7 @@ func MismatchedProjectCharge(issues []types.IssueMismatchedCharge) templ.Compone
 					var templ_7745c5c3_Var4 templ.SafeURL
 					templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("https://amagsymmetry.atlassian.net/browse/" + issue.ParentKey))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 62, Col: 95}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 61, Col: 95}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 					if templ_7745c5c3_Err != nil {
@@ -95,7 +95,7 @@ func MismatchedProjectCharge(issues []types.IssueMismatchedCharge) templ.Compone
 					var templ_7745c5c3_Var5 string
 					templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(issue.ParentKey)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 66, Col: 28}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 65, Col: 28}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 					if templ_7745c5c3_Err != nil {
@@ -108,7 +108,7 @@ func MismatchedProjectCharge(issues []types.IssueMismatchedCharge) templ.Compone
 					var templ_7745c5c3_Var6 string
 					templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(issue.ParentType)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 69, Col: 85}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 68, Col: 85}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 					if templ_7745c5c3_Err != nil {
@@ -121,7 +121,7 @@ func MismatchedProjectCharge(issues []types.IssueMismatchedCharge) templ.Compone
 					var templ_7745c5c3_Var7 string
 					templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(issue.ParentProjectCharge)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 72, Col: 38}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 71, Col: 38}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 					if templ_7745c5c3_Err != nil {
@@ -134,7 +134,7 @@ func MismatchedProjectCharge(issues []types.IssueMismatchedCharge) templ.Compone
 					var templ_7745c5c3_Var8 string
 					templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(issue.ParentSummary)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 75, Col: 112}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 74, Col: 112}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 					if templ_7745c5c3_Err != nil {
@@ -147,7 +147,7 @@ func MismatchedProjectCharge(issues []types.IssueMismatchedCharge) templ.Compone
 					var templ_7745c5c3_Var9 string
 					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(issue.ParentSummary)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 76, Col: 31}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 75, Col: 31}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 					if templ_7745c5c3_Err != nil {
@@ -160,7 +160,7 @@ func MismatchedProjectCharge(issues []types.IssueMismatchedCharge) templ.Compone
 					var templ_7745c5c3_Var10 templ.SafeURL
 					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("https://amagsymmetry.atlassian.net/browse/" + issue.Key))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 80, Col: 89}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 79, Col: 89}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 					if templ_7745c5c3_Err != nil {
@@ -173,7 +173,7 @@ func MismatchedProjectCharge(issues []types.IssueMismatchedCharge) templ.Compone
 					var templ_7745c5c3_Var11 string
 					templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(issue.Key)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 84, Col: 22}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 83, Col: 22}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 					if templ_7745c5c3_Err != nil {
@@ -186,7 +186,7 @@ func MismatchedProjectCharge(issues []types.IssueMismatchedCharge) templ.Compone
 					var templ_7745c5c3_Var12 string
 					templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(issue.Type)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 87, Col: 81}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 86, Col: 81}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 					if templ_7745c5c3_Err != nil {
@@ -199,7 +199,7 @@ func MismatchedProjectCharge(issues []types.IssueMismatchedCharge) templ.Compone
 					var templ_7745c5c3_Var13 string
 					templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(issue.ProjectCharge)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 90, Col: 32}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 89, Col: 32}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 					if templ_7745c5c3_Err != nil {
@@ -212,7 +212,7 @@ func MismatchedProjectCharge(issues []types.IssueMismatchedCharge) templ.Compone
 					var templ_7745c5c3_Var14 string
 					templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(issue.Summary)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 93, Col: 108}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 92, Col: 108}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 					if templ_7745c5c3_Err != nil {
@@ -225,7 +225,7 @@ func MismatchedProjectCharge(issues []types.IssueMismatchedCharge) templ.Compone
 					var templ_7745c5c3_Var15 string
 					templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(issue.Summary)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 94, Col: 25}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 93, Col: 25}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 					if templ_7745c5c3_Err != nil {
@@ -248,7 +248,7 @@ func MismatchedProjectCharge(issues []types.IssueMismatchedCharge) templ.Compone
 					var templ_7745c5c3_Var16 templ.SafeURL
 					templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("https://amagsymmetry.atlassian.net/browse/" + issue.ParentKey))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 111, Col: 93}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 110, Col: 93}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 					if templ_7745c5c3_Err != nil {
@@ -261,7 +261,7 @@ func MismatchedProjectCharge(issues []types.IssueMismatchedCharge) templ.Compone
 					var templ_7745c5c3_Var17 string
 					templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(issue.ParentKey)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 115, Col: 26}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 114, Col: 26}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 					if templ_7745c5c3_Err != nil {
@@ -274,7 +274,7 @@ func MismatchedProjectCharge(issues []types.IssueMismatchedCharge) templ.Compone
 					var templ_7745c5c3_Var18 string
 					templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(issue.ParentSummary)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 118, Col: 66}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 117, Col: 66}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 					if templ_7745c5c3_Err != nil {
@@ -287,7 +287,7 @@ func MismatchedProjectCharge(issues []types.IssueMismatchedCharge) templ.Compone
 					var templ_7745c5c3_Var19 string
 					templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(issue.ParentType)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 120, Col: 62}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 119, Col: 62}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 					if templ_7745c5c3_Err != nil {
@@ -300,7 +300,7 @@ func MismatchedProjectCharge(issues []types.IssueMismatchedCharge) templ.Compone
 					var templ_7745c5c3_Var20 string
 					templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(issue.ParentProjectCharge)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 123, Col: 36}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 122, Col: 36}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 					if templ_7745c5c3_Err != nil {
@@ -313,7 +313,7 @@ func MismatchedProjectCharge(issues []types.IssueMismatchedCharge) templ.Compone
 					var templ_7745c5c3_Var21 templ.SafeURL
 					templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("https://amagsymmetry.atlassian.net/browse/" + issue.Key))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 131, Col: 87}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 130, Col: 87}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 					if templ_7745c5c3_Err != nil {
@@ -326,7 +326,7 @@ func MismatchedProjectCharge(issues []types.IssueMismatchedCharge) templ.Compone
 					var templ_7745c5c3_Var22 string
 					templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(issue.Key)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 135, Col: 20}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 134, Col: 20}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 					if templ_7745c5c3_Err != nil {
@@ -339,7 +339,7 @@ func MismatchedProjectCharge(issues []types.IssueMismatchedCharge) templ.Compone
 					var templ_7745c5c3_Var23 string
 					templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(issue.Summary)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 138, Col: 60}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 137, Col: 60}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 					if templ_7745c5c3_Err != nil {
@@ -352,7 +352,7 @@ func MismatchedProjectCharge(issues []types.IssueMismatchedCharge) templ.Compone
 					var templ_7745c5c3_Var24 string
 					templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(issue.Type)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 140, Col: 56}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 139, Col: 56}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 					if templ_7745c5c3_Err != nil {
@@ -365,7 +365,7 @@ func MismatchedProjectCharge(issues []types.IssueMismatchedCharge) templ.Compone
 					var templ_7745c5c3_Var25 string
 					templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(issue.ProjectCharge)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 143, Col: 30}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/mismatchedcharge.templ`, Line: 142, Col: 30}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 					if templ_7745c5c3_Err != nil {

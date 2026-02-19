@@ -1,35 +1,136 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
 	"log/slog"
+	"math/rand"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/a-h/templ"
 	"github.com/labstack/echo/v4"
+	"github.com/mkobaly/jiraworklog"
+	"github.com/mkobaly/jiraworklog/internal/email"
 	"github.com/mkobaly/jiraworklog/repository"
 	"github.com/mkobaly/jiraworklog/templates/pages"
 	"github.com/mkobaly/jiraworklog/types"
 )
 
 type Handler struct {
-	repo   repository.Repo
-	logger *slog.Logger
-	tz     *time.Location
+	repo        repository.Repo
+	logger      *slog.Logger
+	tz          *time.Location
+	cfg         *jiraworklog.Config
+	emailClient email.EmailClient
+	loginCodes  map[string]string
+	debug       bool
 }
 
-func NewHandler(r repository.Repo, l *slog.Logger) *Handler {
+func NewHandler(r repository.Repo, l *slog.Logger, cfg *jiraworklog.Config, emailClient email.EmailClient, debug bool) *Handler {
 	nyc, err := time.LoadLocation("America/New_York")
 	if err != nil {
 		panic(err)
 	}
 	return &Handler{
-		repo:   r,
-		logger: l,
-		tz:     nyc,
+		repo:        r,
+		logger:      l,
+		tz:          nyc,
+		cfg:         cfg,
+		emailClient: emailClient,
+		loginCodes:  make(map[string]string),
+		debug:       debug,
 	}
+}
+
+func (h *Handler) AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		if h.debug {
+			return next(c)
+		}
+		cookie, err := c.Cookie("session_id")
+		if err != nil || cookie.Value == "" {
+			return c.Redirect(http.StatusSeeOther, "/login")
+		}
+		//Cookie holds email:hash
+		parts := strings.Split(cookie.Value, ":")
+		hash := h.loginCodes[parts[0]]
+		//hash := hashForCookie(parts[0], code)
+		if hash != cookie.Value {
+			return c.Redirect(http.StatusSeeOther, "/login")
+		}
+		return next(c)
+	}
+}
+
+// GET /login
+func (h *Handler) Login(c echo.Context) error {
+	view := pages.Login("")
+	return render(c, http.StatusOK, view)
+}
+
+// GET /login/confirm
+func (h *Handler) LoginConfirmGet(c echo.Context) error {
+	email := c.QueryParam("email")
+	view := pages.LoginConfirm(email, "")
+	return render(c, http.StatusOK, view)
+}
+
+// POST /login
+func (h *Handler) LoginPost(c echo.Context) error {
+	email := c.FormValue("email")
+	if email == "" {
+		view := pages.Login("email is required")
+		return render(c, http.StatusUnprocessableEntity, view)
+	}
+	if !h.validEmail(email) {
+		view := pages.Login("unauthorized email address")
+		return render(c, http.StatusUnprocessableEntity, view)
+	}
+	code := randomCode(6)
+	slog.Warn("login code", slog.String("email", email), slog.String("code", code))
+	h.loginCodes[email] = code
+	err := h.emailClient.SendEmail("Jira Manager - Login Code", email, code)
+	if err != nil {
+		slog.Error("unable to send email", slog.Any("err", err))
+		view := pages.Login("unable to generate code. Please try again later")
+		return render(c, http.StatusUnprocessableEntity, view)
+	}
+	return c.Redirect(http.StatusSeeOther, "/login/confirm?email="+url.QueryEscape(email))
+}
+
+// POST /login/confirm - Will login the user and create cookie
+func (h *Handler) LoginConfirm(c echo.Context) error {
+	code := c.FormValue("code")
+	email := c.FormValue("email")
+	if code == "" || email == "" {
+		view := pages.LoginConfirm(email, "unknown error")
+		return render(c, http.StatusUnprocessableEntity, view)
+	}
+	val := h.loginCodes[email]
+	if val == "" || !strings.EqualFold(val, code) {
+		view := pages.LoginConfirm(email, "invalid code")
+		return render(c, http.StatusUnprocessableEntity, view)
+	}
+	//delete(ws.loginCodes, email)
+	hash := hashForCookie(email, val)
+	h.loginCodes[email] = hash
+
+	cookie := new(http.Cookie)
+	cookie.Name = "session_id"
+	cookie.Value = hash
+	cookie.Expires = time.Now().Add(24 * 30 * time.Hour)
+	cookie.HttpOnly = true
+	if h.cfg.HTTPSecureCookie {
+		cookie.Secure = true
+	}
+	cookie.Path = "/"
+	c.SetCookie(cookie)
+	return c.Redirect(http.StatusFound, "/")
 }
 
 // wantsHTML checks if the client prefers HTML over JSON
@@ -555,9 +656,9 @@ func (h *Handler) GetProjectChargeHours(c echo.Context) error {
 
 	// Get grouping options from query params
 	groupByDate := c.QueryParam("groupByDate") == "true"
-	groupByCharge := c.QueryParam("groupByCharge") != "false"   // Default to true
+	groupByCharge := c.QueryParam("groupByCharge") != "false" // Default to true
 	groupByEmployee := c.QueryParam("groupByEmployee") == "true"
-	groupByRole := c.QueryParam("groupByRole") != "false"       // Default to true
+	groupByRole := c.QueryParam("groupByRole") != "false" // Default to true
 	groupByLocation := c.QueryParam("groupByLocation") == "true"
 
 	if wantsHTML(c) {
@@ -576,9 +677,9 @@ func (h *Handler) GetProjectChargeHoursCSV(c echo.Context) error {
 
 	// Get grouping options from query params
 	groupByDate := c.QueryParam("groupByDate") == "true"
-	groupByCharge := c.QueryParam("groupByCharge") != "false"   // Default to true
+	groupByCharge := c.QueryParam("groupByCharge") != "false" // Default to true
 	groupByEmployee := c.QueryParam("groupByEmployee") == "true"
-	groupByRole := c.QueryParam("groupByRole") != "false"       // Default to true
+	groupByRole := c.QueryParam("groupByRole") != "false" // Default to true
 	groupByLocation := c.QueryParam("groupByLocation") == "true"
 
 	// Build CSV content
@@ -760,7 +861,7 @@ func (h *Handler) GetWeeklyHours(c echo.Context) error {
 	selectedWeekDate := time.Now().AddDate(0, 0, -7*weekOffset)
 	startDate, endDate := getWeekBounds(selectedWeekDate, h.tz)
 
-	fmt.Printf("start: %s end: %s\n", startDate.String(), endDate.String())
+	//fmt.Printf("start: %s end: %s\n", startDate.String(), endDate.String())
 	data, err := h.repo.DailyHoursByRole(selectedRoles, startDate, endDate)
 	if err != nil {
 		h.logger.Error("error fetching weekly hours", "error", err)
@@ -794,4 +895,42 @@ func (h *Handler) GetProjectTimeTracking(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, data)
+}
+
+func (h *Handler) validEmail(email string) bool {
+	for _, v := range h.cfg.AuthorizedUsers {
+		parts := strings.Split(v, "@")
+		//allow wildcard match by domain: *@example.com
+		if parts[0] == "*" {
+			userParts := strings.Split(email, "@")
+			if len(userParts) == 2 && len(parts) == 2 && strings.EqualFold(parts[1], userParts[1]) {
+				return true
+			}
+		}
+		if strings.EqualFold(email, v) {
+			return true
+		}
+	}
+	return false
+}
+
+func render(c echo.Context, status int, component templ.Component) error {
+	c.Response().WriteHeader(status)
+	c.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTML)
+	return component.Render(c.Request().Context(), c.Response().Writer)
+}
+
+const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+func randomCode(length int) string {
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = charset[rand.Intn(len(charset))]
+	}
+	return string(b)
+}
+
+func hashForCookie(email, code string) string {
+	hash := sha256.Sum256([]byte(email + code))
+	return fmt.Sprintf("%s:%s", email, base64.URLEncoding.EncodeToString(hash[:]))
 }

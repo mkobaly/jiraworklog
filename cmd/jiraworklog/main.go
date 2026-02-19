@@ -9,14 +9,16 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/alexflint/go-arg"
 	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/fatih/color"
-	cmdline "github.com/galdor/go-cmdline"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/mkobaly/jiraworklog"
+	"github.com/mkobaly/jiraworklog/internal/config"
+	"github.com/mkobaly/jiraworklog/internal/email"
 	"github.com/mkobaly/jiraworklog/job"
 	"github.com/mkobaly/jiraworklog/repository"
 )
@@ -32,30 +34,27 @@ func main() {
 	signal.Notify(c, os.Interrupt)
 
 	//Define command line params and parse input
-	cmdline := cmdline.New()
-	cmdline.AddOption("c", "config", "config.yaml", "path to configuration file")
-	cmdline.AddOption("r", "repo", "POSTGRES", "specific repo to use (MSSQL, POSTGRES)")
-	cmdline.SetOptionDefault("r", "POSTGRES")
-	cmdline.AddOption("p", "port", "8380", "default port to serve rest API from")
-	cmdline.SetOptionDefault("p", "8380")
-	cmdline.AddFlag("k", "ask", "Ask for username and password from the STDIN")
-	cmdline.AddFlag("v", "verbose", "verbose logging")
-	cmdline.Parse(os.Args)
+	// cmdline := cmdline.New()
+	// cmdline.AddOption("c", "config", "config.yaml", "path to configuration file")
+	// cmdline.AddOption("r", "repo", "POSTGRES", "specific repo to use (MSSQL, POSTGRES)")
+	// cmdline.SetOptionDefault("r", "POSTGRES")
+	// cmdline.AddOption("p", "port", "8380", "default port to serve rest API from")
+	// cmdline.SetOptionDefault("p", "8380")
+	// cmdline.AddFlag("k", "ask", "Ask for username and password from the STDIN")
+	// cmdline.AddFlag("v", "verbose", "verbose logging")
+	// cmdline.Parse(os.Args)
+
+	args := config.Args{}
+	_ = arg.MustParse(&args)
 
 	//Logger setup
 	logLevel := "warn"
-	if cmdline.IsOptionSet("v") {
+	if args.Debug {
 		logLevel = "info"
 	}
 	logger := jiraworklog.NewLogger(jiraworklog.LoggerOptions{Application: "jiraWorklog", Level: logLevel})
 
-	//Load up configuration. This holds Jira and SQL connection information
-	cfgPath := "config.yaml"
-	if cmdline.IsOptionSet("c") {
-		cfgPath = cmdline.OptionValue("c")
-	}
-
-	cfg, err := jiraworklog.LoadConfig(cfgPath)
+	cfg, err := jiraworklog.LoadConfig(args.Config)
 	if err != nil {
 		switch err {
 		case jiraworklog.ErrNoConfigFile:
@@ -69,21 +68,21 @@ func main() {
 		}
 	}
 
-	//Port
-	port := 8380
-	if cmdline.IsOptionSet("p") {
-		port, err = strconv.Atoi(cmdline.OptionValue("p"))
-		if err != nil {
-			logger.Error("port must be numeric", "error", err)
-			os.Exit(1)
-		}
-	}
+	// //Port
+	// port := 8380
+	// if cmdline.IsOptionSet("p") {
+	// 	port, err = strconv.Atoi(cmdline.OptionValue("p"))
+	// 	if err != nil {
+	// 		logger.Error("port must be numeric", "error", err)
+	// 		os.Exit(1)
+	// 	}
+	// }
 
-	//Repo Settings
+	// //Repo Settings
 	repoType := "POSTGRES"
-	if cmdline.IsOptionSet("r") {
-		repoType = cmdline.OptionValue("r")
-	}
+	// if cmdline.IsOptionSet("r") {
+	// 	repoType = cmdline.OptionValue("r")
+	//}
 
 	//load repo
 	repo, err := loadRepo(repoType, cfg)
@@ -107,50 +106,60 @@ func main() {
 	e.Use(middleware.Recover())
 	e.Use(middleware.RequestID())
 
+	emailClient := email.NewSmtpClient(cfg)
+	if args.Debug {
+		emailClient = email.FakeEmailClient{}
+	}
 	// Create handler
-	handler := NewHandler(repo, logger)
+	handler := NewHandler(repo, logger, cfg, emailClient, args.Debug)
 
 	// Static files (paths relative to where binary is run)
 	e.Static("/static", "../static")
 	e.Static("/web", "../web") // Legacy web directory support
 
+	e.GET("/login", handler.Login)
+	e.POST("/login", handler.LoginPost)
+	e.GET("/login/confirm", handler.LoginConfirmGet)
+	e.POST("/login/confirm", handler.LoginConfirm)
+
 	// Dashboard routes
-	e.GET("/", handler.Dashboard)
-	e.GET("/dashboard", handler.Dashboard)
+	e.GET("/", handler.Dashboard, handler.AuthMiddleware)
+	e.GET("/dashboard", handler.Dashboard, handler.AuthMiddleware)
 
 	// Worklog routes
-	e.GET("/worklogs/groupby", handler.GetWorklogsGroupBy)
-	e.GET("/worklogs/perdev", handler.GetWorklogsPerDev)
-	e.GET("/worklogs/perdevweek", handler.GetWorklogsPerDevWeek)
+	// worklogs := e.Group("/worklogs", handler.AuthMiddleware)
+	// worklogs.GET("/groupby", handler.GetWorklogsGroupBy)
+	// worklogs.GET("/perdev", handler.GetWorklogsPerDev)
+	// worklogs.GET("/perdevweek", handler.GetWorklogsPerDevWeek)
 
-	// Issue routes
-	e.GET("/issues/groupby", handler.GetIssuesGroupedBy)
-	e.GET("/issues/accuracy", handler.GetIssueAccuracy)
+	// // Issue routes
+	// e.GET("/issues/groupby", handler.GetIssuesGroupedBy)
+	// e.GET("/issues/accuracy", handler.GetIssueAccuracy)
 
 	// Reports routes
-	e.GET("/reports/maintenance", handler.GetMaintenanceRatio)
-	e.GET("/reports/missing-charge", handler.GetIssuesMissingProjectCharge)
-	e.GET("/reports/mismatched-charge", handler.GetIssuesMismatchedProjectCharge)
-	e.GET("/reports/customer-bugs", handler.GetCustomerBugs)
-	e.GET("/reports/project-hours", handler.GetProjectChargeHours)
-	e.GET("/reports/project-hours/csv", handler.GetProjectChargeHoursCSV)
-	e.GET("/reports/weekly-hours", handler.GetWeeklyHours)
-	e.GET("/reports/time-tracking", handler.GetProjectTimeTracking)
+	reports := e.Group("/reports", handler.AuthMiddleware)
+	reports.GET("/maintenance", handler.GetMaintenanceRatio)
+	reports.GET("/missing-charge", handler.GetIssuesMissingProjectCharge)
+	reports.GET("/mismatched-charge", handler.GetIssuesMismatchedProjectCharge)
+	reports.GET("/customer-bugs", handler.GetCustomerBugs)
+	reports.GET("/project-hours", handler.GetProjectChargeHours)
+	reports.GET("/project-hours/csv", handler.GetProjectChargeHoursCSV)
+	reports.GET("/weekly-hours", handler.GetWeeklyHours)
+	reports.GET("/time-tracking", handler.GetProjectTimeTracking)
 
 	// Settings routes
-	e.GET("/settings/people", handler.GetPeople)
-	e.PUT("/settings/people/:id", handler.UpdatePerson)
-
-	// Projects routes
-	e.GET("/settings/projects", handler.GetProjects)
-	e.POST("/settings/projects", handler.CreateProject)
-	e.PUT("/settings/projects/:id", handler.UpdateProject)
-	e.DELETE("/settings/projects/:id", handler.DeleteProject)
+	settings := e.Group("/settings", handler.AuthMiddleware)
+	settings.GET("/people", handler.GetPeople)
+	settings.PUT("/people/:id", handler.UpdatePerson)
+	settings.GET("/projects", handler.GetProjects)
+	settings.POST("/projects", handler.CreateProject)
+	settings.PUT("/projects/:id", handler.UpdateProject)
+	settings.DELETE("/projects/:id", handler.DeleteProject)
 
 	// Start server in background
 	go func() {
-		logger.Info("Starting HTTP server", "port", port)
-		if err := e.Start(":" + strconv.Itoa(port)); err != nil && err != http.ErrServerClosed {
+		logger.Info("Starting HTTP server", "port", args.Port)
+		if err := e.Start(":" + strconv.Itoa(args.Port)); err != nil && err != http.ErrServerClosed {
 			logger.Error("failed to start server", "error", err)
 		}
 	}()

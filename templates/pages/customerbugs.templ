@@ -121,15 +121,19 @@ templ bugPriorityBadge(priority string) {
 				{ priority }
 			</span>
 		case "High":
-			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
 				{ priority }
 			</span>
 		case "Medium":
-			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
 				{ priority }
 			</span>
 		case "Low", "Lowest":
 			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+				{ priority }
+			</span>
+		case "Hotfix":
+			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-800">
 				{ priority }
 			</span>
 		default:
@@ -166,10 +170,12 @@ templ customerBugsChartScript() {
 			const priorityColors = {
 				'Highest': '#dc2626',
 				'Critical': '#dc2626',
-				'High': '#ea580c',
-				'Medium': '#ca8a04',
+				'High': '#fff02b',
+				'Medium': '#2b47ff',
 				'Low': '#16a34a',
-				'Lowest': '#22c55e'
+				'Lowest': '#22c55e',
+				'Hotfix': '#ff282f',
+				'Blocker / Urgent': '#000000'
 			};
 
 			// Project colors (for aggregated view)

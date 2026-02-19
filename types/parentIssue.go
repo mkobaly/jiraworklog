@@ -385,6 +385,29 @@ func (p ProjectTimeTracking) Progress() float64 {
 	return float64(devSecs) / float64(p.EstimateSeconds.Int32) * 100
 }
 
+func (p ProjectTimeTracking) StillWithDev() bool {
+	switch p.Status {
+	case "In Progress":
+		return true
+	case "To Do":
+		return true
+	case "Development Backlog":
+		return true
+	case "In Development":
+		return true
+	case "Code Complete":
+		return true
+	case "On Hold":
+		return true
+	case "Bug Draft":
+		return true
+	case "Backlog":
+		return true
+	default:
+		return false
+	}
+}
+
 // IsOverBudget returns true if time spent exceeds estimate
 func (p ProjectTimeTracking) IsOverBudget() bool {
 	return p.Progress() > 100
