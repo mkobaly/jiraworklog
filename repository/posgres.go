@@ -96,6 +96,7 @@ func (s *Postgres) IssuesMissingProjectCharge() ([]types.IssueMissingCharge, err
 		WHERE projectcharge = ''
 		AND id IN (SELECT worklog.issueid FROM worklog)
 		AND updatedate >= NOW() - INTERVAL '60 days'
+		AND project not in ('HT', 'AHT')
 		ORDER BY updatedate DESC;`)
 	return result, err
 }
