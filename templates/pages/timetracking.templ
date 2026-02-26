@@ -117,26 +117,45 @@ templ ProjectTimeTracking(issues []types.ProjectTimeTracking, fixedVersion strin
 							type="checkbox"
 							id="show-parents-only"
 							class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-							onchange="toggleChildItems(this.checked)"
+							onchange="applyFilters()"
 						/>
 						<span class="text-sm text-gray-700">Show parents only</span>
+					</label>
+					<label class="flex items-center gap-2 cursor-pointer">
+						<input
+							type="checkbox"
+							id="hide-completed"
+							class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+							onchange="applyFilters()"
+						/>
+						<span class="text-sm text-gray-700">Hide completed work</span>
 					</label>
 				</div>
 			</div>
 
 			<script>
-				function toggleChildItems(hideChildren) {
-					const childRows = document.querySelectorAll('.child-row');
-					const childCards = document.querySelectorAll('.child-card');
-					childRows.forEach(row => {
-						row.style.display = hideChildren ? 'none' : '';
+				function applyFilters() {
+					const hideChildren = document.getElementById('show-parents-only').checked;
+					const hideCompleted = document.getElementById('hide-completed').checked;
+
+					const rows = document.querySelectorAll('tbody tr');
+					let visibleCount = 0;
+					rows.forEach(row => {
+						const isChild = row.classList.contains('child-row');
+						const isCompleted = row.dataset.completed === 'true';
+						const hide = (hideChildren && isChild) || (hideCompleted && isCompleted);
+						row.style.display = hide ? 'none' : '';
+						if (!hide) visibleCount++;
 					});
-					childCards.forEach(card => {
-						card.style.display = hideChildren ? 'none' : '';
+					document.getElementById('visible-issue-count').textContent = visibleCount;
+
+					const cards = document.querySelectorAll('.mobile-card');
+					cards.forEach(card => {
+						const isChild = card.classList.contains('child-card');
+						const isCompleted = card.dataset.completed === 'true';
+						const hide = (hideChildren && isChild) || (hideCompleted && isCompleted);
+						card.style.display = hide ? 'none' : '';
 					});
-					const totalRows = document.querySelectorAll('tbody tr').length;
-					const hiddenRows = hideChildren ? childRows.length : 0;
-					document.getElementById('visible-issue-count').textContent = totalRows - hiddenRows;
 				}
 			</script>
 
@@ -153,6 +172,7 @@ templ ProjectTimeTracking(issues []types.ProjectTimeTracking, fixedVersion strin
 								<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Project Charge</th>
 								<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Estimate</th>
 								<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Dev Time</th>
+								<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Remaining</th>
 								<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[120px]">Progress</th>
 							</tr>
 						</thead>
@@ -194,7 +214,7 @@ templ ProjectTimeTracking(issues []types.ProjectTimeTracking, fixedVersion strin
 }
 
 templ issueRow(issue types.ProjectTimeTracking, isChild bool) {
-	<tr class={ "hover:bg-gray-50", templ.KV("bg-red-50", issue.IsOverBudget()), templ.KV("bg-yellow-50", !issue.IsOverBudget() && (!issue.EstimateSeconds.Valid || issue.EstimateSeconds.Int32 == 0)), templ.KV("bg-gray-50/50", isChild && !issue.IsOverBudget() && issue.EstimateSeconds.Valid && issue.EstimateSeconds.Int32 > 0), templ.KV("child-row", isChild) }>
+	<tr class={ "hover:bg-gray-50", templ.KV("bg-red-50", issue.IsOverBudget()), templ.KV("bg-yellow-50", !issue.IsOverBudget() && (!issue.EstimateSeconds.Valid || issue.EstimateSeconds.Int32 == 0)), templ.KV("bg-gray-50/50", isChild && !issue.IsOverBudget() && issue.EstimateSeconds.Valid && issue.EstimateSeconds.Int32 > 0), templ.KV("child-row", isChild) } data-completed={ fmt.Sprintf("%t", !issue.StillWithDev()) }>
 		<td class={ "px-4 py-3 text-sm whitespace-nowrap", templ.KV("pl-10", isChild) }>
 			<a
 				href={ templ.SafeURL("https://amagsymmetry.atlassian.net/browse/" + issue.Key) }
@@ -236,6 +256,13 @@ templ issueRow(issue types.ProjectTimeTracking, isChild bool) {
 				<span class="text-gray-400">-</span>
 			}
 		</td>
+		<td class="px-4 py-3 text-sm text-right font-mono whitespace-nowrap">
+			if issue.RemainingSeconds.Valid && issue.RemainingSeconds.Int32 > 0 {
+				{ formatSeconds(issue.RemainingSeconds.Int32) }
+			} else {
+				<span class="text-gray-400">-</span>
+			}
+		</td>
 		<td class="px-4 py-3 text-sm min-w-[120px]">
 			@progressBar(issue)
 		</td>
@@ -243,7 +270,7 @@ templ issueRow(issue types.ProjectTimeTracking, isChild bool) {
 }
 
 templ issueCard(issue types.ProjectTimeTracking, isChild bool) {
-	<div class={ "rounded-lg shadow-md overflow-hidden", templ.KV("bg-red-50 border-l-4 border-red-500", issue.IsOverBudget()), templ.KV("bg-yellow-50 border-l-4 border-yellow-500", !issue.IsOverBudget() && (!issue.EstimateSeconds.Valid || issue.EstimateSeconds.Int32 == 0)), templ.KV("bg-white", !issue.IsOverBudget() && issue.EstimateSeconds.Valid && issue.EstimateSeconds.Int32 > 0), templ.KV("ml-6 border-l-4 border-gray-300", isChild && !issue.IsOverBudget() && issue.EstimateSeconds.Valid && issue.EstimateSeconds.Int32 > 0), templ.KV("child-card", isChild) }>
+	<div class={ "mobile-card rounded-lg shadow-md overflow-hidden", templ.KV("bg-red-50 border-l-4 border-red-500", issue.IsOverBudget()), templ.KV("bg-yellow-50 border-l-4 border-yellow-500", !issue.IsOverBudget() && (!issue.EstimateSeconds.Valid || issue.EstimateSeconds.Int32 == 0)), templ.KV("bg-white", !issue.IsOverBudget() && issue.EstimateSeconds.Valid && issue.EstimateSeconds.Int32 > 0), templ.KV("ml-6 border-l-4 border-gray-300", isChild && !issue.IsOverBudget() && issue.EstimateSeconds.Valid && issue.EstimateSeconds.Int32 > 0), templ.KV("child-card", isChild) } data-completed={ fmt.Sprintf("%t", !issue.StillWithDev()) }>
 		<div class="px-4 py-3 bg-gray-50 border-b flex items-center justify-between">
 			<a
 				href={ templ.SafeURL("https://amagsymmetry.atlassian.net/browse/" + issue.Key) }
@@ -264,7 +291,7 @@ templ issueCard(issue types.ProjectTimeTracking, isChild bool) {
 					</span>
 				}
 			</div>
-			<div class="grid grid-cols-2 gap-2 text-sm mb-2">
+			<div class="grid grid-cols-3 gap-2 text-sm mb-2">
 				<div>
 					<span class="text-gray-500">Estimate:</span>
 					<span class="font-mono ml-1">
@@ -285,6 +312,16 @@ templ issueCard(issue types.ProjectTimeTracking, isChild bool) {
 						}
 					</span>
 				</div>
+				<div>
+					<span class="text-gray-500">Remaining:</span>
+					<span class="font-mono ml-1">
+						if issue.RemainingSeconds.Valid && issue.RemainingSeconds.Int32 > 0 {
+							{ formatSeconds(issue.RemainingSeconds.Int32) }
+						} else {
+							-
+						}
+					</span>
+				</div>
 			</div>
 			@progressBar(issue)
 		</div>
@@ -292,7 +329,7 @@ templ issueCard(issue types.ProjectTimeTracking, isChild bool) {
 }
 
 templ parentIssueRow(issue types.ProjectTimeTracking, totals AggregatedTotals) {
-	<tr class={ "hover:bg-gray-50 font-semibold", templ.KV("bg-red-50", totals.IsOverBudget()), templ.KV("bg-yellow-50", !totals.IsOverBudget() && totals.EstimateSeconds == 0), templ.KV("bg-blue-50/30", !totals.IsOverBudget() && totals.EstimateSeconds > 0) }>
+	<tr class={ "hover:bg-gray-50 font-semibold", templ.KV("bg-red-50", totals.IsOverBudget()), templ.KV("bg-yellow-50", !totals.IsOverBudget() && totals.EstimateSeconds == 0), templ.KV("bg-blue-50/30", !totals.IsOverBudget() && totals.EstimateSeconds > 0) } data-completed={ fmt.Sprintf("%t", !issue.StillWithDev()) }>
 		<td class="px-4 py-3 text-sm whitespace-nowrap">
 			<a
 				href={ templ.SafeURL("https://amagsymmetry.atlassian.net/browse/" + issue.Key) }
@@ -334,6 +371,13 @@ templ parentIssueRow(issue types.ProjectTimeTracking, totals AggregatedTotals) {
 				<span class="text-gray-400">-</span>
 			}
 		</td>
+		<td class="px-4 py-3 text-sm text-right font-mono whitespace-nowrap">
+			if totals.RemainingSeconds() > 0 {
+				{ formatSeconds(totals.RemainingSeconds()) }
+			} else {
+				<span class="text-gray-400">-</span>
+			}
+		</td>
 		<td class="px-4 py-3 text-sm min-w-[120px]">
 			@aggregatedProgressBar(totals)
 		</td>
@@ -341,7 +385,7 @@ templ parentIssueRow(issue types.ProjectTimeTracking, totals AggregatedTotals) {
 }
 
 templ parentIssueCard(issue types.ProjectTimeTracking, totals AggregatedTotals) {
-	<div class={ "rounded-lg shadow-md overflow-hidden border-l-4", templ.KV("bg-red-50 border-red-500", totals.IsOverBudget()), templ.KV("bg-yellow-50 border-yellow-500", !totals.IsOverBudget() && totals.EstimateSeconds == 0), templ.KV("bg-white border-blue-500", !totals.IsOverBudget() && totals.EstimateSeconds > 0) }>
+	<div class={ "mobile-card rounded-lg shadow-md overflow-hidden border-l-4", templ.KV("bg-red-50 border-red-500", totals.IsOverBudget()), templ.KV("bg-yellow-50 border-yellow-500", !totals.IsOverBudget() && totals.EstimateSeconds == 0), templ.KV("bg-white border-blue-500", !totals.IsOverBudget() && totals.EstimateSeconds > 0) } data-completed={ fmt.Sprintf("%t", !issue.StillWithDev()) }>
 		<div class="px-4 py-3 bg-blue-50 border-b flex items-center justify-between">
 			<a
 				href={ templ.SafeURL("https://amagsymmetry.atlassian.net/browse/" + issue.Key) }
@@ -362,7 +406,7 @@ templ parentIssueCard(issue types.ProjectTimeTracking, totals AggregatedTotals) 
 					</span>
 				}
 			</div>
-			<div class="grid grid-cols-2 gap-2 text-sm mb-2">
+			<div class="grid grid-cols-3 gap-2 text-sm mb-2">
 				<div>
 					<span class="text-gray-500">Total Estimate:</span>
 					<span class="font-mono font-semibold ml-1">
@@ -378,6 +422,16 @@ templ parentIssueCard(issue types.ProjectTimeTracking, totals AggregatedTotals) 
 					<span class={ "font-mono font-semibold ml-1", templ.KV("text-red-600", totals.IsOverBudget()) }>
 						if totals.DevSeconds > 0 {
 							{ formatSeconds(totals.DevSeconds) }
+						} else {
+							-
+						}
+					</span>
+				</div>
+				<div>
+					<span class="text-gray-500">Remaining:</span>
+					<span class="font-mono font-semibold ml-1">
+						if totals.RemainingSeconds() > 0 {
+							{ formatSeconds(totals.RemainingSeconds()) }
 						} else {
 							-
 						}

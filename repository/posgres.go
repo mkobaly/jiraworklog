@@ -266,9 +266,7 @@ func (s *Postgres) ProjectTimeTracking(fixedVersion string) ([]types.ProjectTime
 	query := `
 		SELECT i.id, i.parentid, i.key, i.type, i.summary, i.status, i.projectcharge,
 			i.originalestimate as estimateseconds,
-			format_seconds(i.originalestimate, 7.5) as estimate,
 			w.timespentseconds as devseconds,
-			format_seconds(w.timespentseconds, 7.5) as devtimespent,
 			i.remainingestimate as remainingseconds
 		FROM issue i
 		LEFT JOIN (
@@ -283,9 +281,7 @@ func (s *Postgres) ProjectTimeTracking(fixedVersion string) ([]types.ProjectTime
 		UNION
 		SELECT i.id, i.parentid, i.key, i.type, i.summary, i.status, i.projectcharge,
 			i.originalestimate as estimateseconds,
-			format_seconds(i.originalestimate, 7.5) as estimate,
 			w.timespentseconds as devseconds,
-			format_seconds(w.timespentseconds, 7.5) as devtimespent,
 			i.remainingestimate as remainingseconds
 		FROM issue i
 		JOIN issue i2 on i.parentid = i2.id
