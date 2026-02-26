@@ -10,6 +10,7 @@ import (
 type IssueGroup struct {
 	Parent   *types.ProjectTimeTracking
 	Children []types.ProjectTimeTracking
+	Totals AggregatedTotals
 }
 
 // AggregatedTotals holds the combined estimate and dev time for a group
@@ -24,6 +25,14 @@ func (a AggregatedTotals) Progress() float64 {
 		return 0
 	}
 	return float64(a.DevSeconds) / float64(a.EstimateSeconds) * 100
+}
+
+func (a AggregatedTotals) RemainingSeconds() int32 {
+	remaining := a.EstimateSeconds - a.DevSeconds
+	if remaining > 0 {
+		return remaining
+	}
+	return 0
 }
 
 // IsOverBudget returns true if dev time exceeds estimate
@@ -545,6 +554,8 @@ func groupIssuesByParent(issues []types.ProjectTimeTracking) []IssueGroup {
 		for _, child := range group.Children {
 			processedIssues[child.ID] = true
 		}
+
+		group.Totals = calcGroupTotals(group)
 		groups = append(groups, group)
 	}
 
@@ -624,17 +635,25 @@ func sumDevTime(issues []types.ProjectTimeTracking) int32 {
 // Remaining = estimate - dev time spent (only for issues where StillWithDev() is true).
 func sumRemainingDevTime(issues []types.ProjectTimeTracking) int32 {
 	var total int32
-	for _, issue := range issues {
-		if issue.StillWithDev() && issue.EstimateSeconds.Valid {
-			remaining := issue.EstimateSeconds.Int32
-			if issue.DevSeconds.Valid {
-				remaining -= issue.DevSeconds.Int32
-			}
-			if remaining > 0 {
-				total += remaining
-			}
+
+	groups := groupIssuesByParent(issues)
+	for _, group := range groups {
+		if group.Parent.StillWithDev() {
+			total += group.Totals.RemainingSeconds()
 		}
 	}
+
+	// for _, issue := range issues {
+	// 	if issue.StillWithDev() && issue.EstimateSeconds.Valid {
+	// 		remaining := issue.EstimateSeconds.Int32
+	// 		if issue.DevSeconds.Valid {
+	// 			remaining -= issue.DevSeconds.Int32
+	// 		}
+	// 		if remaining > 0 {
+	// 			total += remaining
+	// 		}
+	// 	}
+	// }
 	return total
 }
 

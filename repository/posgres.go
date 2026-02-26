@@ -84,7 +84,7 @@ func (s *Postgres) UpdatePerson(personId int, role string, isEmployee bool, loca
 func (s *Postgres) AllRoles() ([]string, error) {
 	result := []string{}
 	err := s.DB.Select(&result, `
-		SELECT distinct role FROM people;`)
+		SELECT distinct role FROM people WHERE role IS NOT NULL;`)
 	return result, err
 }
 
@@ -268,7 +268,8 @@ func (s *Postgres) ProjectTimeTracking(fixedVersion string) ([]types.ProjectTime
 			i.originalestimate as estimateseconds,
 			format_seconds(i.originalestimate, 7.5) as estimate,
 			w.timespentseconds as devseconds,
-			format_seconds(w.timespentseconds, 7.5) as devtimespent
+			format_seconds(w.timespentseconds, 7.5) as devtimespent,
+			i.remainingestimate as remainingseconds
 		FROM issue i
 		LEFT JOIN (
 			SELECT issueId, cast(sum(timespentseconds) as integer) timespentseconds
@@ -284,7 +285,8 @@ func (s *Postgres) ProjectTimeTracking(fixedVersion string) ([]types.ProjectTime
 			i.originalestimate as estimateseconds,
 			format_seconds(i.originalestimate, 7.5) as estimate,
 			w.timespentseconds as devseconds,
-			format_seconds(w.timespentseconds, 7.5) as devtimespent
+			format_seconds(w.timespentseconds, 7.5) as devtimespent,
+			i.remainingestimate as remainingseconds
 		FROM issue i
 		JOIN issue i2 on i.parentid = i2.id
 		LEFT JOIN (
@@ -336,6 +338,22 @@ func (s *Postgres) SaveWorklog(w *types.Worklog) error {
 	}
 
 	_, err = stmt.Exec(w.ID, w.Author, w.Date, w.WeekNumber, w.WeekDay, w.TimeSpentSeconds, w.TimeSpentHours, w.IssueId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Postgres) SyncPeople() error {
+	stmt, err := s.DB.Prepare(`
+        INSERT INTO people(name)
+		SELECT DISTINCT author from worklog
+		WHERE date >= now() - INTERVAL '5 days'
+		ON CONFLICT (name) DO NOTHING;`)
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec()
 	if err != nil {
 		return err
 	}

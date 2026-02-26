@@ -183,7 +183,8 @@ func (h *Handler) Dashboard(c echo.Context) error {
 	}
 	peopleMissingRolesCount := 0
 	for _, p := range people {
-		if p.Role == "" || p.Role == "Unknown" {
+		role := p.GetRole()
+		if role == "" || role == "UNKNOWN" {
 			peopleMissingRolesCount++
 		}
 	}

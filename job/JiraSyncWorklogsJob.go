@@ -14,10 +14,11 @@ import (
 
 // JiraSyncWorklogsJob is a background job that will download all worklogs from Jira (updated or deleted)
 type JiraSyncWorklogsJob struct {
-	cfg  *jiraworklog.Config
-	jira jiraworklog.JiraReader
-	repo repository.Repo
-	tz   *time.Location
+	cfg        *jiraworklog.Config
+	jira       jiraworklog.JiraReader
+	repo       repository.Repo
+	tz         *time.Location
+	todaysHour int
 	//logger *slog.Logger
 }
 
@@ -27,10 +28,11 @@ func NewJiraSyncWorklogsJob(cfg *jiraworklog.Config, jira jiraworklog.JiraReader
 		panic(err)
 	}
 	return &JiraSyncWorklogsJob{
-		cfg:  cfg,
-		jira: jira,
-		repo: repo,
-		tz:   nyc,
+		cfg:        cfg,
+		jira:       jira,
+		repo:       repo,
+		tz:         nyc,
+		todaysHour: 99, //something that does not exist to sync on startup
 		//logger: logger,
 	}
 }
@@ -114,6 +116,17 @@ func (j *JiraSyncWorklogsJob) Run() error {
 	j.cfg.WorklogUpdatedLastTimestamp = lastUpdateTimestamp
 	j.cfg.WorklogDeletedLastTimestamp = lastDeletedTimestamp
 	j.cfg.Save()
+
+	//ensure any missing people synced
+	hour := time.Now().Hour()
+	if j.todaysHour != hour {
+		err = j.repo.SyncPeople()
+		if err != nil {
+			return err
+		}
+		j.todaysHour = hour
+	}
+
 	slog.Info("finished processing batch with timestamps", slog.Int64("update", lastUpdateTimestamp), slog.Int64("deleted", lastDeletedTimestamp))
 	return nil
 }

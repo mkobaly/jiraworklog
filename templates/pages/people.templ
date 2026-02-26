@@ -73,20 +73,20 @@ templ People(people []types.People, roles []string) {
 					</thead>
 					<tbody class="bg-white divide-y divide-gray-200" id="people-table-body">
 						for _, person := range people {
-							<tr class="hover:bg-gray-50 person-row" data-person-id={ fmt.Sprintf("%d", person.Id) } data-name={ person.Name } data-role={ person.Role } data-employee={ fmt.Sprintf("%t", person.IsEmployee) } data-location={ person.GetLocation() }>
+							<tr class="hover:bg-gray-50 person-row" data-person-id={ fmt.Sprintf("%d", person.Id) } data-name={ person.Name } data-role={ person.GetRole() } data-employee={ fmt.Sprintf("%t", person.IsEmployee) } data-location={ person.GetLocation() }>
 								<td class="px-6 py-4 whitespace-nowrap">
 									<div class="text-sm font-medium text-gray-900">{ person.Name }</div>
 								</td>
 								<td class="px-6 py-4 whitespace-nowrap">
 									<div class="role-display">
-										<span class="role-text px-2 py-1 text-sm rounded-full bg-blue-100 text-blue-800">{ person.Role }</span>
+										<span class="role-text px-2 py-1 text-sm rounded-full bg-blue-100 text-blue-800">{ person.GetRole() }</span>
 									</div>
 									<div class="role-edit hidden">
 										<div class="relative">
 											<input
 												type="text"
 												class="role-input w-48 px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-												value={ person.Role }
+												value={ person.GetRole() }
 												list={ fmt.Sprintf("roles-%d", person.Id) }
 												placeholder="Enter or select role"
 											/>
@@ -161,20 +161,20 @@ templ People(people []types.People, roles []string) {
 			<!-- Mobile card view -->
 			<div class="md:hidden space-y-4" id="people-mobile-list">
 				for _, person := range people {
-					<div class="bg-white rounded-lg shadow-md p-4 person-card" data-person-id={ fmt.Sprintf("%d", person.Id) } data-name={ person.Name } data-role={ person.Role } data-employee={ fmt.Sprintf("%t", person.IsEmployee) } data-location={ person.GetLocation() }>
+					<div class="bg-white rounded-lg shadow-md p-4 person-card" data-person-id={ fmt.Sprintf("%d", person.Id) } data-name={ person.Name } data-role={ person.GetRole() } data-employee={ fmt.Sprintf("%t", person.IsEmployee) } data-location={ person.GetLocation() }>
 						<div class="flex justify-between items-start mb-3">
 							<h3 class="text-lg font-semibold text-gray-900">{ person.Name }</h3>
 						</div>
 						<div class="mb-3">
 							<label class="text-xs text-gray-500 uppercase">Role</label>
 							<div class="role-display mt-1">
-								<span class="role-text px-2 py-1 text-sm rounded-full bg-blue-100 text-blue-800">{ person.Role }</span>
+								<span class="role-text px-2 py-1 text-sm rounded-full bg-blue-100 text-blue-800">{ person.GetRole() }</span>
 							</div>
 							<div class="role-edit hidden mt-1">
 								<input
 									type="text"
 									class="role-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-									value={ person.Role }
+									value={ person.GetRole() }
 									list={ fmt.Sprintf("roles-mobile-%d", person.Id) }
 									placeholder="Enter or select role"
 								/>

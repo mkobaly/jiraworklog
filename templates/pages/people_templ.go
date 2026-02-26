@@ -107,9 +107,9 @@ func People(people []types.People, roles []string) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var6 string
-					templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(person.Role)
+					templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(person.GetRole())
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 76, Col: 144}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 76, Col: 149}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 					if templ_7745c5c3_Err != nil {
@@ -122,7 +122,7 @@ func People(people []types.People, roles []string) templ.Component {
 					var templ_7745c5c3_Var7 string
 					templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%t", person.IsEmployee))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 76, Col: 199}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 76, Col: 204}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 					if templ_7745c5c3_Err != nil {
@@ -135,7 +135,7 @@ func People(people []types.People, roles []string) templ.Component {
 					var templ_7745c5c3_Var8 string
 					templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(person.GetLocation())
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 76, Col: 238}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 76, Col: 243}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 					if templ_7745c5c3_Err != nil {
@@ -159,9 +159,9 @@ func People(people []types.People, roles []string) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var10 string
-					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(person.Role)
+					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(person.GetRole())
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 82, Col: 104}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 82, Col: 109}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 					if templ_7745c5c3_Err != nil {
@@ -172,9 +172,9 @@ func People(people []types.People, roles []string) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var11 string
-					templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(person.Role)
+					templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(person.GetRole())
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 89, Col: 31}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 89, Col: 36}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 					if templ_7745c5c3_Err != nil {
@@ -321,9 +321,9 @@ func People(people []types.People, roles []string) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var19 string
-					templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(person.Role)
+					templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(person.GetRole())
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 164, Col: 161}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 164, Col: 166}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 					if templ_7745c5c3_Err != nil {
@@ -336,7 +336,7 @@ func People(people []types.People, roles []string) templ.Component {
 					var templ_7745c5c3_Var20 string
 					templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%t", person.IsEmployee))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 164, Col: 216}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 164, Col: 221}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 					if templ_7745c5c3_Err != nil {
@@ -349,7 +349,7 @@ func People(people []types.People, roles []string) templ.Component {
 					var templ_7745c5c3_Var21 string
 					templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(person.GetLocation())
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 164, Col: 255}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 164, Col: 260}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 					if templ_7745c5c3_Err != nil {
@@ -373,9 +373,9 @@ func People(people []types.People, roles []string) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var23 string
-					templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(person.Role)
+					templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(person.GetRole())
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 171, Col: 102}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 171, Col: 107}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 					if templ_7745c5c3_Err != nil {
@@ -386,9 +386,9 @@ func People(people []types.People, roles []string) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var24 string
-					templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(person.Role)
+					templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(person.GetRole())
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 177, Col: 28}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/people.templ`, Line: 177, Col: 33}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 					if templ_7745c5c3_Err != nil {
