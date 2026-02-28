@@ -47,7 +47,11 @@ type Repo interface {
 	CreateProject(name string, projectCharges []string) error
 	UpdateProject(id int, name string, visible bool, projectCharges []string) error
 	DeleteProject(id int) error
+
 	AllProjectCharges() ([]string, error)
+	ProjectCharges() ([]types.ProjectCharge, error)
+	UpdateProjectCharge(name string, visible bool, label string) error
+	SyncProjectCharges() error
 
 	// Project charge hours reporting
 	ProjectChargeHours() ([]types.ProjectChargeHours, error)

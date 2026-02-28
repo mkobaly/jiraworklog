@@ -1,0 +1,293 @@
+package pages
+
+import (
+	"database/sql"
+	"github.com/mkobaly/jiraworklog/templates/layouts"
+	"github.com/mkobaly/jiraworklog/types"
+)
+
+templ ProjectCharges(charges []types.ProjectCharge) {
+	@layouts.Base("Project Charges") {
+		<div class="mb-6">
+			<h1 class="text-3xl font-bold text-gray-900">Project Charges</h1>
+			<p class="text-gray-600 mt-2">Manage visibility and labels for project charges</p>
+		</div>
+
+		<!-- Success/Error message container -->
+		<div id="message-container" class="hidden mb-4">
+			<div id="success-message" class="hidden bg-green-50 border-l-4 border-green-400 p-4">
+				<p class="text-green-700"></p>
+			</div>
+			<div id="error-message" class="hidden bg-red-50 border-l-4 border-red-400 p-4">
+				<p class="text-red-700"></p>
+			</div>
+		</div>
+
+		if len(charges) == 0 {
+			<div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+				<p class="text-yellow-700">No project charges found.</p>
+			</div>
+		} else {
+			<!-- Search box -->
+			<div class="mb-4 relative max-w-sm">
+				<input
+					type="text"
+					id="charge-search"
+					class="w-full px-3 py-2 pl-9 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+					placeholder="Search by name, category, type or label..."
+					oninput="filterChargeRows(this.value)"
+				/>
+				<svg class="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+				</svg>
+			</div>
+
+			<!-- Project Charges Table -->
+			<div class="bg-white rounded-lg shadow-md overflow-hidden">
+				<table class="min-w-full divide-y divide-gray-200">
+					<thead class="bg-gray-50">
+						<tr>
+							<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+							<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+							<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+							<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Visible</th>
+							<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Label</th>
+							<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+						</tr>
+					</thead>
+					<tbody class="bg-white divide-y divide-gray-200" id="charges-table-body">
+						for _, charge := range charges {
+							<tr
+								class="hover:bg-gray-50 charge-row"
+								data-charge-name={ charge.Name }
+								data-charge-visible={ boolStr(charge.Visible) }
+								data-charge-label={ nullStringVal(charge.Label) }
+							>
+								<td class="px-6 py-4 whitespace-nowrap">
+									<div class="text-sm font-mono text-gray-900">{ charge.Name }</div>
+								</td>
+								<td class="px-6 py-4 whitespace-nowrap">
+									<div class="text-sm text-gray-700">{ charge.Category() }</div>
+								</td>
+								<td class="px-6 py-4 whitespace-nowrap">
+									<div class="text-sm text-gray-700">{ charge.Type() }</div>
+								</td>
+								<td class="px-6 py-4 whitespace-nowrap">
+									if charge.Visible {
+										<span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Yes</span>
+									} else {
+										<span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">No</span>
+									}
+								</td>
+								<td class="px-6 py-4 whitespace-nowrap">
+									<div class="text-sm text-gray-700">{ nullStringVal(charge.Label) }</div>
+								</td>
+								<td class="px-6 py-4 whitespace-nowrap text-sm">
+									<button class="edit-charge-btn text-blue-600 hover:text-blue-800 font-medium">
+										Edit
+									</button>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+
+		<!-- Edit Project Charge Modal -->
+		<div id="charge-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+			<div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-lg bg-white">
+				<div class="flex justify-between items-center mb-4">
+					<h3 class="text-lg font-semibold text-gray-900">Edit Project Charge</h3>
+					<button onclick="closeChargeModal()" class="text-gray-400 hover:text-gray-600">
+						<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+						</svg>
+					</button>
+				</div>
+
+				<form id="charge-form" onsubmit="saveCharge(event)">
+					<input type="hidden" id="charge-name"/>
+
+					<div class="mb-4">
+						<label class="block text-sm font-medium text-gray-500 mb-1">Name</label>
+						<p id="charge-name-display" class="text-sm font-mono text-gray-900 bg-gray-50 px-3 py-2 rounded-md border border-gray-200"></p>
+					</div>
+
+					<div class="mb-4">
+						<label class="flex items-center cursor-pointer">
+							<input
+								type="checkbox"
+								id="charge-visible"
+								class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+							/>
+							<span class="ml-2 text-sm text-gray-700">Visible</span>
+						</label>
+					</div>
+
+					<div class="mb-6">
+						<label for="charge-label" class="block text-sm font-medium text-gray-700 mb-1">Label</label>
+						<input
+							type="text"
+							id="charge-label"
+							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+							placeholder="Optional display label"
+						/>
+					</div>
+
+					<div class="flex justify-end space-x-3">
+						<button
+							type="button"
+							onclick="closeChargeModal()"
+							class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
+						>
+							Cancel
+						</button>
+						<button
+							type="submit"
+							id="charge-save-btn"
+							class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+						>
+							Save
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+
+		@projectChargesScript()
+	}
+}
+
+templ projectChargesScript() {
+	<script>
+		function filterChargeRows(term) {
+			const lower = term.toLowerCase().trim();
+			document.querySelectorAll('.charge-row').forEach(row => {
+				const text = row.textContent.toLowerCase();
+				row.classList.toggle('hidden', lower !== '' && !text.includes(lower));
+			});
+		}
+
+		document.querySelectorAll('.edit-charge-btn').forEach(btn => {
+			btn.addEventListener('click', function() {
+				const row = this.closest('.charge-row');
+				const name = row.dataset.chargeName;
+				const visible = row.dataset.chargeVisible === 'true';
+				const label = row.dataset.chargeLabel;
+				showEditChargeModal(name, visible, label);
+			});
+		});
+
+		function showEditChargeModal(name, visible, label) {
+			document.getElementById('charge-name').value = name;
+			document.getElementById('charge-name-display').textContent = name;
+			document.getElementById('charge-visible').checked = visible;
+			document.getElementById('charge-label').value = label;
+			document.getElementById('charge-modal').classList.remove('hidden');
+			document.getElementById('charge-label').focus();
+		}
+
+		function closeChargeModal() {
+			document.getElementById('charge-modal').classList.add('hidden');
+		}
+
+		async function saveCharge(event) {
+			event.preventDefault();
+
+			const name = document.getElementById('charge-name').value;
+			const visible = document.getElementById('charge-visible').checked;
+			const label = document.getElementById('charge-label').value.trim();
+
+			const saveBtn = document.getElementById('charge-save-btn');
+			saveBtn.disabled = true;
+			saveBtn.textContent = 'Saving...';
+
+			try {
+				const response = await fetch('/settings/project-charges', {
+					method: 'PUT',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ name, visible, label })
+				});
+
+				if (response.ok) {
+					// Update the row in the table
+					const row = document.querySelector(`.charge-row[data-charge-name="${CSS.escape(name)}"]`);
+					if (row) {
+						row.dataset.chargeVisible = String(visible);
+						row.dataset.chargeLabel = label;
+
+						const visibleCell = row.children[3];
+						visibleCell.innerHTML = visible
+							? '<span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Yes</span>'
+							: '<span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">No</span>';
+
+						row.children[4].querySelector('div').textContent = label;
+					}
+
+					closeChargeModal();
+					showMessage('success', 'Project charge updated successfully!');
+				} else {
+					const errorText = await response.text();
+					showMessage('error', errorText || 'Failed to update project charge. Please try again.');
+				}
+			} catch (error) {
+				console.error('Error saving project charge:', error);
+				showMessage('error', 'Failed to update project charge. Please try again.');
+			} finally {
+				saveBtn.disabled = false;
+				saveBtn.textContent = 'Save';
+			}
+		}
+
+		function showMessage(msgType, text) {
+			const container = document.getElementById('message-container');
+			const successMsg = document.getElementById('success-message');
+			const errorMsg = document.getElementById('error-message');
+
+			container.classList.remove('hidden');
+
+			if (msgType === 'success') {
+				successMsg.classList.remove('hidden');
+				successMsg.querySelector('p').textContent = text;
+				errorMsg.classList.add('hidden');
+			} else {
+				errorMsg.classList.remove('hidden');
+				errorMsg.querySelector('p').textContent = text;
+				successMsg.classList.add('hidden');
+			}
+
+			setTimeout(() => {
+				container.classList.add('hidden');
+				successMsg.classList.add('hidden');
+				errorMsg.classList.add('hidden');
+			}, 3000);
+		}
+
+		document.addEventListener('keydown', function(e) {
+			if (e.key === 'Escape') {
+				closeChargeModal();
+			}
+		});
+
+		document.getElementById('charge-modal').addEventListener('click', function(e) {
+			if (e.target === this) {
+				closeChargeModal();
+			}
+		});
+	</script>
+}
+
+func boolStr(b bool) string {
+	if b {
+		return "true"
+	}
+	return "false"
+}
+
+func nullStringVal(ns sql.NullString) string {
+	if ns.Valid {
+		return ns.String
+	}
+	return ""
+}

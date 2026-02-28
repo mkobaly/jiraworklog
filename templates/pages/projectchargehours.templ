@@ -7,6 +7,7 @@ import (
 
 	"github.com/mkobaly/jiraworklog/templates/layouts"
 	"github.com/mkobaly/jiraworklog/types"
+	"slices"
 )
 
 // ProjectGroup represents a project with its charges and total hours
@@ -19,6 +20,8 @@ type ProjectGroup struct {
 // ChargeGroup represents a project charge with detail rows
 type ChargeGroup struct {
 	Name       string
+	Category   string
+	Type       string
 	DetailRows []DetailRow
 	Total      float64
 }
@@ -51,11 +54,11 @@ func groupProjectChargeHours(data []types.ProjectChargeHours, opts GroupingOptio
 
 	for _, item := range data {
 		// Initialize project if needed
-		if _, exists := projectMap[item.Project]; !exists {
-			projectMap[item.Project] = &ProjectGroup{Name: item.Project}
-			chargeMap[item.Project] = make(map[string]*ChargeGroup)
-			detailMap[item.Project] = make(map[string]map[string]*DetailRow)
-			projectOrder = append(projectOrder, item.Project)
+		if _, exists := projectMap[item.Label]; !exists {
+			projectMap[item.Label] = &ProjectGroup{Name: item.Label}
+			chargeMap[item.Label] = make(map[string]*ChargeGroup)
+			detailMap[item.Label] = make(map[string]map[string]*DetailRow)
+			projectOrder = append(projectOrder, item.Label)
 		}
 
 		// Determine charge group name based on ByCharge option
@@ -65,9 +68,14 @@ func groupProjectChargeHours(data []types.ProjectChargeHours, opts GroupingOptio
 		}
 
 		// Initialize charge if needed
-		if _, exists := chargeMap[item.Project][chargeGroupName]; !exists {
-			chargeMap[item.Project][chargeGroupName] = &ChargeGroup{Name: chargeGroupName}
-			detailMap[item.Project][chargeGroupName] = make(map[string]*DetailRow)
+		if _, exists := chargeMap[item.Label][chargeGroupName]; !exists {
+			category, chargeType := "", ""
+			if opts.ByCharge {
+				category = item.Category()
+				chargeType = item.Type()
+			}
+			chargeMap[item.Label][chargeGroupName] = &ChargeGroup{Name: chargeGroupName, Category: category, Type: chargeType}
+			detailMap[item.Label][chargeGroupName] = make(map[string]*DetailRow)
 		}
 
 		// Build grouping key based on options
@@ -109,10 +117,10 @@ func groupProjectChargeHours(data []types.ProjectChargeHours, opts GroupingOptio
 		}
 
 		// Aggregate hours for this key
-		if existing, exists := detailMap[item.Project][chargeGroupName][key]; exists {
+		if existing, exists := detailMap[item.Label][chargeGroupName][key]; exists {
 			existing.Hours += item.Hours
 		} else {
-			detailMap[item.Project][chargeGroupName][key] = &DetailRow{
+			detailMap[item.Label][chargeGroupName][key] = &DetailRow{
 				YearMonth:     yearMonth,
 				IsEmployee:    isEmployee,
 				Role:          role,
@@ -122,8 +130,8 @@ func groupProjectChargeHours(data []types.ProjectChargeHours, opts GroupingOptio
 			}
 		}
 
-		chargeMap[item.Project][chargeGroupName].Total += item.Hours
-		projectMap[item.Project].Total += item.Hours
+		chargeMap[item.Label][chargeGroupName].Total += item.Hours
+		projectMap[item.Label].Total += item.Hours
 	}
 
 	// Build final result maintaining order
@@ -159,6 +167,9 @@ func groupProjectChargeHours(data []types.ProjectChargeHours, opts GroupingOptio
 		result = append(result, *project)
 	}
 
+	slices.SortFunc(result, func(a, b ProjectGroup) int {
+		return  strings.Compare(a.Name, b.Name)
+	})
 	return result
 }
 
@@ -304,6 +315,10 @@ templ ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, 
 							<thead class="bg-gray-50">
 								<tr>
 									<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project Charge</th>
+									if groupByCharge {
+										<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+										<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+									}
 									if groupByDate {
 										<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Month</th>
 									}
@@ -328,6 +343,10 @@ templ ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, 
 													<div class="text-sm font-medium text-gray-900">{ charge.Name }</div>
 													<div class="text-xs text-gray-500">Subtotal: { formatHours(charge.Total) } hrs</div>
 												</td>
+												if groupByCharge {
+													<td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700" rowspan={ fmt.Sprintf("%d", len(charge.DetailRows)) }>{ charge.Category }</td>
+													<td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700" rowspan={ fmt.Sprintf("%d", len(charge.DetailRows)) }>{ charge.Type }</td>
+												}
 											}
 											if groupByDate {
 												<td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">
@@ -375,7 +394,12 @@ templ ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, 
 							for _, charge := range project.Charges {
 								<div class="p-4">
 									<div class="flex justify-between items-start mb-2">
-										<span class="text-sm font-medium text-gray-900">{ charge.Name }</span>
+										<div>
+											<span class="text-sm font-medium text-gray-900">{ charge.Name }</span>
+											if groupByCharge {
+												<div class="text-xs text-gray-500 mt-0.5">{ charge.Category } &bull; { charge.Type }</div>
+											}
+										</div>
 										<span class="text-sm font-semibold text-blue-600">{ formatHours(charge.Total) } hrs</span>
 									</div>
 									<div class="space-y-2">
@@ -462,7 +486,7 @@ templ locationBadge(location string) {
 func countUniqueProjects(data []types.ProjectChargeHours) int {
 	projects := make(map[string]bool)
 	for _, item := range data {
-		projects[item.Project] = true
+		projects[item.Label] = true
 	}
 	return len(projects)
 }

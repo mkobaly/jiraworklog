@@ -26,7 +26,7 @@ func NewJJiraSyncIssuesJob(cfg *jiraworklog.Config, jira jiraworklog.JiraReader,
 		cfg:        cfg,
 		jira:       jira,
 		repo:       repo,
-		todaysHour: 0,
+		todaysHour: 99,
 	}
 }
 
@@ -35,7 +35,7 @@ func (j *JiraSyncIssuesJob) GetName() string {
 }
 
 func (j *JiraSyncIssuesJob) GetInterval() time.Duration {
-	return time.Second * 30
+	return time.Second * 45
 }
 
 func (j *JiraSyncIssuesJob) Run() error {
@@ -82,18 +82,27 @@ func (j *JiraSyncIssuesJob) Run() error {
 		lastUpdated = lastUpdated.Add(time.Hour * 24)
 	}
 
-	//run for today once an hour as current issues have hours updated
+	//if caught up, for today once every 10 mins
 	if lastUpdated.Compare(today) == 0 {
 		hour := time.Now().Hour()
-		if j.todaysHour != hour {
+		minute := time.Now().Minute()
+		if j.todaysHour != hour || minute%10 == 0 {
+			slog.Info("syncing issues and project charges for today", slog.Time("lastUpdated", lastUpdated))
 			err = j.syncUpdatedIssues(lastUpdated)
 			if err != nil {
 				return err
 			}
 			j.todaysHour = hour
+			err = j.repo.SyncProjectCharges()
+			if err != nil {
+				return err
+			}
+			j.cfg.IssueLastTimestamp = lastUpdated
+			if err := j.cfg.Save(); err != nil {
+				return errors.Wrap(err, "error saving config")
+			}
 		}
 	}
-
 	return nil
 }
 
@@ -108,7 +117,7 @@ func (j *JiraSyncIssuesJob) issueOK(issue types.StoredIssue) bool {
 
 func (j *JiraSyncIssuesJob) fetchAndSaveIssues(jiraIds []string) error {
 
-	slog.Info("bulk fetching jira issues", slog.String("ids", strings.Join(jiraIds, ",")))
+	//slog.Info("bulk fetching jira issues", slog.String("ids", strings.Join(jiraIds, ",")))
 	issues, err := jiraworklog.Retry(3, time.Second*10, func() ([]jiraworklog.Issue, error) {
 		return j.jira.BulkFetchIssues(jiraIds)
 	})
@@ -133,7 +142,6 @@ func (j *JiraSyncIssuesJob) syncUpdatedIssues(date time.Time) error {
 	jiraIds := []string{}
 	nextPageToken := ""
 	for {
-		slog.Info("fetching jira issues updated", slog.String("since", date.String()))
 		updatedIssues, err := j.jira.IssuesUpdated(date, nextPageToken)
 		if err != nil {
 			return errors.Wrap(err, "error fetching updated jira issues")
@@ -147,13 +155,12 @@ func (j *JiraSyncIssuesJob) syncUpdatedIssues(date time.Time) error {
 		}
 
 		if len(jiraIds) > 0 {
-			slog.Info("fetching updated jira issues", slog.Int("count", len(jiraIds)))
+			slog.Info("fetching updated jira issues", slog.Time("since", date), slog.Int("count", len(jiraIds)))
 			err := j.fetchAndSaveIssues(jiraIds)
 			if err != nil {
 				return err
 			}
 		}
-
 		if updatedIssues.IsLast {
 			break
 		}

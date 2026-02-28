@@ -155,6 +155,8 @@ func main() {
 	settings.POST("/projects", handler.CreateProject)
 	settings.PUT("/projects/:id", handler.UpdateProject)
 	settings.DELETE("/projects/:id", handler.DeleteProject)
+	settings.GET("/project-charges", handler.GetProjectCharges)
+	settings.PUT("/project-charges", handler.UpdateProjectCharge)
 
 	// Start server in background
 	go func() {

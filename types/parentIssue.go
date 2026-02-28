@@ -310,15 +310,96 @@ type Project struct {
 	ProjectCharges StringArray `db:"projectcharge"`
 }
 
+// Project represents a project with associated project charges
+type ProjectCharge struct {
+	Name    string         `db:"name"`
+	Visible bool           `db:"visible"`
+	Label   sql.NullString `db:"label"`
+}
+
+func (p ProjectCharge) Category() string {
+	return projectCategory(p.Name)
+}
+
+func (p ProjectCharge) Type() string {
+	return projectType(p.Name)
+}
+
+func projectCategory(name string) string {
+	if !strings.Contains(name, "/") {
+		return "Non-Recoverable"
+	}
+	idx := strings.Index(name, "/")
+	if idx == -1 || idx+2 > len(name) {
+		return "UNKNOWN"
+	}
+	switch name[idx+1 : idx+2] {
+	case "0":
+		return "Symmetry Software"
+	case "1":
+		return "Symmetry Hardware"
+	case "2":
+		return "Identity"
+	case "3":
+		return "Guest"
+	case "4":
+		return "Mobile"
+	case "5":
+		return "Non-Recoverable"
+	case "6":
+		return "Infrastructure"
+	case "7":
+		return "Symmetry Cloud"
+	default:
+		return "UNKNOWN"
+
+	}
+}
+
+func projectType(name string) string {
+	if !strings.Contains(name, "/") {
+		return "Non-Recoverable"
+	}
+	idx := strings.Index(name, "/")
+	if idx == -1 || idx+3 > len(name) {
+		return "UNKNOWN"
+	}
+	switch name[idx+2 : idx+3] {
+	case "0":
+		return "New"
+	case "1":
+		return "Enhancement"
+	case "2":
+		return "Maintenance"
+	case "3":
+		return "Research"
+	case "4":
+		return "Customization"
+	case "5":
+		return "Non-Recoverable"
+	default:
+		return "UNKNOWN"
+	}
+}
+
 // ProjectChargeHours represents hours worked per project charge and role
 type ProjectChargeHours struct {
-	Project       string         `db:"project"`
+	//Project       string         `db:"project"`
+	Label         string         `db:"label"`
 	ProjectCharge string         `db:"projectcharge"`
 	YearMonth     string         `db:"yearmonth"`
 	IsEmployee    bool           `db:"isemployee"`
 	Role          sql.NullString `db:"role"`
 	Location      sql.NullString `db:"location"`
 	Hours         float64        `db:"hours"`
+}
+
+func (p ProjectChargeHours) Category() string {
+	return projectCategory(p.ProjectCharge)
+}
+
+func (p ProjectChargeHours) Type() string {
+	return projectType(p.ProjectCharge)
 }
 
 // DailyHours represents hours worked by an author on a specific day

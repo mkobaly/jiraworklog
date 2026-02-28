@@ -648,6 +648,43 @@ func (h *Handler) DeleteProject(c echo.Context) error {
 	})
 }
 
+func (h *Handler) GetProjectCharges(c echo.Context) error {
+	charges, err := h.repo.ProjectCharges()
+	if err != nil {
+		h.logger.Error("error fetching project charges", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch project charges")
+	}
+
+	if wantsHTML(c) {
+		return pages.ProjectCharges(charges).Render(c.Request().Context(), c.Response().Writer)
+	}
+
+	return c.JSON(http.StatusOK, charges)
+}
+
+func (h *Handler) UpdateProjectCharge(c echo.Context) error {
+	var req struct {
+		Name    string `json:"name"`
+		Visible bool   `json:"visible"`
+		Label   string `json:"label"`
+	}
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid request body")
+	}
+	if req.Name == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "name is required")
+	}
+
+	if err := h.repo.UpdateProjectCharge(req.Name, req.Visible, req.Label); err != nil {
+		h.logger.Error("error updating project charge", "error", err, "name", req.Name)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to update project charge")
+	}
+
+	h.logger.Info("updated project charge", "name", req.Name, "visible", req.Visible)
+
+	return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
+}
+
 func (h *Handler) GetProjectChargeHours(c echo.Context) error {
 	data, err := h.repo.ProjectChargeHours()
 	if err != nil {
@@ -689,7 +726,7 @@ func (h *Handler) GetProjectChargeHoursCSV(c echo.Context) error {
 	// Write header
 	csv.WriteString("Project")
 	if groupByCharge {
-		csv.WriteString(",Project Charge")
+		csv.WriteString(",Project Charge,Category,Type")
 	}
 	if groupByDate {
 		csv.WriteString(",Month")
@@ -709,6 +746,8 @@ func (h *Handler) GetProjectChargeHoursCSV(c echo.Context) error {
 	type rowKey struct {
 		Project       string
 		ProjectCharge string
+		Category      string
+		Type          string
 		YearMonth     string
 		IsEmployee    bool
 		Role          string
@@ -728,10 +767,12 @@ func (h *Handler) GetProjectChargeHoursCSV(c echo.Context) error {
 		}
 
 		key := rowKey{
-			Project: item.Project,
+			Project: item.Label,
 		}
 		if groupByCharge {
 			key.ProjectCharge = item.ProjectCharge
+			key.Category = item.Category()
+			key.Type = item.Type()
 		}
 		if groupByDate {
 			key.YearMonth = item.YearMonth
@@ -753,7 +794,7 @@ func (h *Handler) GetProjectChargeHoursCSV(c echo.Context) error {
 	for key, hours := range aggregated {
 		csv.WriteString(fmt.Sprintf("%q", key.Project))
 		if groupByCharge {
-			csv.WriteString(fmt.Sprintf(",%q", key.ProjectCharge))
+			fmt.Fprintf(&csv, ",%q,%q,%q", key.ProjectCharge, key.Category, key.Type)
 		}
 		if groupByDate {
 			csv.WriteString(fmt.Sprintf(",%q", key.YearMonth))

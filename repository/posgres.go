@@ -187,6 +187,7 @@ func (s *Postgres) DeleteProject(id int) error {
 	return err
 }
 
+// TODO - This should go away
 // AllProjectCharges returns all distinct project charges from the issue table
 func (s *Postgres) AllProjectCharges() ([]string, error) {
 	result := []string{}
@@ -198,12 +199,31 @@ func (s *Postgres) AllProjectCharges() ([]string, error) {
 	return result, err
 }
 
+func (s *Postgres) ProjectCharges() ([]types.ProjectCharge, error) {
+	result := []types.ProjectCharge{}
+	err := s.DB.Select(&result, `
+		SELECT name, visible, label
+		FROM project_charge
+		ORDER BY name;`)
+	return result, err
+}
+
+func (s *Postgres) UpdateProjectCharge(name string, visible bool, label string) error {
+	stmt, err := s.DB.Prepare(`
+		UPDATE project_charge SET visible = $2, label = $3 WHERE name = $1`)
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = stmt.Exec(name, visible, label)
+	return err
+}
+
 // ProjectChargeHours returns hours worked per project charge and role
 func (s *Postgres) ProjectChargeHours() ([]types.ProjectChargeHours, error) {
 	result := []types.ProjectChargeHours{}
 	err := s.DB.Select(&result, `
 		SELECT
-			COALESCE(p.name, 'UNDEFINED') as project,
+			COALESCE(p.label, 'UNDEFINED') as label,
 			COALESCE(NULLIF(j.projectcharge, ''), 'PROJECT CHARGE MISSING') as projectcharge,
 			to_char(w.date, 'YYYY-MM') AS yearmonth,
 			NULLIF(per.role, 'UNKNOWN') as role,
@@ -212,12 +232,16 @@ func (s *Postgres) ProjectChargeHours() ([]types.ProjectChargeHours, error) {
 			SUM(w.timespenthours) as hours
 		FROM worklog w
 				JOIN issue j ON w.issueid = j.id
-				LEFT JOIN project p ON j.projectcharge = ANY(p.projectcharge)
+				LEFT JOIN project_charge p ON j.projectcharge = p.name
 				LEFT JOIN people per ON w.author = per.name
 		WHERE w.date >= now() - INTERVAL '13 months'
 		AND COALESCE(p.visible, true)  = true
 		GROUP BY p.name, j.projectcharge, to_char(w.date, 'YYYY-MM'), per.role, per.isemployee, per.location
-		ORDER BY p.name, j.projectcharge;`)
+		ORDER BY p.name, j.projectcharge;
+
+		
+		
+		`)
 	return result, err
 }
 
@@ -345,6 +369,23 @@ func (s *Postgres) SyncPeople() error {
         INSERT INTO people(name)
 		SELECT DISTINCT author from worklog
 		WHERE date >= now() - INTERVAL '5 days'
+		ON CONFLICT (name) DO NOTHING;`)
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Postgres) SyncProjectCharges() error {
+	stmt, err := s.DB.Prepare(`
+        INSERT INTO project_charge(name)
+		SELECT DISTINCT projectcharge from issue
+		WHERE createdate >= now() - INTERVAL '5 days'
+		and projectcharge != ''
 		ON CONFLICT (name) DO NOTHING;`)
 	if err != nil {
 		return err

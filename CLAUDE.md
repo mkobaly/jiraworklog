@@ -76,6 +76,5 @@ This is a Go web application that syncs Jira worklogs/issues to PostgreSQL and p
 ### CLI Flags
 
 - `-c, --config`: Config file path (default: config.yaml)
-- `-r, --repo`: Repository type - POSTGRES only for now
 - `-p, --port`: HTTP port (default: 8380)
-- `-v, --verbose`: Enable debug logging
+- `-d, --debug`: Enable debug logging
