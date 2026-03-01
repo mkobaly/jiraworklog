@@ -302,15 +302,7 @@ type CustomerBugCount struct {
 	Count     int    `db:"count"`
 }
 
-// Project represents a project with associated project charges
-type Project struct {
-	Id             int         `db:"id"`
-	Name           string      `db:"name"`
-	Visible        bool        `db:"visible"`
-	ProjectCharges StringArray `db:"projectcharge"`
-}
-
-// Project represents a project with associated project charges
+// ProjectCharge represents a project charge entry
 type ProjectCharge struct {
 	Name    string         `db:"name"`
 	Visible bool           `db:"visible"`

@@ -33,17 +33,6 @@ func main() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 
-	//Define command line params and parse input
-	// cmdline := cmdline.New()
-	// cmdline.AddOption("c", "config", "config.yaml", "path to configuration file")
-	// cmdline.AddOption("r", "repo", "POSTGRES", "specific repo to use (MSSQL, POSTGRES)")
-	// cmdline.SetOptionDefault("r", "POSTGRES")
-	// cmdline.AddOption("p", "port", "8380", "default port to serve rest API from")
-	// cmdline.SetOptionDefault("p", "8380")
-	// cmdline.AddFlag("k", "ask", "Ask for username and password from the STDIN")
-	// cmdline.AddFlag("v", "verbose", "verbose logging")
-	// cmdline.Parse(os.Args)
-
 	args := config.Args{}
 	_ = arg.MustParse(&args)
 
@@ -68,16 +57,7 @@ func main() {
 		}
 	}
 
-	// //Port
-	// port := 8380
-	// if cmdline.IsOptionSet("p") {
-	// 	port, err = strconv.Atoi(cmdline.OptionValue("p"))
-	// 	if err != nil {
-	// 		logger.Error("port must be numeric", "error", err)
-	// 		os.Exit(1)
-	// 	}
-	// }
-
+	
 	// //Repo Settings
 	repoType := "POSTGRES"
 	// if cmdline.IsOptionSet("r") {
@@ -151,10 +131,6 @@ func main() {
 	settings := e.Group("/settings", handler.AuthMiddleware)
 	settings.GET("/people", handler.GetPeople)
 	settings.PUT("/people/:id", handler.UpdatePerson)
-	settings.GET("/projects", handler.GetProjects)
-	settings.POST("/projects", handler.CreateProject)
-	settings.PUT("/projects/:id", handler.UpdateProject)
-	settings.DELETE("/projects/:id", handler.DeleteProject)
 	settings.GET("/project-charges", handler.GetProjectCharges)
 	settings.PUT("/project-charges", handler.UpdateProjectCharge)
 
