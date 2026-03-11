@@ -39,6 +39,7 @@ func (j *JiraSyncIssuesJob) GetInterval() time.Duration {
 }
 
 func (j *JiraSyncIssuesJob) Run() error {
+	//Grab all missing issues that have worklog ids
 	missingIssues, err := j.repo.MissingIssues()
 	if err != nil {
 		return errors.Wrap(err, "error fetching missing jira issues")
@@ -115,6 +116,7 @@ func (j *JiraSyncIssuesJob) issueOK(issue types.StoredIssue) bool {
 	return true
 }
 
+// This does a lot for issues. It will update the issue table, fetch the changelog for the issue and save that
 func (j *JiraSyncIssuesJob) fetchAndSaveIssues(jiraIds []string) error {
 
 	//slog.Info("bulk fetching jira issues", slog.String("ids", strings.Join(jiraIds, ",")))
@@ -134,6 +136,23 @@ func (j *JiraSyncIssuesJob) fetchAndSaveIssues(jiraIds []string) error {
 		if err != nil {
 			return errors.Wrap(err, "error writting issue "+issue.Key)
 		}
+
+		//sync chnagelog
+		changelog, err := j.fetchIssueChangelog(issue.ID)
+		if err != nil {
+			return errors.Wrap(err, "error fetching changelogs for issue "+issue.Key)
+		}
+		slog.Info("jira issue changelog", slog.String("key", issue.Key), slog.Int("records", len(changelog)))
+		err = j.repo.BulkInsertChangelogs(changelog)
+		if err != nil {
+			return errors.Wrap(err, "error bulk inserting changelogs for issue "+issue.Key)
+		}
+
+		err = j.repo.RefreshStatusStints(issue.ID)
+		if err != nil {
+			return errors.Wrap(err, "error refreshing status stints for issue "+issue.Key)
+		}
+
 	}
 	return nil
 }
@@ -155,7 +174,7 @@ func (j *JiraSyncIssuesJob) syncUpdatedIssues(date time.Time) error {
 		}
 
 		if len(jiraIds) > 0 {
-			slog.Info("fetching updated jira issues", slog.Time("since", date), slog.Int("count", len(jiraIds)))
+			slog.Info("fetching updated jira issues", slog.Time("since", date), slog.Int("count", len(jiraIds)), slog.String("nextPageToken", nextPageToken))
 			err := j.fetchAndSaveIssues(jiraIds)
 			if err != nil {
 				return err
@@ -166,6 +185,23 @@ func (j *JiraSyncIssuesJob) syncUpdatedIssues(date time.Time) error {
 		}
 	}
 	return nil
+}
+
+func (j *JiraSyncIssuesJob) fetchIssueChangelog(issueId int) ([]types.ChangelogStatus, error) {
+	changelog := []types.ChangelogStatus{}
+	startAt := 0
+	for {
+		cl, err := j.jira.Changelog(issueId, startAt)
+		if err != nil {
+			return nil, err
+		}
+		startAt = cl.Total + startAt - 1
+		changelog = append(changelog, types.ToChangelogStatus(cl, issueId)...)
+		if cl.IsLast {
+			break
+		}
+	}
+	return changelog, nil
 }
 
 func dateOnly(t time.Time) time.Time {

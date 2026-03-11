@@ -152,3 +152,20 @@ func TestWorklogFetchAndSave(t *testing.T) {
 		}
 	}
 }
+
+func TestFetchChangelog(t *testing.T) {
+	cfg, err := jiraworklog.LoadConfig("../bin/config.yaml")
+	if err != nil {
+		t.Fail()
+	}
+
+	jira := jiraworklog.NewJira(cfg)
+	id := 97039
+	changelog, err := jira.Changelog(id, 0)
+	require.NoError(t, err)
+	require.Equal(t, true, changelog.IsLast)
+
+	status := types.ToChangelogStatus(changelog, id)
+	require.Equal(t, 18, len(status))
+
+}

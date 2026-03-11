@@ -501,3 +501,27 @@ func MustNullInt32(s string) sql.NullInt32 {
 	v, _ := strconv.Atoi(s)
 	return sql.NullInt32{Int32: int32(v), Valid: true}
 }
+
+//Changelogs
+
+type ChangelogStatus struct {
+	ID         int
+	IssueID    int
+	Date       time.Time
+	FromStatus string
+	ToStatus   string
+}
+
+func ToChangelogStatus(c jiraworklog.Changelog, issueId int) []ChangelogStatus {
+	results := []ChangelogStatus{}
+	for _, v := range c.Values {
+		for _, i := range v.Items {
+			if i.Field == "status" {
+				id, _ := strconv.Atoi(v.ID)
+				created, _ := time.Parse("2006-01-02T15:04:05.000-0700", v.Created)
+				results = append(results, ChangelogStatus{ID: id, IssueID: issueId, Date: created, FromStatus: i.FromString, ToStatus: i.ToString})
+			}
+		}
+	}
+	return results
+}

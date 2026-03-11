@@ -55,6 +55,9 @@ type Repo interface {
 	// Project time tracking
 	ProjectTimeTracking(fixedVersion string) ([]types.ProjectTimeTracking, error)
 
+	BulkInsertChangelogs(transitions []types.ChangelogStatus) error
+	RefreshStatusStints(issueID int) error
+
 	//WorklogsPerDay() ([]types.WorklogsPerDay, error)
 	//WorklogsPerDevDay() ([]types.WorklogsPerDevDay, error)
 

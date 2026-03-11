@@ -21,6 +21,8 @@ type JiraReader interface {
 	Issue(idOrKey string) (Issue, error)
 	BulkFetchIssues(idOrKeys []string) ([]Issue, error)
 	IssuesUpdated(timestamp time.Time, nextPageToken string) (IssuesUpdated, error)
+
+	Changelog(id int, startAt int) (Changelog, error)
 }
 
 type Jira struct {
@@ -150,7 +152,7 @@ func (j *Jira) Issue(idOrKey string) (Issue, error) {
 // day, the 24 hour period
 func (j *Jira) IssuesUpdated(timestamp time.Time, nextPageToken string) (IssuesUpdated, error) {
 	issuesUpdated := IssuesUpdated{}
-	ts := timestamp.Format("2006-01-02")
+	ts := timestamp.Add(time.Minute * -5).Format("2006-01-02 15:04")
 	te := timestamp.Add(time.Hour * 24).Format("2006-01-02")
 	query := fmt.Sprintf("jql=updated>=\"%s\" AND updated < \"%s\" order by updated ASC", ts, te)
 	if nextPageToken != "" {
@@ -222,6 +224,32 @@ func (j *Jira) BulkFetchIssues(idOrKeys []string) ([]Issue, error) {
 		return issues, err
 	}
 	return response.Issues, nil
+}
+
+func (j *Jira) Changelog(id int, startAt int) (Changelog, error) {
+	changelog := Changelog{}
+	req, err := http.NewRequest("GET", j.Config.Jira.URL+fmt.Sprintf("/issue/%d/changelog?maxResults=100&startAt=%d", id, startAt), nil)
+	if err != nil {
+		return changelog, err
+	}
+	req.SetBasicAuth(j.Config.Jira.Username, j.Config.Jira.Password)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := j.client.Do(req)
+	if err != nil {
+		return changelog, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		if resp.StatusCode == 404 {
+			return changelog, ErrIssueNotFound
+		}
+		return changelog, fmt.Errorf("Not 200 response %d", resp.StatusCode)
+	}
+
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&changelog)
+	return changelog, err
 }
 
 type UpdatedWorklogs struct {
@@ -453,4 +481,40 @@ type IssuesUpdated struct {
 type BulkJiraResponse struct {
 	Expand string  `json:"expand"`
 	Issues []Issue `json:"issues"`
+}
+
+type Changelog struct {
+	Self       string `json:"self"`
+	MaxResults int    `json:"maxResults"`
+	StartAt    int    `json:"startAt"`
+	Total      int    `json:"total"`
+	IsLast     bool   `json:"isLast"`
+	Values     []struct {
+		ID     string `json:"id"`
+		Author struct {
+			Self       string `json:"self"`
+			AccountID  string `json:"accountId"`
+			AvatarUrls struct {
+				Four8X48  string `json:"48x48"`
+				Two4X24   string `json:"24x24"`
+				One6X16   string `json:"16x16"`
+				Three2X32 string `json:"32x32"`
+			} `json:"avatarUrls"`
+			DisplayName string `json:"displayName"`
+			Active      bool   `json:"active"`
+			TimeZone    string `json:"timeZone"`
+			AccountType string `json:"accountType"`
+		} `json:"author"`
+		Created string `json:"created"`
+		Items   []struct {
+			Field      string `json:"field"`
+			Fieldtype  string `json:"fieldtype"`
+			From       string `json:"from"`
+			FromString string `json:"fromString"`
+			To         string `json:"to"`
+			ToString   string `json:"toString"`
+		} `json:"items"`
+		HistoryMetadata struct {
+		} `json:"historyMetadata,omitempty"`
+	} `json:"values"`
 }

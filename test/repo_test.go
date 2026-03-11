@@ -72,3 +72,43 @@ func TestInsert(t *testing.T) {
 		t.Error("Error executing repository.Fetch()", err.Error())
 	}
 }
+
+func TestBulkInsertChangelog(t *testing.T) {
+	cfg, err := GetTestConfig()
+	if err != nil {
+		t.Fatal()
+	}
+	repo, err := repository.NewPostgresRepo(cfg)
+	if err != nil {
+		t.Fatal()
+	}
+
+	jira := jiraworklog.NewJira(cfg)
+	id := 97039
+	changelog, err := jira.Changelog(id, 0)
+	require.NoError(t, err)
+	cs := types.ToChangelogStatus(changelog, id)
+
+	err = repo.BulkInsertChangelogs(cs)
+	if err != nil {
+		t.Error("Error bulk inserting changlogs", err.Error())
+	}
+}
+
+func TestRefreshOfStatus(t *testing.T) {
+	cfg, err := GetTestConfig()
+	if err != nil {
+		t.Fatal()
+	}
+	repo, err := repository.NewPostgresRepo(cfg)
+	if err != nil {
+		t.Fatal()
+	}
+
+	id := 97039
+
+	err = repo.RefreshStatusStints(id)
+	if err != nil {
+		t.Error("Error bulk inserting changlogs", err.Error())
+	}
+}

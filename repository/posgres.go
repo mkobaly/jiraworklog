@@ -190,11 +190,7 @@ func (s *Postgres) ProjectChargeHours() ([]types.ProjectChargeHours, error) {
 		WHERE w.date >= now() - INTERVAL '13 months'
 		AND COALESCE(p.visible, true)  = true
 		GROUP BY p.name, j.projectcharge, to_char(w.date, 'YYYY-MM'), per.role, per.isemployee, per.location
-		ORDER BY p.name, j.projectcharge;
-
-		
-		
-		`)
+		ORDER BY p.name, j.projectcharge;`)
 	return result, err
 }
 
@@ -394,6 +390,62 @@ func (s *Postgres) UpdateIssue(issue *types.StoredIssue) error {
 		issue.ID, issue.Key, issue.ParentId, issue.Type, issue.Summary, issue.Priority, issue.Status, issue.Project,
 		issue.ProjectCharge, issue.FixedVersions, issue.CreateDate, issue.UpdateDate, issue.ResolvedDate, issue.DaysToResolve,
 		issue.TimeSpent, issue.OriginalEstimate, issue.RemainingEstimate)
+	return err
+}
+
+// Bulk insert all status changelogs. This is typically for a single jira issue
+func (s *Postgres) BulkInsertChangelogs(transitions []types.ChangelogStatus) error {
+	if len(transitions) == 0 {
+		return nil
+	}
+
+	issueIDs := make([]int, len(transitions))
+	fromStatuses := make([]string, len(transitions))
+	toStatuses := make([]string, len(transitions))
+	dates := make([]time.Time, len(transitions))
+	ids := make([]int, len(transitions))
+
+	for i, t := range transitions {
+		issueIDs[i] = t.IssueID
+		fromStatuses[i] = t.FromStatus
+		toStatuses[i] = t.ToStatus
+		dates[i] = t.Date
+		ids[i] = t.ID
+	}
+
+	_, err := s.DB.Exec(`
+		INSERT INTO issue_transition (id, issueid, fromstatus, tostatus, datetransitioned)
+		SELECT * FROM unnest($1::integer[], $2::integer[], $3::text[], $4::text[], $5::TIMESTAMPTZ[])
+		ON CONFLICT DO NOTHING`,
+		ids, issueIDs, fromStatuses, toStatuses, dates)
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Refresh status stints will repopulate the current status state for a given issue (deletes and then inserts results)
+func (s *Postgres) RefreshStatusStints(issueID int) error {
+	_, err := s.DB.Exec(`
+		WITH deleted AS (
+			DELETE FROM status_stints WHERE issueid = $1
+		),
+		transitions AS (
+			SELECT
+				issueid,
+				tostatus                                                                AS status,
+				datetransitioned                                                        AS datestarted,
+				LEAD(datetransitioned) OVER (ORDER BY datetransitioned)                AS dateended,
+				EXTRACT(EPOCH FROM (
+					LEAD(datetransitioned) OVER (ORDER BY datetransitioned) - datetransitioned
+				))::bigint                                                              AS durationseconds
+			FROM issue_transition
+			WHERE issueid = $1
+		)
+		INSERT INTO status_stints (issueid, status, datestarted, dateended, durationseconds)
+		SELECT issueid, status, datestarted, dateended, durationseconds
+		FROM transitions`, issueID)
 	return err
 }
 
