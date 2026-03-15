@@ -9,7 +9,6 @@ import (
 
 templ ProjectKPIs(data types.ProjectKPIData, project string) {
 	@layouts.Base("Project KPIs") {
-		<!-- Chart.js -->
 		<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 		<div class="space-y-6">
@@ -43,72 +42,101 @@ templ ProjectKPIs(data types.ProjectKPIData, project string) {
 					No issues found for <strong>{ project }</strong>. Check that the transition data has been synced.
 				</div>
 			} else {
-				<!-- KPI summary cards -->
-				<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-					@kpiCard("Issues", fmt.Sprintf("%d", data.IssueCount), "bg-blue-50", "text-blue-700")
-					@kpiCard("Avg Cycle Time", kpiFmtDuration(data.AvgCycleTimeSecs), "bg-indigo-50", "text-indigo-700")
-					@kpiCard("Median Cycle Time", kpiFmtDuration(data.MedianCycleTimeSecs), "bg-purple-50", "text-purple-700")
-					@kpiCard("P85 Cycle Time", kpiFmtDuration(data.P85CycleTimeSecs), "bg-violet-50", "text-violet-700")
-					@kpiCard("P95 Cycle Time", kpiFmtDuration(data.P95CycleTimeSecs), "bg-fuchsia-50", "text-fuchsia-700")
-					@kpiCard("Flow Efficiency", fmt.Sprintf("%.1f%%", data.FlowEfficiencyPct), flowEfficiencyBg(data.FlowEfficiencyPct), flowEfficiencyText(data.FlowEfficiencyPct))
-					@kpiCard("Avg Blocked Time", kpiFmtDuration(data.AvgBlockedTimeSecs), "bg-red-50", "text-red-700")
-					@kpiCard("Status Bounces", fmt.Sprintf("%d (%d issues)", data.TotalBounces, data.BounceIssueCount), "bg-orange-50", "text-orange-700")
-					@kpiCard("QA Returns", fmt.Sprintf("%d issues (avg %.1f)", data.IssuesReturnedFromQA, data.AvgQACycles), "bg-yellow-50", "text-yellow-700")
-				</div>
-
-				<!-- Charts row -->
+				<!-- Row 1: Summary table + Delivery Predictability chart -->
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-					<!-- Cycle time by status -->
+					<!-- Flow Health Summary -->
 					<div class="bg-white rounded-lg shadow p-6">
-						<h2 class="text-lg font-semibold text-gray-700 mb-4">Avg Cycle Time by Status</h2>
-						<canvas
-							id="cycleByStatusChart"
-							data-labels={ kpiStatusLabels(data.CycleTimeByStatus) }
-							data-values={ kpiStatusValues(data.CycleTimeByStatus) }
-							height="300"
-						></canvas>
+						<h2 class="text-lg font-semibold text-gray-700 mb-4">Flow Health Summary</h2>
+						<table class="w-full text-sm">
+							<tbody class="divide-y divide-gray-100">
+								@summaryRow("Issues", fmt.Sprintf("%d", data.IssueCount), "")
+								@summaryRow("Median Cycle Time", kpiFmtDuration(data.MedianCycleTimeSecs), "")
+								@summaryRow("Flow Efficiency", fmt.Sprintf("%.1f%%", data.FlowEfficiencyPct), flowEfficiencyColor(data.FlowEfficiencyPct))
+								@summaryRow("Avg Blocked Time", kpiFmtDuration(data.AvgBlockedTimeSecs), "")
+								@summaryRowWithSub(
+									"Status Bounce Rate",
+									fmt.Sprintf("%.0f%% (%d bounces, %d issues)", kpiBounceRate(data), data.TotalBounces, data.BounceIssueCount),
+									"Issues that re-entered the same status — signals thrash or unclear requirements",
+									"",
+								)
+								if data.IssuesReturnedFromQA > 0 {
+									@summaryRow("QA Returns", fmt.Sprintf("%d issues (avg %.1f cycles)", data.IssuesReturnedFromQA, data.AvgQACycles), "text-orange-600")
+								}
+							</tbody>
+						</table>
 					</div>
 
-					<!-- Flow efficiency gauge-style bar -->
+					<!-- Delivery Predictability -->
 					<div class="bg-white rounded-lg shadow p-6">
-						<h2 class="text-lg font-semibold text-gray-700 mb-4">Cycle Time Distribution</h2>
+						<h2 class="text-lg font-semibold text-gray-700 mb-1">Delivery Predictability</h2>
+						<p class="text-xs text-gray-400 mb-4">Cycle time percentiles across all issues</p>
+						<!-- Percentile summary -->
+						<div class="grid grid-cols-3 gap-3 mb-4">
+							<div class="text-center p-3 bg-purple-50 rounded-lg">
+								<p class="text-xs text-gray-500 uppercase tracking-wide">P50</p>
+								<p class="text-base font-bold text-purple-700">{ kpiFmtDuration(data.MedianCycleTimeSecs) }</p>
+							</div>
+							<div class="text-center p-3 bg-violet-50 rounded-lg">
+								<p class="text-xs text-gray-500 uppercase tracking-wide">P85</p>
+								<p class="text-base font-bold text-violet-700">{ kpiFmtDuration(data.P85CycleTimeSecs) }</p>
+							</div>
+							<div class="text-center p-3 bg-indigo-50 rounded-lg">
+								<p class="text-xs text-gray-500 uppercase tracking-wide">P95</p>
+								<p class="text-base font-bold text-indigo-700">{ kpiFmtDuration(data.P95CycleTimeSecs) }</p>
+							</div>
+						</div>
 						<canvas
 							id="cycleDistChart"
-							data-labels='["Median","P85","P95"]'
+							data-labels='["P50 (Median)","P85","P95"]'
 							data-values={ kpyCycleDistValues(data) }
-							height="300"
+							height="180"
 						></canvas>
 					</div>
 				</div>
 
-				<!-- WIP + Burndown row -->
-				if len(data.WIPHistory) > 0 {
-					<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-						<!-- WIP over time -->
+				<!-- Row 2: Bottleneck Breakdown + Flow Stability -->
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+					<div class="bg-white rounded-lg shadow p-6">
+						<h2 class="text-lg font-semibold text-gray-700 mb-1">Bottleneck Breakdown</h2>
+						<p class="text-xs text-gray-400 mb-4">Average time per issue spent in each phase</p>
+						<canvas
+							id="bucketChart"
+							data-labels={ kpiBucketLabels(data.FlowBuckets) }
+							data-values={ kpiBucketValues(data.FlowBuckets) }
+							height="220"
+						></canvas>
+					</div>
+
+					if len(data.WIPHistory) > 0 {
 						<div class="bg-white rounded-lg shadow p-6">
-							<h2 class="text-lg font-semibold text-gray-700 mb-4">WIP Levels Over Time</h2>
+							<h2 class="text-lg font-semibold text-gray-700 mb-1">Flow Stability</h2>
+							<p class="text-xs text-gray-400 mb-4">Active issues in-flight over time</p>
 							<canvas
 								id="wipChart"
 								data-labels={ kpiTimeLabels(wipDays(data.WIPHistory)) }
 								data-values={ kpiWIPValues(data.WIPHistory) }
-								height="300"
+								height="220"
 							></canvas>
 						</div>
+					}
+				</div>
 
-						<!-- Burndown -->
-						<div class="bg-white rounded-lg shadow p-6">
-							<h2 class="text-lg font-semibold text-gray-700 mb-4">Burndown</h2>
-							<canvas
-								id="burndownChart"
-								data-labels={ kpiTimeLabels(burndownDays(data.BurndownHistory)) }
-								data-values={ kpiBurndownValues(data) }
-								height="300"
-							></canvas>
-						</div>
+				<!-- Row 3: Sprint Progress -->
+				if len(data.BurndownHistory) > 0 {
+					<div class="bg-white rounded-lg shadow p-6">
+						<h2 class="text-lg font-semibold text-gray-700 mb-1">Sprint Progress</h2>
+						<p class="text-xs text-gray-400 mb-4">Remaining issues over time, broken down by phase</p>
+						<canvas
+							id="burndownChart"
+							data-labels={ kpiTimeLabels(burndownDays(data.BurndownHistory)) }
+							data-remaining={ kpiBurndownRemaining(data) }
+							data-dev-remaining={ kpiBurndownDevRemaining(data) }
+							height="180"
+						></canvas>
 					</div>
 				}
 
-				<!-- Cycle time by status detail table -->
+				<!-- Row 4: Time Spent per Status detail table -->
 				if len(data.CycleTimeByStatus) > 0 {
 					<div class="bg-white rounded-lg shadow overflow-hidden">
 						<div class="px-6 py-4 border-b border-gray-200">
@@ -118,6 +146,7 @@ templ ProjectKPIs(data types.ProjectKPIData, project string) {
 							<thead class="bg-gray-50">
 								<tr>
 									<th class="px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Status</th>
+									<th class="px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Phase</th>
 									<th class="px-6 py-3 text-right font-medium text-gray-500 uppercase tracking-wider">Avg Time</th>
 									<th class="px-6 py-3 text-right font-medium text-gray-500 uppercase tracking-wider">Issues</th>
 								</tr>
@@ -126,6 +155,9 @@ templ ProjectKPIs(data types.ProjectKPIData, project string) {
 								for _, s := range data.CycleTimeByStatus {
 									<tr class="hover:bg-gray-50">
 										<td class="px-6 py-3 text-gray-800">{ s.Status }</td>
+										<td class="px-6 py-3">
+											<span class={ "px-2 py-0.5 rounded text-xs font-medium " + bucketBadgeClass(s.Bucket) }>{ s.Bucket }</span>
+										</td>
 										<td class="px-6 py-3 text-right text-gray-600">{ kpiFmtDuration(s.AvgSecs) }</td>
 										<td class="px-6 py-3 text-right text-gray-600">{ fmt.Sprintf("%d", s.IssueCount) }</td>
 									</tr>
@@ -155,45 +187,7 @@ templ ProjectKPIs(data types.ProjectKPIData, project string) {
 					return Math.round(v / 3600 * 10) / 10;
 				}
 
-				function lineChart(id, label, color) {
-					const d = load(id);
-					if (!d || !d.values.length) return;
-					new Chart(d.el, {
-						type: 'line',
-						data: {
-							labels: d.labels,
-							datasets: [{ label: label, data: d.values,
-								borderColor: color, backgroundColor: color,
-								borderWidth: 2, fill: true, tension: 0.3, pointRadius: 2 }]
-						},
-						options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
-					});
-				}
-
-				// Cycle time by status — horizontal bar, values converted to hours
-				(function() {
-					const d = load('cycleByStatusChart');
-					if (!d || !d.values.length) return;
-					new Chart(d.el, {
-						type: 'bar',
-						data: {
-							labels: d.labels,
-							datasets: [{
-								label: 'Avg Hours',
-								data: d.values.map(secsToHours),
-								backgroundColor: 'rgba(99,102,241,0.7)',
-							}]
-						},
-						options: {
-							indexAxis: 'y',
-							responsive: true,
-							plugins: { legend: { display: false } },
-							scales: { x: { beginAtZero: true, title: { display: true, text: 'Hours' } } }
-						}
-					});
-				})();
-
-				// Cycle time distribution (median / P85 / P95) in hours
+				// Delivery Predictability — P50/P85/P95 bar
 				(function() {
 					const d = load('cycleDistChart');
 					if (!d || !d.values.length) return;
@@ -215,18 +209,111 @@ templ ProjectKPIs(data types.ProjectKPIData, project string) {
 					});
 				})();
 
-				lineChart('wipChart',      'WIP Count',  'rgba(59,130,246,0.5)');
-				lineChart('burndownChart', 'Remaining',  'rgba(239,68,68,0.5)');
+				// Bottleneck Breakdown — horizontal bar by bucket
+				(function() {
+					const d = load('bucketChart');
+					if (!d || !d.values.length) return;
+					const colors = {
+						'Dev':     'rgba(59,130,246,0.75)',
+						'QA':      'rgba(139,92,246,0.75)',
+						'Waiting': 'rgba(249,115,22,0.75)',
+						'Done':    'rgba(34,197,94,0.75)',
+						'Other':   'rgba(156,163,175,0.75)',
+					};
+					const bgColors = d.labels.map(function(l) { return colors[l] || colors['Other']; });
+					new Chart(d.el, {
+						type: 'bar',
+						data: {
+							labels: d.labels,
+							datasets: [{
+								label: 'Avg Hours per Issue',
+								data: d.values.map(secsToHours),
+								backgroundColor: bgColors,
+							}]
+						},
+						options: {
+							indexAxis: 'y',
+							responsive: true,
+							plugins: { legend: { display: false } },
+							scales: { x: { beginAtZero: true, title: { display: true, text: 'Hours' } } }
+						}
+					});
+				})();
+
+				// Flow Stability — WIP line
+				(function() {
+					const d = load('wipChart');
+					if (!d || !d.values.length) return;
+					new Chart(d.el, {
+						type: 'line',
+						data: {
+							labels: d.labels,
+							datasets: [{ label: 'WIP Count', data: d.values,
+								borderColor: 'rgba(59,130,246,1)', backgroundColor: 'rgba(59,130,246,0.1)',
+								borderWidth: 2, fill: true, tension: 0.3, pointRadius: 2 }]
+						},
+						options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+					});
+				})();
+
+				// Sprint Progress — 2-line burndown
+				(function() {
+					const el = document.getElementById('burndownChart');
+					if (!el) return;
+					try {
+						const labels       = JSON.parse(el.dataset.labels        || '[]');
+						const remaining    = JSON.parse(el.dataset.remaining      || '[]');
+						const devRemaining = JSON.parse(el.dataset.devRemaining   || '[]');
+						if (!labels.length) return;
+						new Chart(el, {
+							type: 'line',
+							data: {
+								labels: labels,
+								datasets: [
+									{ label: 'Remaining (overall)', data: remaining,
+									  borderColor: 'rgba(239,68,68,1)', backgroundColor: 'rgba(239,68,68,0.08)',
+									  borderWidth: 2, fill: true, tension: 0.3, pointRadius: 0 },
+									{ label: 'Remaining in Dev', data: devRemaining,
+									  borderColor: 'rgba(59,130,246,1)', backgroundColor: 'rgba(59,130,246,0.08)',
+									  borderWidth: 2, fill: true, tension: 0.3, pointRadius: 0 },
+								]
+							},
+							options: {
+								responsive: true,
+								plugins: { legend: { display: true, position: 'top' } },
+								scales: { y: { beginAtZero: true } }
+							}
+						});
+					} catch(e) {}
+				})();
 			})();
 		</script>
 	}
 }
 
-templ kpiCard(label, value, bg, textColor string) {
-	<div class={ "rounded-lg shadow p-5 " + bg }>
-		<p class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">{ label }</p>
-		<p class={ "text-xl font-bold " + textColor }>{ value }</p>
-	</div>
+templ summaryRow(label, value, valueClass string) {
+	<tr>
+		<td class="py-2.5 pr-4 text-gray-500 w-1/2">{ label }</td>
+		if valueClass != "" {
+			<td class={ "py-2.5 font-semibold " + valueClass }>{ value }</td>
+		} else {
+			<td class="py-2.5 font-semibold text-gray-800">{ value }</td>
+		}
+	</tr>
+}
+
+templ summaryRowWithSub(label, value, subtitle, valueClass string) {
+	<tr>
+		<td class="py-2.5 pr-4 w-1/2">
+			<span class="text-gray-500">{ label }</span>
+			<p class="text-xs text-gray-400 mt-0.5">{ subtitle }</p>
+		</td>
+		if valueClass != "" {
+			<td class={ "py-2.5 font-semibold align-top " + valueClass }>{ value }</td>
+		} else {
+			<td class="py-2.5 font-semibold text-gray-800 align-top">{ value }</td>
+		}
+	</tr>
 }
 
 // ── Helper functions ──────────────────────────────────────────────────────────
@@ -251,38 +338,49 @@ func kpiFmtDuration(secs float64) string {
 	}
 }
 
-func flowEfficiencyBg(pct float64) string {
+func kpiBounceRate(data types.ProjectKPIData) float64 {
+	if data.IssueCount == 0 {
+		return 0
+	}
+	return float64(data.BounceIssueCount) / float64(data.IssueCount) * 100
+}
+
+func flowEfficiencyColor(pct float64) string {
 	switch {
 	case pct >= 40:
-		return "bg-green-50"
+		return "text-green-600"
 	case pct >= 20:
-		return "bg-yellow-50"
+		return "text-yellow-600"
 	default:
-		return "bg-red-50"
+		return "text-red-600"
 	}
 }
 
-func flowEfficiencyText(pct float64) string {
-	switch {
-	case pct >= 40:
-		return "text-green-700"
-	case pct >= 20:
-		return "text-yellow-700"
+func bucketBadgeClass(bucket string) string {
+	switch bucket {
+	case "Dev":
+		return "bg-blue-100 text-blue-700"
+	case "QA":
+		return "bg-purple-100 text-purple-700"
+	case "Waiting":
+		return "bg-orange-100 text-orange-700"
+	case "Done":
+		return "bg-green-100 text-green-700"
 	default:
-		return "text-red-700"
+		return "bg-gray-100 text-gray-600"
 	}
 }
 
-func kpiStatusLabels(rows []types.CycleTimeByStatus) string {
+func kpiBucketLabels(rows []types.FlowBucket) string {
 	labels := make([]string, len(rows))
 	for i, r := range rows {
-		labels[i] = r.Status
+		labels[i] = r.Bucket
 	}
 	b, _ := json.Marshal(labels)
 	return string(b)
 }
 
-func kpiStatusValues(rows []types.CycleTimeByStatus) string {
+func kpiBucketValues(rows []types.FlowBucket) string {
 	vals := make([]float64, len(rows))
 	for i, r := range rows {
 		vals[i] = r.AvgSecs
@@ -326,10 +424,21 @@ func kpiWIPValues(pts []types.WIPDataPoint) string {
 	return string(b)
 }
 
-func kpiBurndownValues(data types.ProjectKPIData) string {
+// kpiBurndownRemaining: issues not yet fully done (top/slower line)
+func kpiBurndownRemaining(data types.ProjectKPIData) string {
 	vals := make([]int, len(data.BurndownHistory))
 	for i, p := range data.BurndownHistory {
-		vals[i] = data.IssueCount - p.CompletedIssues
+		vals[i] = data.IssueCount - p.FullyDoneCount
+	}
+	b, _ := json.Marshal(vals)
+	return string(b)
+}
+
+// kpiBurndownDevRemaining: issues dev is still working on (lower/faster line)
+func kpiBurndownDevRemaining(data types.ProjectKPIData) string {
+	vals := make([]int, len(data.BurndownHistory))
+	for i, p := range data.BurndownHistory {
+		vals[i] = data.IssueCount - p.DevCompleteCount
 	}
 	b, _ := json.Marshal(vals)
 	return string(b)

@@ -507,17 +507,60 @@ func (s *Postgres) ProjectKPIs(epicOrVersion string) (types.ProjectKPIData, erro
 	data.P85CycleTimeSecs = ct.P85
 	data.P95CycleTimeSecs = ct.P95
 
-	// ── 3. Cycle time breakdown by status ───────────────────────────────────
+	// ── 3. Cycle time breakdown by status (with bucket label) ───────────────
 	err = s.DB.Select(&data.CycleTimeByStatus, projectIssuesCTE+`
 		SELECT
 			status,
-			AVG(EXTRACT(EPOCH FROM (COALESCE(dateended, now()) - datestarted)))  AS avg_seconds,
-			COUNT(DISTINCT issueid)     AS issue_count
+			CASE
+				WHEN status IN ('In Development','In Progress','Code Complete','Code Merged','Code Review','In Review') THEN 'Dev'
+				WHEN status IN ('In QA','Failed QA') THEN 'QA'
+				WHEN status IN ('On Hold','To Do','Development Backlog','QA Backlog','Bug Draft','Backlog') THEN 'Waiting'
+				WHEN status IN ('Done','Closed','Cancelled') THEN 'Done'
+				ELSE 'Other'
+			END AS bucket,
+			AVG(EXTRACT(EPOCH FROM (COALESCE(dateended, now()) - datestarted))) AS avg_seconds,
+			COUNT(DISTINCT issueid) AS issue_count
 		FROM status_stints
 		WHERE issueid IN (SELECT id FROM project_issues)
-		--AND durationseconds IS NOT NULL
 		GROUP BY status
-		ORDER BY avg_seconds DESC`, epicOrVersion)
+		ORDER BY
+			CASE
+				WHEN status IN ('In Development','In Progress','Code Complete','Code Merged','Code Review','In Review') THEN 1
+				WHEN status IN ('In QA','QA Backlog','Failed QA') THEN 2
+				WHEN status IN ('On Hold','To Do','Development Backlog','Bug Draft','Backlog') THEN 3
+				WHEN status IN ('Done','Closed','Cancelled') THEN 4
+				ELSE 5
+			END,
+			avg_seconds DESC`, epicOrVersion)
+	if err != nil {
+		return data, err
+	}
+
+	// ── 3b. Flow bucket aggregation ──────────────────────────────────────────
+	// Wrap in a subquery so GROUP BY can reference the computed `bucket` column.
+	err = s.DB.Select(&data.FlowBuckets, projectIssuesCTE+`
+		SELECT
+			bucket,
+			AVG(elapsed) AS avg_seconds,
+			SUM(elapsed) AS total_seconds,
+			COUNT(DISTINCT issueid) AS issue_count
+		FROM (
+			SELECT
+				issueid,
+				EXTRACT(EPOCH FROM (COALESCE(dateended, now()) - datestarted)) AS elapsed,
+				CASE
+					WHEN status IN ('In Development','In Progress','Code Complete','Code Merged','Code Review','In Review') THEN 'Dev'
+					WHEN status IN ('In QA','QA Backlog','Failed QA') THEN 'QA'
+					WHEN status IN ('On Hold','To Do','Development Backlog','Bug Draft','Backlog') THEN 'Waiting'
+					WHEN status IN ('Done','Closed','Cancelled') THEN 'Done'
+					ELSE 'Other'
+				END AS bucket
+			FROM status_stints
+			WHERE issueid IN (SELECT id FROM project_issues)
+		) s
+		GROUP BY bucket
+		ORDER BY CASE bucket WHEN 'Dev' THEN 1 WHEN 'QA' THEN 2 WHEN 'Waiting' THEN 3 WHEN 'Done' THEN 4 ELSE 5 END`,
+		epicOrVersion)
 	if err != nil {
 		return data, err
 	}
@@ -632,23 +675,35 @@ func (s *Postgres) ProjectKPIs(epicOrVersion string) (types.ProjectKPIData, erro
 		return data, err
 	}
 
-	// ── 9. Burndown (completed issues cumulative per day) ───────────────────
-	err = s.DB.Select(&data.BurndownHistory, projectIssuesCTE+`
+	// ── 9. Burndown — two falling lines: remaining-in-dev and remaining-overall
+	// dev_complete: first time an issue entered QA or beyond (dev is done with it)
+	// fully_done:   first time an issue entered a done/closed status
+	err = s.DB.Select(&data.BurndownHistory, projectIssuesCTE+`,
+		dev_complete AS (
+			SELECT issueid, MIN(datestarted) AS crossed_at
+			FROM status_stints
+			WHERE issueid IN (SELECT id FROM project_issues)
+			AND status IN ('In QA','QA Backlog','Failed QA','Done','Closed','Cancelled')
+			GROUP BY issueid
+		),
+		fully_done AS (
+			SELECT issueid, MIN(datestarted) AS crossed_at
+			FROM status_stints
+			WHERE issueid IN (SELECT id FROM project_issues)
+			AND status IN ('Done','Closed','Cancelled')
+			GROUP BY issueid
+		)
 		SELECT
-			gs.day::date                                                                    AS day,
-			COUNT(DISTINCT CASE WHEN first_done.completed_at::date <= gs.day THEN first_done.issueid END) AS completed_issues
+			gs.day::date AS day,
+			COUNT(DISTINCT CASE WHEN dc.crossed_at::date <= gs.day THEN dc.issueid END) AS dev_complete_count,
+			COUNT(DISTINCT CASE WHEN fd.crossed_at::date <= gs.day THEN fd.issueid END) AS fully_done_count
 		FROM generate_series(
 			(SELECT MIN(datestarted)::date FROM status_stints WHERE issueid IN (SELECT id FROM project_issues)),
 			NOW()::date,
 			'1 day'::interval
 		) gs(day)
-		LEFT JOIN (
-			SELECT DISTINCT ON (issueid) issueid, datestarted AS completed_at
-			FROM status_stints
-			WHERE issueid IN (SELECT id FROM project_issues)
-			AND status IN ('Done','Closed', 'Cancelled')
-			ORDER BY issueid, datestarted
-		) first_done ON true
+		LEFT JOIN dev_complete  dc ON true
+		LEFT JOIN fully_done    fd ON true
 		GROUP BY gs.day
 		ORDER BY gs.day`, epicOrVersion)
 	if err != nil {

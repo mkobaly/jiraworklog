@@ -28,13 +28,23 @@ type ProjectKPIData struct {
 	IssuesReturnedFromQA int
 
 	// Breakdowns
+	FlowBuckets       []FlowBucket
 	CycleTimeByStatus []CycleTimeByStatus
 	WIPHistory        []WIPDataPoint
 	BurndownHistory   []BurndownDataPoint
 }
 
+// FlowBucket aggregates time spent across a named group of statuses.
+type FlowBucket struct {
+	Bucket     string  `db:"bucket"`
+	AvgSecs    float64 `db:"avg_seconds"`
+	TotalSecs  float64 `db:"total_seconds"`
+	IssueCount int     `db:"issue_count"`
+}
+
 type CycleTimeByStatus struct {
 	Status     string  `db:"status"`
+	Bucket     string  `db:"bucket"`
 	AvgSecs    float64 `db:"avg_seconds"`
 	IssueCount int     `db:"issue_count"`
 }
@@ -45,6 +55,7 @@ type WIPDataPoint struct {
 }
 
 type BurndownDataPoint struct {
-	Day             time.Time `db:"day"`
-	CompletedIssues int       `db:"completed_issues"`
+	Day              time.Time `db:"day"`
+	DevCompleteCount int       `db:"dev_complete_count"` // cumulative issues dev is done with (in QA or beyond)
+	FullyDoneCount   int       `db:"fully_done_count"`   // cumulative issues fully shipped
 }
