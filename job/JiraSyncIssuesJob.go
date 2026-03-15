@@ -150,22 +150,24 @@ func (j *JiraSyncIssuesJob) fetchAndSaveIssues(jiraIds []string) error {
 			return errors.Wrap(err, "error writting issue "+issue.Key)
 		}
 
-		//sync chnagelog
-		changelog, err := jiraworklog.Retry(3, time.Second*10, func() ([]types.ChangelogStatus, error) {
-			return j.fetchIssueChangelog(issue.ID)
-		})
-		if err != nil {
-			return errors.Wrap(err, "error fetching changelogs for issue "+issue.Key)
-		}
-		//slog.Info("jira issue changelog", slog.String("key", issue.Key), slog.Int("records", len(changelog)))
-		err = j.repo.BulkInsertChangelogs(changelog)
-		if err != nil {
-			return errors.Wrap(err, "error bulk inserting changelogs for issue "+issue.Key)
-		}
+		if issue.IsParent() {
+			//sync chnagelog ONLY for Parent issues (only sub-tasks excluded..for now)
+			changelog, err := jiraworklog.Retry(3, time.Second*10, func() ([]types.ChangelogStatus, error) {
+				return j.fetchIssueChangelog(issue.ID)
+			})
+			if err != nil {
+				return errors.Wrap(err, "error fetching changelogs for issue "+issue.Key)
+			}
+			//slog.Info("jira issue changelog", slog.String("key", issue.Key), slog.Int("records", len(changelog)))
+			err = j.repo.BulkInsertChangelogs(changelog)
+			if err != nil {
+				return errors.Wrap(err, "error bulk inserting changelogs for issue "+issue.Key)
+			}
 
-		err = j.repo.RefreshStatusStints(issue.ID)
-		if err != nil {
-			return errors.Wrap(err, "error refreshing status stints for issue "+issue.Key)
+			err = j.repo.RefreshStatusStints(issue.ID)
+			if err != nil {
+				return errors.Wrap(err, "error refreshing status stints for issue "+issue.Key)
+			}
 		}
 
 	}

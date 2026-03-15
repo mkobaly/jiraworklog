@@ -173,6 +173,13 @@ func ToDomain(i jiraworklog.Issue) StoredIssue {
 	}
 }
 
+func (si *StoredIssue) IsParent() bool {
+	if strings.EqualFold(si.Type, "sub-task") {
+		return false
+	}
+	return true
+}
+
 func (si *StoredIssue) Merge(i jiraworklog.Issue) {
 	daysToResolve := 0
 	updated, _ := time.Parse("2006-01-02T15:04:05.000-0700", i.Fields.Updated)
