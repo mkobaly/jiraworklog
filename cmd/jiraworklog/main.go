@@ -126,6 +126,7 @@ func main() {
 	reports.GET("/project-hours/csv", handler.GetProjectChargeHoursCSV)
 	reports.GET("/weekly-hours", handler.GetWeeklyHours)
 	reports.GET("/time-tracking", handler.GetProjectTimeTracking)
+	reports.GET("/project-kpis", handler.GetProjectKPIs)
 
 	// Settings routes
 	settings := e.Group("/settings", handler.AuthMiddleware)

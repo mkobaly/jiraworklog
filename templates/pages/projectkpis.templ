@@ -1,0 +1,336 @@
+package pages
+
+import (
+	"encoding/json"
+	"fmt"
+	"github.com/mkobaly/jiraworklog/templates/layouts"
+	"github.com/mkobaly/jiraworklog/types"
+)
+
+templ ProjectKPIs(data types.ProjectKPIData, project string) {
+	@layouts.Base("Project KPIs") {
+		<!-- Chart.js -->
+		<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+		<div class="space-y-6">
+			<!-- Header + search form -->
+			<div class="bg-white rounded-lg shadow p-6">
+				<h1 class="text-2xl font-bold text-gray-800 mb-4">Project KPIs</h1>
+				<form method="GET" action="/reports/project-kpis" class="flex gap-3 items-end flex-wrap">
+					<div class="flex-1 min-w-48">
+						<label for="project" class="block text-sm font-medium text-gray-700 mb-1">Epic Key or Fixed Version</label>
+						<input
+							type="text"
+							id="project"
+							name="project"
+							value={ project }
+							placeholder="e.g. PROJ-123 or 2024.1"
+							class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+						/>
+					</div>
+					<button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition">
+						Load KPIs
+					</button>
+				</form>
+			</div>
+
+			if project == "" {
+				<div class="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center text-blue-700">
+					Enter an epic key or fixed version above to load KPI data.
+				</div>
+			} else if data.IssueCount == 0 {
+				<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center text-yellow-700">
+					No issues found for <strong>{ project }</strong>. Check that the transition data has been synced.
+				</div>
+			} else {
+				<!-- KPI summary cards -->
+				<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+					@kpiCard("Issues", fmt.Sprintf("%d", data.IssueCount), "bg-blue-50", "text-blue-700")
+					@kpiCard("Avg Cycle Time", kpiFmtDuration(data.AvgCycleTimeSecs), "bg-indigo-50", "text-indigo-700")
+					@kpiCard("Median Cycle Time", kpiFmtDuration(data.MedianCycleTimeSecs), "bg-purple-50", "text-purple-700")
+					@kpiCard("P85 Cycle Time", kpiFmtDuration(data.P85CycleTimeSecs), "bg-violet-50", "text-violet-700")
+					@kpiCard("P95 Cycle Time", kpiFmtDuration(data.P95CycleTimeSecs), "bg-fuchsia-50", "text-fuchsia-700")
+					@kpiCard("Flow Efficiency", fmt.Sprintf("%.1f%%", data.FlowEfficiencyPct), flowEfficiencyBg(data.FlowEfficiencyPct), flowEfficiencyText(data.FlowEfficiencyPct))
+					@kpiCard("Avg Blocked Time", kpiFmtDuration(data.AvgBlockedTimeSecs), "bg-red-50", "text-red-700")
+					@kpiCard("Status Bounces", fmt.Sprintf("%d (%d issues)", data.TotalBounces, data.BounceIssueCount), "bg-orange-50", "text-orange-700")
+					@kpiCard("QA Returns", fmt.Sprintf("%d issues (avg %.1f)", data.IssuesReturnedFromQA, data.AvgQACycles), "bg-yellow-50", "text-yellow-700")
+				</div>
+
+				<!-- Charts row -->
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+					<!-- Cycle time by status -->
+					<div class="bg-white rounded-lg shadow p-6">
+						<h2 class="text-lg font-semibold text-gray-700 mb-4">Avg Cycle Time by Status</h2>
+						<canvas
+							id="cycleByStatusChart"
+							data-labels={ kpiStatusLabels(data.CycleTimeByStatus) }
+							data-values={ kpiStatusValues(data.CycleTimeByStatus) }
+							height="300"
+						></canvas>
+					</div>
+
+					<!-- Flow efficiency gauge-style bar -->
+					<div class="bg-white rounded-lg shadow p-6">
+						<h2 class="text-lg font-semibold text-gray-700 mb-4">Cycle Time Distribution</h2>
+						<canvas
+							id="cycleDistChart"
+							data-labels='["Median","P85","P95"]'
+							data-values={ kpyCycleDistValues(data) }
+							height="300"
+						></canvas>
+					</div>
+				</div>
+
+				<!-- WIP + Burndown row -->
+				if len(data.WIPHistory) > 0 {
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+						<!-- WIP over time -->
+						<div class="bg-white rounded-lg shadow p-6">
+							<h2 class="text-lg font-semibold text-gray-700 mb-4">WIP Levels Over Time</h2>
+							<canvas
+								id="wipChart"
+								data-labels={ kpiTimeLabels(wipDays(data.WIPHistory)) }
+								data-values={ kpiWIPValues(data.WIPHistory) }
+								height="300"
+							></canvas>
+						</div>
+
+						<!-- Burndown -->
+						<div class="bg-white rounded-lg shadow p-6">
+							<h2 class="text-lg font-semibold text-gray-700 mb-4">Burndown</h2>
+							<canvas
+								id="burndownChart"
+								data-labels={ kpiTimeLabels(burndownDays(data.BurndownHistory)) }
+								data-values={ kpiBurndownValues(data) }
+								height="300"
+							></canvas>
+						</div>
+					</div>
+				}
+
+				<!-- Cycle time by status detail table -->
+				if len(data.CycleTimeByStatus) > 0 {
+					<div class="bg-white rounded-lg shadow overflow-hidden">
+						<div class="px-6 py-4 border-b border-gray-200">
+							<h2 class="text-lg font-semibold text-gray-700">Time Spent per Status</h2>
+						</div>
+						<table class="min-w-full divide-y divide-gray-200 text-sm">
+							<thead class="bg-gray-50">
+								<tr>
+									<th class="px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Status</th>
+									<th class="px-6 py-3 text-right font-medium text-gray-500 uppercase tracking-wider">Avg Time</th>
+									<th class="px-6 py-3 text-right font-medium text-gray-500 uppercase tracking-wider">Issues</th>
+								</tr>
+							</thead>
+							<tbody class="bg-white divide-y divide-gray-100">
+								for _, s := range data.CycleTimeByStatus {
+									<tr class="hover:bg-gray-50">
+										<td class="px-6 py-3 text-gray-800">{ s.Status }</td>
+										<td class="px-6 py-3 text-right text-gray-600">{ kpiFmtDuration(s.AvgSecs) }</td>
+										<td class="px-6 py-3 text-right text-gray-600">{ fmt.Sprintf("%d", s.IssueCount) }</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				}
+			}
+		</div>
+
+		<script>
+			(function () {
+				function load(id) {
+					const el = document.getElementById(id);
+					if (!el) return null;
+					try {
+						return {
+							el: el,
+							labels: JSON.parse(el.dataset.labels || '[]'),
+							values: JSON.parse(el.dataset.values || '[]'),
+						};
+					} catch(e) { return null; }
+				}
+
+				function secsToHours(v) {
+					return Math.round(v / 3600 * 10) / 10;
+				}
+
+				function lineChart(id, label, color) {
+					const d = load(id);
+					if (!d || !d.values.length) return;
+					new Chart(d.el, {
+						type: 'line',
+						data: {
+							labels: d.labels,
+							datasets: [{ label: label, data: d.values,
+								borderColor: color, backgroundColor: color,
+								borderWidth: 2, fill: true, tension: 0.3, pointRadius: 2 }]
+						},
+						options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+					});
+				}
+
+				// Cycle time by status — horizontal bar, values converted to hours
+				(function() {
+					const d = load('cycleByStatusChart');
+					if (!d || !d.values.length) return;
+					new Chart(d.el, {
+						type: 'bar',
+						data: {
+							labels: d.labels,
+							datasets: [{
+								label: 'Avg Hours',
+								data: d.values.map(secsToHours),
+								backgroundColor: 'rgba(99,102,241,0.7)',
+							}]
+						},
+						options: {
+							indexAxis: 'y',
+							responsive: true,
+							plugins: { legend: { display: false } },
+							scales: { x: { beginAtZero: true, title: { display: true, text: 'Hours' } } }
+						}
+					});
+				})();
+
+				// Cycle time distribution (median / P85 / P95) in hours
+				(function() {
+					const d = load('cycleDistChart');
+					if (!d || !d.values.length) return;
+					new Chart(d.el, {
+						type: 'bar',
+						data: {
+							labels: d.labels,
+							datasets: [{
+								label: 'Hours',
+								data: d.values.map(secsToHours),
+								backgroundColor: ['rgba(139,92,246,0.7)','rgba(109,40,217,0.7)','rgba(76,29,149,0.7)'],
+							}]
+						},
+						options: {
+							responsive: true,
+							plugins: { legend: { display: false } },
+							scales: { y: { beginAtZero: true, title: { display: true, text: 'Hours' } } }
+						}
+					});
+				})();
+
+				lineChart('wipChart',      'WIP Count',  'rgba(59,130,246,0.5)');
+				lineChart('burndownChart', 'Remaining',  'rgba(239,68,68,0.5)');
+			})();
+		</script>
+	}
+}
+
+templ kpiCard(label, value, bg, textColor string) {
+	<div class={ "rounded-lg shadow p-5 " + bg }>
+		<p class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">{ label }</p>
+		<p class={ "text-xl font-bold " + textColor }>{ value }</p>
+	</div>
+}
+
+// ── Helper functions ──────────────────────────────────────────────────────────
+
+func kpiFmtDuration(secs float64) string {
+	if secs <= 0 {
+		return "—"
+	}
+	total := int(secs)
+	days := total / 86400
+	total %= 86400
+	hours := total / 3600
+	total %= 3600
+	mins := total / 60
+	switch {
+	case days > 0:
+		return fmt.Sprintf("%dd %dh", days, hours)
+	case hours > 0:
+		return fmt.Sprintf("%dh %dm", hours, mins)
+	default:
+		return fmt.Sprintf("%dm", mins)
+	}
+}
+
+func flowEfficiencyBg(pct float64) string {
+	switch {
+	case pct >= 40:
+		return "bg-green-50"
+	case pct >= 20:
+		return "bg-yellow-50"
+	default:
+		return "bg-red-50"
+	}
+}
+
+func flowEfficiencyText(pct float64) string {
+	switch {
+	case pct >= 40:
+		return "text-green-700"
+	case pct >= 20:
+		return "text-yellow-700"
+	default:
+		return "text-red-700"
+	}
+}
+
+func kpiStatusLabels(rows []types.CycleTimeByStatus) string {
+	labels := make([]string, len(rows))
+	for i, r := range rows {
+		labels[i] = r.Status
+	}
+	b, _ := json.Marshal(labels)
+	return string(b)
+}
+
+func kpiStatusValues(rows []types.CycleTimeByStatus) string {
+	vals := make([]float64, len(rows))
+	for i, r := range rows {
+		vals[i] = r.AvgSecs
+	}
+	b, _ := json.Marshal(vals)
+	return string(b)
+}
+
+func kpyCycleDistValues(data types.ProjectKPIData) string {
+	b, _ := json.Marshal([]float64{data.MedianCycleTimeSecs, data.P85CycleTimeSecs, data.P95CycleTimeSecs})
+	return string(b)
+}
+
+func wipDays(pts []types.WIPDataPoint) []string {
+	labels := make([]string, len(pts))
+	for i, p := range pts {
+		labels[i] = p.Day.Format("Jan 2")
+	}
+	return labels
+}
+
+func burndownDays(pts []types.BurndownDataPoint) []string {
+	labels := make([]string, len(pts))
+	for i, p := range pts {
+		labels[i] = p.Day.Format("Jan 2")
+	}
+	return labels
+}
+
+func kpiTimeLabels(labels []string) string {
+	b, _ := json.Marshal(labels)
+	return string(b)
+}
+
+func kpiWIPValues(pts []types.WIPDataPoint) string {
+	vals := make([]int, len(pts))
+	for i, p := range pts {
+		vals[i] = p.WIPCount
+	}
+	b, _ := json.Marshal(vals)
+	return string(b)
+}
+
+func kpiBurndownValues(data types.ProjectKPIData) string {
+	vals := make([]int, len(data.BurndownHistory))
+	for i, p := range data.BurndownHistory {
+		vals[i] = data.IssueCount - p.CompletedIssues
+	}
+	b, _ := json.Marshal(vals)
+	return string(b)
+}

@@ -124,6 +124,8 @@ type StoredIssue struct {
 	OriginalEstimate  int           `db:"originalestimate"`
 	RemainingEstimate int           `db:"remainingestimate"`
 	DevTimeSpent      int           `db:"devtimespent"`
+	Labels            []string      `db:"labels"`
+	Assignee          string        `db:"sssignee"`
 }
 
 func ToDomain(i jiraworklog.Issue) StoredIssue {
@@ -166,6 +168,8 @@ func ToDomain(i jiraworklog.Issue) StoredIssue {
 		TimeSpent:         i.Fields.Timetracking.TimeSpentSeconds,
 		OriginalEstimate:  i.Fields.Timetracking.OriginalEstimateSeconds,
 		RemainingEstimate: i.Fields.Timetracking.RemainingEstimateSeconds,
+		Labels:            i.Fields.Labels,
+		Assignee:          i.Fields.Assignee.DisplayName,
 	}
 }
 

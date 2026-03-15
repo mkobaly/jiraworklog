@@ -57,6 +57,7 @@ type Repo interface {
 
 	BulkInsertChangelogs(transitions []types.ChangelogStatus) error
 	RefreshStatusStints(issueID int) error
+	ProjectKPIs(epicOrVersion string) (types.ProjectKPIData, error)
 
 	//WorklogsPerDay() ([]types.WorklogsPerDay, error)
 	//WorklogsPerDevDay() ([]types.WorklogsPerDevDay, error)

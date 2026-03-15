@@ -32,7 +32,7 @@ func TestBulkIssueFetch(t *testing.T) {
 		t.Fail()
 	}
 	jira := jiraworklog.NewJira(cfg)
-	keys := []string{"IDM-2501", "IDM-2694"}
+	keys := []string{"IDM-19349", "IDM-2694"}
 	issues, err := jira.BulkFetchIssues(keys)
 	require.NoError(t, err)
 	require.Equal(t, 2, len(issues))

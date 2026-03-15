@@ -20,7 +20,7 @@ type JiraReader interface {
 	WorklogDetails(ids []int) ([]Worklog, error)
 	Issue(idOrKey string) (Issue, error)
 	BulkFetchIssues(idOrKeys []string) ([]Issue, error)
-	IssuesUpdated(timestamp time.Time, nextPageToken string) (IssuesUpdated, error)
+	IssuesUpdated(timestampStart int64, timestampEnd int64, nextPageToken string) (IssuesUpdated, error)
 
 	Changelog(id int, startAt int) (Changelog, error)
 }
@@ -148,13 +148,16 @@ func (j *Jira) Issue(idOrKey string) (Issue, error) {
 	return issue, nil
 }
 
-// IssuesUpdated will fetch all issues that were updated on the given timestamp. This is for the single
-// day, the 24 hour period
-func (j *Jira) IssuesUpdated(timestamp time.Time, nextPageToken string) (IssuesUpdated, error) {
+// IssuesUpdated will fetch all issues that were updated within the calculated date range.
+// For past days it queries the full day; for today it queries the current hour window.
+func (j *Jira) IssuesUpdated(timestampStart int64, timestampEnd int64, nextPageToken string) (IssuesUpdated, error) {
 	issuesUpdated := IssuesUpdated{}
-	ts := timestamp.Add(time.Minute * -5).Format("2006-01-02 15:04")
-	te := timestamp.Add(time.Hour * 24).Format("2006-01-02")
+
+	ts := time.Unix(timestampStart, 0).Format("2006-01-02 15:04")
+	te := time.Unix(timestampEnd, 0).Format("2006-01-02 15:04")
+
 	query := fmt.Sprintf("jql=updated>=\"%s\" AND updated < \"%s\" order by updated ASC", ts, te)
+	//slog.Info("Issue Updated", slog.String("start", ts), slog.String("end", te))
 	if nextPageToken != "" {
 		query += fmt.Sprintf("&nextPageToken=%s", nextPageToken)
 	}
@@ -187,7 +190,7 @@ func (j *Jira) BulkFetchIssues(idOrKeys []string) ([]Issue, error) {
 
 	// Step 2: Use the JQL to search for issues
 	searchPayload := map[string]interface{}{
-		"fields": []string{"priority", "summary", "parent", "status", "aggregateprogress", "progress",
+		"fields": []string{"priority", "summary", "parent", "status", "aggregateprogress", "progress", "assignee", "labels",
 			"issuetype", "timespent", "aggregatetimespent", "timeoriginalestimate", "aggregatetimeoriginalestimate", "timetracking",
 			"resolutiondate", "created", "updated", "statuscategorychangedate", "fixVersions", "versions", "customfield_13521"},
 		"issueIdsOrKeys": idOrKeys,
@@ -382,6 +385,21 @@ type Issue struct {
 				} `json:"issuetype"`
 			} `json:"fields"`
 		} `json:"parent"`
+		Labels   []string `json:"labels"`
+		Assignee struct {
+			Self       string `json:"self"`
+			AccountID  string `json:"accountId"`
+			AvatarUrls struct {
+				Four8X48  string `json:"48x48"`
+				Two4X24   string `json:"24x24"`
+				One6X16   string `json:"16x16"`
+				Three2X32 string `json:"32x32"`
+			} `json:"avatarUrls"`
+			DisplayName string `json:"displayName"`
+			Active      bool   `json:"active"`
+			TimeZone    string `json:"timeZone"`
+			AccountType string `json:"accountType"`
+		} `json:"assignee"`
 		//Timespent            int `json:"timespent"`
 		//Timeoriginalestimate int `json:"timeoriginalestimate"`
 		Description struct {

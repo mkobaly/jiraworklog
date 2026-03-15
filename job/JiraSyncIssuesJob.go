@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/mkobaly/jiraworklog"
+	"github.com/mkobaly/jiraworklog/internal"
 	"github.com/mkobaly/jiraworklog/repository"
 	"github.com/mkobaly/jiraworklog/types"
 	"github.com/pkg/errors"
@@ -35,7 +36,7 @@ func (j *JiraSyncIssuesJob) GetName() string {
 }
 
 func (j *JiraSyncIssuesJob) GetInterval() time.Duration {
-	return time.Second * 45
+	return time.Second * 25
 }
 
 func (j *JiraSyncIssuesJob) Run() error {
@@ -69,27 +70,34 @@ func (j *JiraSyncIssuesJob) Run() error {
 		}
 	}
 
-	lastUpdated := dateOnly(j.cfg.IssueLastTimestamp)
-	today := dateOnly(time.Now())
-	for lastUpdated.Before(today) {
-		err = j.syncUpdatedIssues(lastUpdated)
+	lastUpdated := j.cfg.IssueLastTimestamp
+	lastUpdatedDateOnly := dateOnly(time.Unix(lastUpdated, 0)).Unix()
+	today := dateOnly(time.Now()).Unix()
+	if lastUpdatedDateOnly < today {
+		ts, te := internal.GetDateRange(lastUpdated, time.Now().Unix())
+		//fmt.Println("callinng syncUpdatedIssues less than today")
+		err = j.syncUpdatedIssues(ts, te)
 		if err != nil {
 			return err
 		}
-		j.cfg.IssueLastTimestamp = lastUpdated
+		//fmt.Println("saving lasttimestamp")
+		j.cfg.IssueLastTimestamp = te
 		if err := j.cfg.Save(); err != nil {
 			return errors.Wrap(err, "error saving config")
 		}
-		lastUpdated = lastUpdated.Add(time.Hour * 24)
+		//lastUpdated = lastUpdated + 86400 //add day
 	}
 
+	//lu := dateOnly(time.Unix(lastUpdated, 0))
 	//if caught up, for today once every 10 mins
-	if lastUpdated.Compare(today) == 0 {
+	if lastUpdatedDateOnly == today {
+		//fmt.Println("in for today")
 		hour := time.Now().Hour()
 		minute := time.Now().Minute()
 		if j.todaysHour != hour || minute%10 == 0 {
-			slog.Info("syncing issues and project charges for today", slog.Time("lastUpdated", lastUpdated))
-			err = j.syncUpdatedIssues(lastUpdated)
+			ts, te := internal.GetDateRange(lastUpdated, time.Now().Unix())
+			//slog.Info("syncing issues and project charges for today", slog.Time("start", time.Unix(ts, 0)), slog.Time("end", time.Unix(te, 0)))
+			err = j.syncUpdatedIssues(ts, te)
 			if err != nil {
 				return err
 			}
@@ -98,7 +106,7 @@ func (j *JiraSyncIssuesJob) Run() error {
 			if err != nil {
 				return err
 			}
-			j.cfg.IssueLastTimestamp = lastUpdated
+			j.cfg.IssueLastTimestamp = te
 			if err := j.cfg.Save(); err != nil {
 				return errors.Wrap(err, "error saving config")
 			}
@@ -118,13 +126,18 @@ func (j *JiraSyncIssuesJob) issueOK(issue types.StoredIssue) bool {
 
 // This does a lot for issues. It will update the issue table, fetch the changelog for the issue and save that
 func (j *JiraSyncIssuesJob) fetchAndSaveIssues(jiraIds []string) error {
-
-	//slog.Info("bulk fetching jira issues", slog.String("ids", strings.Join(jiraIds, ",")))
-	issues, err := jiraworklog.Retry(3, time.Second*10, func() ([]jiraworklog.Issue, error) {
-		return j.jira.BulkFetchIssues(jiraIds)
-	})
-	if err != nil {
-		return errors.Wrap(err, "unknown error bulk fetching issues from jira")
+	const batchSize = 50
+	var issues []jiraworklog.Issue
+	for i := 0; i < len(jiraIds); i += batchSize {
+		end := min(i+batchSize, len(jiraIds))
+		batch := jiraIds[i:end]
+		fetched, err := jiraworklog.Retry(3, time.Second*10, func() ([]jiraworklog.Issue, error) {
+			return j.jira.BulkFetchIssues(batch)
+		})
+		if err != nil {
+			return errors.Wrap(err, "unknown error bulk fetching issues from jira")
+		}
+		issues = append(issues, fetched...)
 	}
 	for _, i := range issues {
 		issue := types.ToDomain(i)
@@ -138,11 +151,13 @@ func (j *JiraSyncIssuesJob) fetchAndSaveIssues(jiraIds []string) error {
 		}
 
 		//sync chnagelog
-		changelog, err := j.fetchIssueChangelog(issue.ID)
+		changelog, err := jiraworklog.Retry(3, time.Second*10, func() ([]types.ChangelogStatus, error) {
+			return j.fetchIssueChangelog(issue.ID)
+		})
 		if err != nil {
 			return errors.Wrap(err, "error fetching changelogs for issue "+issue.Key)
 		}
-		slog.Info("jira issue changelog", slog.String("key", issue.Key), slog.Int("records", len(changelog)))
+		//slog.Info("jira issue changelog", slog.String("key", issue.Key), slog.Int("records", len(changelog)))
 		err = j.repo.BulkInsertChangelogs(changelog)
 		if err != nil {
 			return errors.Wrap(err, "error bulk inserting changelogs for issue "+issue.Key)
@@ -157,31 +172,28 @@ func (j *JiraSyncIssuesJob) fetchAndSaveIssues(jiraIds []string) error {
 	return nil
 }
 
-func (j *JiraSyncIssuesJob) syncUpdatedIssues(date time.Time) error {
+func (j *JiraSyncIssuesJob) syncUpdatedIssues(startDate, endDate int64) error {
 	jiraIds := []string{}
 	nextPageToken := ""
 	for {
-		updatedIssues, err := j.jira.IssuesUpdated(date, nextPageToken)
+		updatedIssues, err := j.jira.IssuesUpdated(startDate, endDate, nextPageToken)
 		if err != nil {
 			return errors.Wrap(err, "error fetching updated jira issues")
 		}
 		nextPageToken = updatedIssues.NextPageToken
-
-		// Collect issue IDs from this batch
-		jiraIds = jiraIds[:0]
 		for _, issue := range updatedIssues.Issues {
 			jiraIds = append(jiraIds, issue.ID)
 		}
-
-		if len(jiraIds) > 0 {
-			slog.Info("fetching updated jira issues", slog.Time("since", date), slog.Int("count", len(jiraIds)), slog.String("nextPageToken", nextPageToken))
-			err := j.fetchAndSaveIssues(jiraIds)
-			if err != nil {
-				return err
-			}
-		}
 		if updatedIssues.IsLast {
 			break
+		}
+	}
+
+	if len(jiraIds) > 0 {
+		slog.Info("fetching updated jira issues", slog.Time("start", time.Unix(startDate, 0)), slog.Int("count", len(jiraIds)), slog.Time("end", time.Unix(endDate, 0)))
+		err := j.fetchAndSaveIssues(jiraIds)
+		if err != nil {
+			return err
 		}
 	}
 	return nil

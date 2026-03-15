@@ -366,9 +366,9 @@ func (s *Postgres) UpdateIssue(issue *types.StoredIssue) error {
 		INSERT INTO issue (
 			id, "key", parentid, type, summary, priority, status, project,
 			projectcharge, fixedversions, createdate, updatedate, resolveddate, daystoresolve,
-			timespent, originalestimate, remainingestimate
+			timespent, originalestimate, remainingestimate, labels, assignee
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
 		)
 		ON CONFLICT (id) DO UPDATE SET
 			"key" = EXCLUDED."key",
@@ -386,10 +386,12 @@ func (s *Postgres) UpdateIssue(issue *types.StoredIssue) error {
 			timespent = EXCLUDED.timespent,
 			originalestimate = EXCLUDED.originalestimate,
 			remainingestimate = EXCLUDED.remainingestimate,
+			labels = EXCLUDED.labels,
+			assignee = EXCLUDED.assignee,
 			dateupdated = now()`,
 		issue.ID, issue.Key, issue.ParentId, issue.Type, issue.Summary, issue.Priority, issue.Status, issue.Project,
 		issue.ProjectCharge, issue.FixedVersions, issue.CreateDate, issue.UpdateDate, issue.ResolvedDate, issue.DaysToResolve,
-		issue.TimeSpent, issue.OriginalEstimate, issue.RemainingEstimate)
+		issue.TimeSpent, issue.OriginalEstimate, issue.RemainingEstimate, issue.Labels, issue.Assignee)
 	return err
 }
 
@@ -447,6 +449,213 @@ func (s *Postgres) RefreshStatusStints(issueID int) error {
 		SELECT issueid, status, datestarted, dateended, durationseconds
 		FROM transitions`, issueID)
 	return err
+}
+
+// projectIssuesCTE is the base CTE used by all ProjectKPIs queries to resolve the
+// set of leaf issues belonging to a given epic key or fixed version.
+const projectIssuesCTE = `
+	WITH project_issues AS (
+		SELECT i.id FROM issue i
+		WHERE i.type NOT IN ('Epic', 'Release Candidate')
+		AND ($1 = ANY(i.fixedversions) OR i.parentid IN (SELECT id FROM issue WHERE key = $1))
+		AND i.type NOT IN ('Sub-task')
+		UNION
+		SELECT i.id FROM issue i
+		JOIN issue i2 ON i.parentid = i2.id
+		WHERE i2.type NOT IN ('Release Candidate')
+		AND ($1 = ANY(i2.fixedversions) OR i2.parentid IN (SELECT id FROM issue WHERE key = $1))
+		AND i.type NOT IN ('Sub-task')
+	)`
+
+// ProjectKPIs runs all KPI queries for the given epic key or fixed version and
+// returns the aggregated results in a single ProjectKPIData struct.
+func (s *Postgres) ProjectKPIs(epicOrVersion string) (types.ProjectKPIData, error) {
+	data := types.ProjectKPIData{}
+
+	// ── 1. Issue count ──────────────────────────────────────────────────────
+	err := s.DB.Get(&data.IssueCount, projectIssuesCTE+`
+		SELECT COUNT(*) FROM project_issues`, epicOrVersion)
+	if err != nil || data.IssueCount == 0 {
+		return data, err
+	}
+
+	// ── 2. Cycle time percentiles (active-work statuses only) ───────────────
+	var ct struct {
+		Avg    float64 `db:"avg_secs"`
+		Median float64 `db:"median_secs"`
+		P85    float64 `db:"p85_secs"`
+		P95    float64 `db:"p95_secs"`
+	}
+	err = s.DB.Get(&ct, projectIssuesCTE+`
+		SELECT
+			COALESCE(AVG(total), 0)                                              AS avg_secs,
+			COALESCE(PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY total), 0)    AS median_secs,
+			COALESCE(PERCENTILE_CONT(0.85) WITHIN GROUP (ORDER BY total), 0)    AS p85_secs,
+			COALESCE(PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY total), 0)    AS p95_secs
+		FROM (
+			SELECT issueid, SUM(EXTRACT(EPOCH FROM (COALESCE(dateended, now()) - datestarted))) AS total
+			FROM status_stints
+			WHERE issueid IN (SELECT id FROM project_issues)
+			AND status IN ('In Development','In Progress','Code Complete', 'Code Merged', 'Code Review','In Review', 'In QA', 'Failed QA')
+			GROUP BY issueid
+		) ct`, epicOrVersion)
+	if err != nil {
+		return data, err
+	}
+	data.AvgCycleTimeSecs = ct.Avg
+	data.MedianCycleTimeSecs = ct.Median
+	data.P85CycleTimeSecs = ct.P85
+	data.P95CycleTimeSecs = ct.P95
+
+	// ── 3. Cycle time breakdown by status ───────────────────────────────────
+	err = s.DB.Select(&data.CycleTimeByStatus, projectIssuesCTE+`
+		SELECT
+			status,
+			AVG(EXTRACT(EPOCH FROM (COALESCE(dateended, now()) - datestarted)))  AS avg_seconds,
+			COUNT(DISTINCT issueid)     AS issue_count
+		FROM status_stints
+		WHERE issueid IN (SELECT id FROM project_issues)
+		--AND durationseconds IS NOT NULL
+		GROUP BY status
+		ORDER BY avg_seconds DESC`, epicOrVersion)
+	if err != nil {
+		return data, err
+	}
+
+	// ── 4. Blocked time ─────────────────────────────────────────────────────
+	var blocked struct {
+		Avg   float64 `db:"avg_blocked"`
+		Count int     `db:"blocked_count"`
+	}
+	err = s.DB.Get(&blocked, projectIssuesCTE+`
+		SELECT
+			COALESCE(AVG(total), 0)  AS avg_blocked,
+			COUNT(*)                 AS blocked_count
+		FROM (
+			SELECT issueid, SUM(EXTRACT(EPOCH FROM (COALESCE(dateended, now()) - datestarted))) AS total
+			FROM status_stints
+			WHERE issueid IN (SELECT id FROM project_issues)
+			AND status in ('On Hold')
+			--AND durationseconds IS NOT NULL
+			GROUP BY issueid
+		) b`, epicOrVersion)
+	if err != nil {
+		return data, err
+	}
+	data.AvgBlockedTimeSecs = blocked.Avg
+	data.BlockedIssueCount = blocked.Count
+
+	// ── 5. Status bounce / thrash rate ──────────────────────────────────────
+	var bounce struct {
+		Total      int `db:"total_bounces"`
+		IssueCount int `db:"bounce_issue_count"`
+	}
+	err = s.DB.Get(&bounce, projectIssuesCTE+`
+		SELECT
+			COALESCE(SUM(re_entries), 0) AS total_bounces,
+			COUNT(DISTINCT issueid)      AS bounce_issue_count
+		FROM (
+			SELECT issueid, tostatus, COUNT(*) - 1 AS re_entries
+			FROM issue_transition
+			WHERE issueid IN (SELECT id FROM project_issues)
+			GROUP BY issueid, tostatus
+			HAVING COUNT(*) > 1
+		) b`, epicOrVersion)
+	if err != nil {
+		return data, err
+	}
+	data.TotalBounces = bounce.Total
+	data.BounceIssueCount = bounce.IssueCount
+
+	// ── 6. Flow efficiency ──────────────────────────────────────────────────
+	var flow struct {
+		ActiveSecs float64 `db:"active_secs"`
+		TotalSecs  float64 `db:"total_secs"`
+	}
+	err = s.DB.Get(&flow, projectIssuesCTE+`
+		SELECT
+			SUM(EXTRACT(EPOCH FROM (COALESCE(dateended, now()) - datestarted))) FILTER (
+				WHERE status IN ('In Development','In Progress','Code Complete', 'Code Merged', 'Code Review','In Review', 'In QA', 'Failed QA')
+			) AS active_secs,
+			SUM(EXTRACT(EPOCH FROM (COALESCE(dateended, now()) - datestarted))) AS total_secs
+		FROM status_stints
+		WHERE issueid IN (SELECT id FROM project_issues)`, epicOrVersion)
+	if err != nil {
+		return data, err
+	}
+	if flow.TotalSecs > 0 {
+		data.FlowEfficiencyPct = (flow.ActiveSecs / flow.TotalSecs) * 100
+	}
+
+	//might just need to check for failed QA?? TODO
+	// ── 7. QA rework cycles ─────────────────────────────────────────────────
+	var qa struct {
+		AvgCycles  float64 `db:"avg_cycles"`
+		IssueCount int     `db:"issue_count"`
+	}
+	err = s.DB.Get(&qa, projectIssuesCTE+`
+		SELECT
+			COALESCE(AVG(qa_cycles), 0) AS avg_cycles,
+			COUNT(*)                    AS issue_count
+		FROM (
+			SELECT issueid, COUNT(*) AS qa_cycles
+			FROM issue_transition
+			WHERE issueid IN (SELECT id FROM project_issues)
+			AND (fromstatus ILIKE '%qa%' OR fromstatus ILIKE '%test%')
+			AND (tostatus ILIKE '%dev%' OR tostatus = 'In Progress' OR tostatus = 'In Development')
+			GROUP BY issueid
+		) qac`, epicOrVersion)
+	if err != nil {
+		return data, err
+	}
+	data.AvgQACycles = qa.AvgCycles
+	data.IssuesReturnedFromQA = qa.IssueCount
+
+	// ── 8. WIP history (one row per day) ────────────────────────────────────
+	err = s.DB.Select(&data.WIPHistory, projectIssuesCTE+`
+		SELECT
+			gs.day::date                AS day,
+			COUNT(DISTINCT ss.issueid)  AS wip_count
+		FROM generate_series(
+			(SELECT MIN(datestarted)::date FROM status_stints WHERE issueid IN (SELECT id FROM project_issues)),
+			NOW()::date,
+			'1 day'::interval
+		) gs(day)
+		LEFT JOIN status_stints ss
+			ON  ss.status IN ('In Development','In Progress','Code Complete', 'Code Merged', 'Code Review','In Review', 'In QA', 'Failed QA')
+			AND ss.datestarted::date <= gs.day::date
+			AND (ss.dateended IS NULL OR ss.dateended::date > gs.day::date)
+			AND ss.issueid IN (SELECT id FROM project_issues)
+		GROUP BY gs.day
+		ORDER BY gs.day`, epicOrVersion)
+	if err != nil {
+		return data, err
+	}
+
+	// ── 9. Burndown (completed issues cumulative per day) ───────────────────
+	err = s.DB.Select(&data.BurndownHistory, projectIssuesCTE+`
+		SELECT
+			gs.day::date                                                                    AS day,
+			COUNT(DISTINCT CASE WHEN first_done.completed_at::date <= gs.day THEN first_done.issueid END) AS completed_issues
+		FROM generate_series(
+			(SELECT MIN(datestarted)::date FROM status_stints WHERE issueid IN (SELECT id FROM project_issues)),
+			NOW()::date,
+			'1 day'::interval
+		) gs(day)
+		LEFT JOIN (
+			SELECT DISTINCT ON (issueid) issueid, datestarted AS completed_at
+			FROM status_stints
+			WHERE issueid IN (SELECT id FROM project_issues)
+			AND status IN ('Done','Closed', 'Cancelled')
+			ORDER BY issueid, datestarted
+		) first_done ON true
+		GROUP BY gs.day
+		ORDER BY gs.day`, epicOrVersion)
+	if err != nil {
+		return data, err
+	}
+
+	return data, nil
 }
 
 // Close will close the database connection

@@ -35,7 +35,7 @@ type Config struct {
 	//MaxWorklogID  int
 	WorklogUpdatedLastTimestamp int64
 	WorklogDeletedLastTimestamp int64
-	IssueLastTimestamp          time.Time
+	IssueLastTimestamp          int64
 
 	UserList         []string
 	DoneStatus       []string
@@ -97,12 +97,13 @@ func LoadConfig(path string) (*Config, error) {
 // newConfig will create a default config file with placeholder values
 func newConfig() *Config {
 
+	lastYear := time.Now().Add(time.Hour * -8760).Unix()
 	var config = &Config{
 		Jira:                        JiraSettings{URL: "https://your-url.example.com/rest/api/latest", Username: "username", Password: "use_api_token"},
 		SQLConnection:               "Server=localhost;Database=Jira;User Id=xxx;Password=yyyyyy",
-		WorklogDeletedLastTimestamp: 0,
-		WorklogUpdatedLastTimestamp: 0,
-		IssueLastTimestamp:          time.Now(),
+		WorklogDeletedLastTimestamp: lastYear,
+		WorklogUpdatedLastTimestamp: lastYear,
+		IssueLastTimestamp:          lastYear,
 		UserList:                    []string{"leave.empty", "to.pull", "all.users"},
 		DoneStatus:                  []string{"done", "closed"},
 	}

@@ -831,6 +831,27 @@ func (h *Handler) GetProjectTimeTracking(c echo.Context) error {
 	return c.JSON(http.StatusOK, data)
 }
 
+func (h *Handler) GetProjectKPIs(c echo.Context) error {
+	epicOrVersion := c.QueryParam("project")
+
+	var data types.ProjectKPIData
+	var err error
+
+	if epicOrVersion != "" {
+		data, err = h.repo.ProjectKPIs(epicOrVersion)
+		if err != nil {
+			h.logger.Error("error fetching project KPIs", "error", err)
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch project KPIs")
+		}
+	}
+
+	if wantsHTML(c) {
+		return pages.ProjectKPIs(data, epicOrVersion).Render(c.Request().Context(), c.Response().Writer)
+	}
+
+	return c.JSON(http.StatusOK, data)
+}
+
 func (h *Handler) validEmail(email string) bool {
 	for _, v := range h.cfg.AuthorizedUsers {
 		parts := strings.Split(v, "@")
