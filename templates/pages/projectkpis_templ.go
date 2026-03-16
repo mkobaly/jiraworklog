@@ -101,18 +101,28 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = summaryRow("Flow Efficiency", fmt.Sprintf("%.1f%%", data.FlowEfficiencyPct), flowEfficiencyColor(data.FlowEfficiencyPct)).Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = summaryRowWithSub(
+					"Flow Efficiency",
+					fmt.Sprintf("%.1f%%", data.FlowEfficiencyPct),
+					"Measures how much time is spent actively progressing work vs waiting in queues or blocked. A higher percentage means smoother delivery.",
+					flowEfficiencyColor(data.FlowEfficiencyPct),
+				).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = summaryRow("Avg Blocked Time", kpiFmtDuration(data.AvgBlockedTimeSecs), "").Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = summaryRowWithSub(
+					"Avg Blocked Time",
+					kpiFmtDuration(data.AvgBlockedTimeSecs),
+					"Measures how long issues are stalled due to blockers. Helps identify systemic delays and ownership gaps.",
+					"",
+				).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				templ_7745c5c3_Err = summaryRowWithSub(
 					"Status Bounce Rate",
 					fmt.Sprintf("%.0f%% (%d bounces, %d issues)", kpiBounceRate(data), data.TotalBounces, data.BounceIssueCount),
-					"Issues that re-entered the same status — signals thrash or unclear requirements",
+					"Tracks how often issues re-enter the same status. High bounce rate may indicate requirement churn or process instability.",
 					"",
 				).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
@@ -124,14 +134,14 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</tbody></table></div><!-- Delivery Predictability --><div class=\"bg-white rounded-lg shadow p-6\"><h2 class=\"text-lg font-semibold text-gray-700 mb-1\">Delivery Predictability</h2><p class=\"text-xs text-gray-400 mb-4\">Cycle time percentiles across all issues</p><!-- Percentile summary --><div class=\"grid grid-cols-3 gap-3 mb-4\"><div class=\"text-center p-3 bg-purple-50 rounded-lg\"><p class=\"text-xs text-gray-500 uppercase tracking-wide\">P50</p><p class=\"text-base font-bold text-purple-700\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</tbody></table></div><!-- Delivery Predictability --><div class=\"bg-white rounded-lg shadow p-6\"><h2 class=\"text-lg font-semibold text-gray-700 mb-1\">Delivery Predictability</h2><p class=\"text-xs text-gray-400 mb-4\">Shows how long issues take to complete. P50 = typical case, P85 = most cases, P95 = worst-case. Helps forecast delivery timelines.</p><!-- Percentile summary --><div class=\"grid grid-cols-3 gap-3 mb-4\"><div class=\"text-center p-3 bg-purple-50 rounded-lg\"><p class=\"text-xs text-gray-500 uppercase tracking-wide\">P50</p><p class=\"text-base font-bold text-purple-700\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(kpiFmtDuration(data.MedianCycleTimeSecs))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 77, Col: 97}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 87, Col: 97}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
@@ -144,7 +154,7 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 				var templ_7745c5c3_Var6 string
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(kpiFmtDuration(data.P85CycleTimeSecs))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 81, Col: 94}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 91, Col: 94}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
@@ -157,7 +167,7 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(kpiFmtDuration(data.P95CycleTimeSecs))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 85, Col: 94}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 95, Col: 94}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -170,7 +180,7 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 				var templ_7745c5c3_Var8 string
 				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(kpyCycleDistValues(data))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 91, Col: 45}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 101, Col: 45}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 				if templ_7745c5c3_Err != nil {
@@ -183,7 +193,7 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 				var templ_7745c5c3_Var9 string
 				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(kpiBucketLabels(data.FlowBuckets))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 104, Col: 54}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 114, Col: 54}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 				if templ_7745c5c3_Err != nil {
@@ -196,7 +206,7 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 				var templ_7745c5c3_Var10 string
 				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(kpiBucketValues(data.FlowBuckets))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 105, Col: 54}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 115, Col: 54}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 				if templ_7745c5c3_Err != nil {
@@ -214,7 +224,7 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 					var templ_7745c5c3_Var11 string
 					templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(kpiTimeLabels(wipDays(data.WIPHistory)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 116, Col: 61}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 126, Col: 61}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 					if templ_7745c5c3_Err != nil {
@@ -227,7 +237,7 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 					var templ_7745c5c3_Var12 string
 					templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(kpiWIPValues(data.WIPHistory))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 117, Col: 51}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 127, Col: 51}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 					if templ_7745c5c3_Err != nil {
@@ -238,19 +248,19 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</div><!-- Row 3: Sprint Progress --> ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</div><!-- Row 3: Burdown chart --> ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if len(data.BurndownHistory) > 0 {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<div class=\"bg-white rounded-lg shadow p-6\"><h2 class=\"text-lg font-semibold text-gray-700 mb-1\">Sprint Progress</h2><p class=\"text-xs text-gray-400 mb-4\">Remaining issues over time, broken down by phase</p><canvas id=\"burndownChart\" data-labels=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<div class=\"bg-white rounded-lg shadow p-6\"><h2 class=\"text-lg font-semibold text-gray-700 mb-1\">Burdown</h2><p class=\"text-xs text-gray-400 mb-4\">Remaining issues over time</p><canvas id=\"burndownChart\" data-labels=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var13 string
 					templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(kpiTimeLabels(burndownDays(data.BurndownHistory)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 131, Col: 70}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 141, Col: 70}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 					if templ_7745c5c3_Err != nil {
@@ -263,7 +273,7 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 					var templ_7745c5c3_Var14 string
 					templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(kpiBurndownRemaining(data))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 132, Col: 50}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 142, Col: 50}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 					if templ_7745c5c3_Err != nil {
@@ -276,7 +286,7 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 					var templ_7745c5c3_Var15 string
 					templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(kpiBurndownDevRemaining(data))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 133, Col: 57}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 143, Col: 57}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 					if templ_7745c5c3_Err != nil {
@@ -304,7 +314,7 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 						var templ_7745c5c3_Var16 string
 						templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(s.Status)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 157, Col: 56}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 167, Col: 56}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 						if templ_7745c5c3_Err != nil {
@@ -339,7 +349,7 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 						var templ_7745c5c3_Var19 string
 						templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(s.Bucket)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 159, Col: 109}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 169, Col: 109}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 						if templ_7745c5c3_Err != nil {
@@ -352,7 +362,7 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 						var templ_7745c5c3_Var20 string
 						templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(kpiFmtDuration(s.AvgSecs))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 161, Col: 84}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 171, Col: 84}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 						if templ_7745c5c3_Err != nil {
@@ -365,7 +375,7 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 						var templ_7745c5c3_Var21 string
 						templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", s.IssueCount))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 162, Col: 90}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 172, Col: 90}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 						if templ_7745c5c3_Err != nil {
@@ -424,7 +434,7 @@ func summaryRow(label, value, valueClass string) templ.Component {
 		var templ_7745c5c3_Var23 string
 		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 296, Col: 53}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 306, Col: 53}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 		if templ_7745c5c3_Err != nil {
@@ -460,7 +470,7 @@ func summaryRow(label, value, valueClass string) templ.Component {
 			var templ_7745c5c3_Var26 string
 			templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 298, Col: 61}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 308, Col: 61}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 			if templ_7745c5c3_Err != nil {
@@ -478,7 +488,7 @@ func summaryRow(label, value, valueClass string) templ.Component {
 			var templ_7745c5c3_Var27 string
 			templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 300, Col: 57}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 310, Col: 57}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 			if templ_7745c5c3_Err != nil {
@@ -525,7 +535,7 @@ func summaryRowWithSub(label, value, subtitle, valueClass string) templ.Componen
 		var templ_7745c5c3_Var29 string
 		templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 308, Col: 38}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 318, Col: 38}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 		if templ_7745c5c3_Err != nil {
@@ -538,7 +548,7 @@ func summaryRowWithSub(label, value, subtitle, valueClass string) templ.Componen
 		var templ_7745c5c3_Var30 string
 		templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(subtitle)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 309, Col: 53}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 319, Col: 53}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 		if templ_7745c5c3_Err != nil {
@@ -574,7 +584,7 @@ func summaryRowWithSub(label, value, subtitle, valueClass string) templ.Componen
 			var templ_7745c5c3_Var33 string
 			templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 312, Col: 71}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 322, Col: 71}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 			if templ_7745c5c3_Err != nil {
@@ -592,7 +602,7 @@ func summaryRowWithSub(label, value, subtitle, valueClass string) templ.Componen
 			var templ_7745c5c3_Var34 string
 			templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 314, Col: 67}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 324, Col: 67}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 			if templ_7745c5c3_Err != nil {

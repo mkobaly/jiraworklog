@@ -51,12 +51,22 @@ templ ProjectKPIs(data types.ProjectKPIData, project string) {
 							<tbody class="divide-y divide-gray-100">
 								@summaryRow("Issues", fmt.Sprintf("%d", data.IssueCount), "")
 								@summaryRow("Median Cycle Time", kpiFmtDuration(data.MedianCycleTimeSecs), "")
-								@summaryRow("Flow Efficiency", fmt.Sprintf("%.1f%%", data.FlowEfficiencyPct), flowEfficiencyColor(data.FlowEfficiencyPct))
-								@summaryRow("Avg Blocked Time", kpiFmtDuration(data.AvgBlockedTimeSecs), "")
+								@summaryRowWithSub(
+									"Flow Efficiency",
+									fmt.Sprintf("%.1f%%", data.FlowEfficiencyPct),
+									"Measures how much time is spent actively progressing work vs waiting in queues or blocked. A higher percentage means smoother delivery.",
+									flowEfficiencyColor(data.FlowEfficiencyPct),
+								)
+								@summaryRowWithSub(
+									"Avg Blocked Time",
+									kpiFmtDuration(data.AvgBlockedTimeSecs),
+									"Measures how long issues are stalled due to blockers. Helps identify systemic delays and ownership gaps.",
+									"",
+								)
 								@summaryRowWithSub(
 									"Status Bounce Rate",
 									fmt.Sprintf("%.0f%% (%d bounces, %d issues)", kpiBounceRate(data), data.TotalBounces, data.BounceIssueCount),
-									"Issues that re-entered the same status — signals thrash or unclear requirements",
+									"Tracks how often issues re-enter the same status. High bounce rate may indicate requirement churn or process instability.",
 									"",
 								)
 								if data.IssuesReturnedFromQA > 0 {
@@ -69,7 +79,7 @@ templ ProjectKPIs(data types.ProjectKPIData, project string) {
 					<!-- Delivery Predictability -->
 					<div class="bg-white rounded-lg shadow p-6">
 						<h2 class="text-lg font-semibold text-gray-700 mb-1">Delivery Predictability</h2>
-						<p class="text-xs text-gray-400 mb-4">Cycle time percentiles across all issues</p>
+						<p class="text-xs text-gray-400 mb-4">Shows how long issues take to complete. P50 = typical case, P85 = most cases, P95 = worst-case. Helps forecast delivery timelines.</p>
 						<!-- Percentile summary -->
 						<div class="grid grid-cols-3 gap-3 mb-4">
 							<div class="text-center p-3 bg-purple-50 rounded-lg">
@@ -121,11 +131,11 @@ templ ProjectKPIs(data types.ProjectKPIData, project string) {
 					}
 				</div>
 
-				<!-- Row 3: Sprint Progress -->
+				<!-- Row 3: Burdown chart -->
 				if len(data.BurndownHistory) > 0 {
 					<div class="bg-white rounded-lg shadow p-6">
-						<h2 class="text-lg font-semibold text-gray-700 mb-1">Sprint Progress</h2>
-						<p class="text-xs text-gray-400 mb-4">Remaining issues over time, broken down by phase</p>
+						<h2 class="text-lg font-semibold text-gray-700 mb-1">Burdown</h2>
+						<p class="text-xs text-gray-400 mb-4">Remaining issues over time</p>
 						<canvas
 							id="burndownChart"
 							data-labels={ kpiTimeLabels(burndownDays(data.BurndownHistory)) }
