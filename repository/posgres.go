@@ -458,13 +458,13 @@ const projectIssuesCTE = `
 		SELECT i.id FROM issue i
 		WHERE i.type NOT IN ('Epic', 'Release Candidate')
 		AND ($1 = ANY(i.fixedversions) OR i.parentid IN (SELECT id FROM issue WHERE key = $1))
-		AND i.type NOT IN ('Sub-task')
+		AND i.type NOT IN ('Sub-task', 'Dev Sub-Task', 'QA Needed Sub-Task', 'Authoring Task')
 		UNION
 		SELECT i.id FROM issue i
 		JOIN issue i2 ON i.parentid = i2.id
 		WHERE i2.type NOT IN ('Release Candidate')
 		AND ($1 = ANY(i2.fixedversions) OR i2.parentid IN (SELECT id FROM issue WHERE key = $1))
-		AND i.type NOT IN ('Sub-task')
+		AND i.type NOT IN ('Sub-task', 'Dev Sub-Task', 'QA Needed Sub-Task', 'Authoring Task')
 	)`
 
 // ProjectKPIs runs all KPI queries for the given epic key or fixed version and
@@ -496,7 +496,7 @@ func (s *Postgres) ProjectKPIs(epicOrVersion string) (types.ProjectKPIData, erro
 			SELECT issueid, SUM(EXTRACT(EPOCH FROM (COALESCE(dateended, now()) - datestarted))) AS total
 			FROM status_stints
 			WHERE issueid IN (SELECT id FROM project_issues)
-			AND status IN ('In Development','In Progress','Code Complete', 'Code Merged', 'Code Review','In Review', 'In QA', 'Failed QA')
+			AND status IN ('In Development','In Progress','Code Complete', 'Code Merged', 'In Review', 'In QA', 'Failed QA')
 			GROUP BY issueid
 		) ct`, epicOrVersion)
 	if err != nil {
@@ -512,24 +512,25 @@ func (s *Postgres) ProjectKPIs(epicOrVersion string) (types.ProjectKPIData, erro
 		SELECT
 			status,
 			CASE
-				WHEN status IN ('In Development','In Progress','Code Complete','Code Merged','Code Review','In Review') THEN 'Dev'
+				WHEN status IN ('In Development','In Progress','Code Complete','Code Merged', 'In Review') THEN 'Dev'
 				WHEN status IN ('In QA','Failed QA') THEN 'QA'
-				WHEN status IN ('On Hold','To Do','Development Backlog','QA Backlog','Bug Draft','Backlog') THEN 'Waiting'
-				WHEN status IN ('Done','Closed','Cancelled') THEN 'Done'
+				WHEN status IN ('On Hold','QA Backlog') THEN 'Waiting'
+				--WHEN status IN ('Done','Closed','Cancelled', 'Awaiting Release to Customer') THEN 'Done'
 				ELSE 'Other'
 			END AS bucket,
 			AVG(EXTRACT(EPOCH FROM (COALESCE(dateended, now()) - datestarted))) AS avg_seconds,
 			COUNT(DISTINCT issueid) AS issue_count
 		FROM status_stints
 		WHERE issueid IN (SELECT id FROM project_issues)
+		AND status NOT IN ('Development Backlog', 'To Do', 'Bug Draft', 'Done','Closed','Cancelled', 'Awaiting Release to Customer')
 		GROUP BY status
 		ORDER BY
 			CASE
-				WHEN status IN ('In Development','In Progress','Code Complete','Code Merged','Code Review','In Review') THEN 1
-				WHEN status IN ('In QA','QA Backlog','Failed QA') THEN 2
-				WHEN status IN ('On Hold','To Do','Development Backlog','Bug Draft','Backlog') THEN 3
-				WHEN status IN ('Done','Closed','Cancelled') THEN 4
-				ELSE 5
+				WHEN status IN ('In Development','In Progress','Code Complete','Code Merged', 'In Review') THEN 1
+				WHEN status IN ('In QA','Failed QA') THEN 2
+				WHEN status IN ('On Hold','QA Backlog') THEN 3
+				--WHEN status IN ('Done','Closed','Cancelled', 'Awaiting Release to Customer') THEN 4
+				ELSE 4
 			END,
 			avg_seconds DESC`, epicOrVersion)
 	if err != nil {
@@ -549,17 +550,18 @@ func (s *Postgres) ProjectKPIs(epicOrVersion string) (types.ProjectKPIData, erro
 				issueid,
 				EXTRACT(EPOCH FROM (COALESCE(dateended, now()) - datestarted)) AS elapsed,
 				CASE
-					WHEN status IN ('In Development','In Progress','Code Complete','Code Merged','Code Review','In Review') THEN 'Dev'
-					WHEN status IN ('In QA','QA Backlog','Failed QA') THEN 'QA'
-					WHEN status IN ('On Hold','To Do','Development Backlog','Bug Draft','Backlog') THEN 'Waiting'
-					WHEN status IN ('Done','Closed','Cancelled') THEN 'Done'
+					WHEN status IN ('In Development','In Progress','Code Complete','Code Merged', 'In Review') THEN 'Dev'
+					WHEN status IN ('In QA','Failed QA') THEN 'QA'
+					WHEN status IN ('On Hold', 'QA Backlog') THEN 'Waiting'
+					--WHEN status IN ('Done','Closed','Cancelled', 'Awaiting Release to Customer') THEN 'Done'
 					ELSE 'Other'
 				END AS bucket
 			FROM status_stints
 			WHERE issueid IN (SELECT id FROM project_issues)
+			AND status NOT IN ('Development Backlog', 'To Do', 'Bug Draft', 'Done','Closed','Cancelled', 'Awaiting Release to Customer') 
 		) s
 		GROUP BY bucket
-		ORDER BY CASE bucket WHEN 'Dev' THEN 1 WHEN 'QA' THEN 2 WHEN 'Waiting' THEN 3 WHEN 'Done' THEN 4 ELSE 5 END`,
+		ORDER BY CASE bucket WHEN 'Dev' THEN 1 WHEN 'QA' THEN 2 WHEN 'Waiting' THEN 3 ELSE 4 END`,
 		epicOrVersion)
 	if err != nil {
 		return data, err
@@ -579,7 +581,6 @@ func (s *Postgres) ProjectKPIs(epicOrVersion string) (types.ProjectKPIData, erro
 			FROM status_stints
 			WHERE issueid IN (SELECT id FROM project_issues)
 			AND status in ('On Hold')
-			--AND durationseconds IS NOT NULL
 			GROUP BY issueid
 		) b`, epicOrVersion)
 	if err != nil {
@@ -618,9 +619,11 @@ func (s *Postgres) ProjectKPIs(epicOrVersion string) (types.ProjectKPIData, erro
 	err = s.DB.Get(&flow, projectIssuesCTE+`
 		SELECT
 			SUM(EXTRACT(EPOCH FROM (COALESCE(dateended, now()) - datestarted))) FILTER (
-				WHERE status IN ('In Development','In Progress','Code Complete', 'Code Merged', 'Code Review','In Review', 'In QA', 'Failed QA')
+				WHERE status IN ('In Development','In Progress','Code Complete', 'Code Merged', 'In Review', 'In QA', 'Failed QA')
 			) AS active_secs,
-			SUM(EXTRACT(EPOCH FROM (COALESCE(dateended, now()) - datestarted))) AS total_secs
+			SUM(EXTRACT(EPOCH FROM (COALESCE(dateended, now()) - datestarted))) FILTER (
+				WHERE status IN ('In Development','In Progress','Code Complete', 'Code Merged', 'In Review', 'In QA', 'Failed QA', 'On Hold', 'QA Backlog', 'Done')
+			) AS total_secs
 		FROM status_stints
 		WHERE issueid IN (SELECT id FROM project_issues)`, epicOrVersion)
 	if err != nil {
@@ -665,7 +668,7 @@ func (s *Postgres) ProjectKPIs(epicOrVersion string) (types.ProjectKPIData, erro
 			'1 day'::interval
 		) gs(day)
 		LEFT JOIN status_stints ss
-			ON  ss.status IN ('In Development','In Progress','Code Complete', 'Code Merged', 'Code Review','In Review', 'In QA', 'Failed QA')
+			ON  ss.status IN ('In Development','In Progress','Code Complete', 'Code Merged' ,'In Review', 'In QA', 'Failed QA')
 			AND ss.datestarted::date <= gs.day::date
 			AND (ss.dateended IS NULL OR ss.dateended::date > gs.day::date)
 			AND ss.issueid IN (SELECT id FROM project_issues)
@@ -683,7 +686,7 @@ func (s *Postgres) ProjectKPIs(epicOrVersion string) (types.ProjectKPIData, erro
 			SELECT issueid, MIN(datestarted) AS crossed_at
 			FROM status_stints
 			WHERE issueid IN (SELECT id FROM project_issues)
-			AND status IN ('In QA','QA Backlog','Failed QA','Done','Closed','Cancelled')
+			AND status IN ('In QA','QA Backlog','Done','Closed','Cancelled')
 			GROUP BY issueid
 		),
 		fully_done AS (
