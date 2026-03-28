@@ -57,7 +57,6 @@ func main() {
 		}
 	}
 
-	
 	// //Repo Settings
 	repoType := "POSTGRES"
 	// if cmdline.IsOptionSet("r") {

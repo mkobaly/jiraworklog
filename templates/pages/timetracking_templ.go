@@ -14,6 +14,15 @@ import (
 	"github.com/mkobaly/jiraworklog/types"
 )
 
+type SummaryWidget struct {
+	TotalIssues            int
+	EstimateTotal          int32
+	DevTimeTotal           int32
+	JiraRemainingTimeTotal int32 //This represents the remaining time displayed in Jira.
+	RemainingTimeTotal     int32 //This represents Estimate - DevTime logged
+	IssuesOverBudget       int
+}
+
 // IssueGroup represents a parent issue with its children
 type IssueGroup struct {
 	Parent   *types.ProjectTimeTracking
@@ -23,8 +32,9 @@ type IssueGroup struct {
 
 // AggregatedTotals holds the combined estimate and dev time for a group
 type AggregatedTotals struct {
-	EstimateSeconds int32
-	DevSeconds      int32
+	EstimateSeconds      int32
+	DevSeconds           int32
+	JiraRemainingSeconds int32
 }
 
 // Progress returns the percentage of dev time vs estimate
@@ -35,7 +45,7 @@ func (a AggregatedTotals) Progress() float64 {
 	return float64(a.DevSeconds) / float64(a.EstimateSeconds) * 100
 }
 
-func (a AggregatedTotals) RemainingSeconds() int32 {
+func (a AggregatedTotals) RemainingDevSeconds() int32 {
 	remaining := a.EstimateSeconds - a.DevSeconds
 	if remaining > 0 {
 		return remaining
@@ -88,7 +98,7 @@ func ProjectTimeTracking(issues []types.ProjectTimeTracking, fixedVersion string
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(fixedVersion)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 62, Col: 26}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 72, Col: 26}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -111,7 +121,7 @@ func ProjectTimeTracking(issues []types.ProjectTimeTracking, fixedVersion string
 				var templ_7745c5c3_Var4 string
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(fixedVersion)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 100, Col: 76}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 110, Col: 76}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -122,7 +132,7 @@ func ProjectTimeTracking(issues []types.ProjectTimeTracking, fixedVersion string
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<!-- Summary Stats --> <div class=\"grid grid-cols-1 md:grid-cols-5 gap-4 mb-6\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<!-- Summary Stats --> <div class=\"grid grid-cols-1 md:grid-cols-6 gap-4 mb-6\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -137,7 +147,7 @@ func ProjectTimeTracking(issues []types.ProjectTimeTracking, fixedVersion string
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(issues)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 112, Col: 68}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 122, Col: 68}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
@@ -150,7 +160,7 @@ func ProjectTimeTracking(issues []types.ProjectTimeTracking, fixedVersion string
 				var templ_7745c5c3_Var6 string
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(fixedVersion)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 112, Col: 102}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 122, Col: 102}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
@@ -267,7 +277,7 @@ func issueRow(issue types.ProjectTimeTracking, isChild bool) templ.Component {
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%t", !issue.StillWithDev()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 217, Col: 414}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 227, Col: 414}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -302,7 +312,7 @@ func issueRow(issue types.ProjectTimeTracking, isChild bool) templ.Component {
 		var templ_7745c5c3_Var13 templ.SafeURL
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("https://amagsymmetry.atlassian.net/browse/" + issue.Key))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 220, Col: 82}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 230, Col: 82}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {
@@ -315,7 +325,7 @@ func issueRow(issue types.ProjectTimeTracking, isChild bool) templ.Component {
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(issue.Key)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 224, Col: 15}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 234, Col: 15}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
@@ -336,7 +346,7 @@ func issueRow(issue types.ProjectTimeTracking, isChild bool) templ.Component {
 		var templ_7745c5c3_Var15 string
 		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(issue.Summary)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 230, Col: 67}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 240, Col: 67}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 		if templ_7745c5c3_Err != nil {
@@ -349,7 +359,7 @@ func issueRow(issue types.ProjectTimeTracking, isChild bool) templ.Component {
 		var templ_7745c5c3_Var16 string
 		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(issue.Summary)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 231, Col: 18}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 241, Col: 18}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
@@ -375,7 +385,7 @@ func issueRow(issue types.ProjectTimeTracking, isChild bool) templ.Component {
 			var templ_7745c5c3_Var17 string
 			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(issue.ProjectCharge)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 239, Col: 26}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 249, Col: 26}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 			if templ_7745c5c3_Err != nil {
@@ -394,7 +404,7 @@ func issueRow(issue types.ProjectTimeTracking, isChild bool) templ.Component {
 			var templ_7745c5c3_Var18 string
 			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(formatSeconds(issue.EstimateSeconds.Int32))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 245, Col: 48}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 255, Col: 48}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 			if templ_7745c5c3_Err != nil {
@@ -436,7 +446,7 @@ func issueRow(issue types.ProjectTimeTracking, isChild bool) templ.Component {
 			var templ_7745c5c3_Var21 string
 			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(formatSeconds(issue.DevSeconds.Int32))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 253, Col: 44}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 263, Col: 44}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 			if templ_7745c5c3_Err != nil {
@@ -460,7 +470,7 @@ func issueRow(issue types.ProjectTimeTracking, isChild bool) templ.Component {
 			var templ_7745c5c3_Var22 string
 			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(formatSeconds(issue.RemainingSeconds.Int32))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 261, Col: 49}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 271, Col: 49}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 			if templ_7745c5c3_Err != nil {
@@ -534,7 +544,7 @@ func issueCard(issue types.ProjectTimeTracking, isChild bool) templ.Component {
 		var templ_7745c5c3_Var26 string
 		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%t", !issue.StillWithDev()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 273, Col: 632}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 283, Col: 632}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 		if templ_7745c5c3_Err != nil {
@@ -547,7 +557,7 @@ func issueCard(issue types.ProjectTimeTracking, isChild bool) templ.Component {
 		var templ_7745c5c3_Var27 templ.SafeURL
 		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("https://amagsymmetry.atlassian.net/browse/" + issue.Key))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 276, Col: 82}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 286, Col: 82}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 		if templ_7745c5c3_Err != nil {
@@ -560,7 +570,7 @@ func issueCard(issue types.ProjectTimeTracking, isChild bool) templ.Component {
 		var templ_7745c5c3_Var28 string
 		templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(issue.Key)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 280, Col: 15}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 290, Col: 15}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 		if templ_7745c5c3_Err != nil {
@@ -581,7 +591,7 @@ func issueCard(issue types.ProjectTimeTracking, isChild bool) templ.Component {
 		var templ_7745c5c3_Var29 string
 		templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(issue.Summary)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 285, Col: 56}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 295, Col: 56}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 		if templ_7745c5c3_Err != nil {
@@ -603,7 +613,7 @@ func issueCard(issue types.ProjectTimeTracking, isChild bool) templ.Component {
 			var templ_7745c5c3_Var30 string
 			templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(issue.ProjectCharge)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 290, Col: 27}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 300, Col: 27}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 			if templ_7745c5c3_Err != nil {
@@ -622,7 +632,7 @@ func issueCard(issue types.ProjectTimeTracking, isChild bool) templ.Component {
 			var templ_7745c5c3_Var31 string
 			templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(formatSeconds(issue.EstimateSeconds.Int32))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 299, Col: 51}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 309, Col: 51}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 			if templ_7745c5c3_Err != nil {
@@ -664,7 +674,7 @@ func issueCard(issue types.ProjectTimeTracking, isChild bool) templ.Component {
 			var templ_7745c5c3_Var34 string
 			templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(formatSeconds(issue.DevSeconds.Int32))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 309, Col: 46}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 319, Col: 46}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 			if templ_7745c5c3_Err != nil {
@@ -684,7 +694,7 @@ func issueCard(issue types.ProjectTimeTracking, isChild bool) templ.Component {
 			var templ_7745c5c3_Var35 string
 			templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(formatSeconds(issue.RemainingSeconds.Int32))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 319, Col: 52}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 329, Col: 52}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 			if templ_7745c5c3_Err != nil {
@@ -758,7 +768,7 @@ func parentIssueRow(issue types.ProjectTimeTracking, totals AggregatedTotals) te
 		var templ_7745c5c3_Var39 string
 		templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%t", !issue.StillWithDev()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 332, Col: 313}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 342, Col: 313}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
 		if templ_7745c5c3_Err != nil {
@@ -771,7 +781,7 @@ func parentIssueRow(issue types.ProjectTimeTracking, totals AggregatedTotals) te
 		var templ_7745c5c3_Var40 templ.SafeURL
 		templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("https://amagsymmetry.atlassian.net/browse/" + issue.Key))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 335, Col: 82}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 345, Col: 82}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 		if templ_7745c5c3_Err != nil {
@@ -784,7 +794,7 @@ func parentIssueRow(issue types.ProjectTimeTracking, totals AggregatedTotals) te
 		var templ_7745c5c3_Var41 string
 		templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(issue.Key)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 339, Col: 15}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 349, Col: 15}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 		if templ_7745c5c3_Err != nil {
@@ -805,7 +815,7 @@ func parentIssueRow(issue types.ProjectTimeTracking, totals AggregatedTotals) te
 		var templ_7745c5c3_Var42 string
 		templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(issue.Summary)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 345, Col: 67}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 355, Col: 67}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 		if templ_7745c5c3_Err != nil {
@@ -818,7 +828,7 @@ func parentIssueRow(issue types.ProjectTimeTracking, totals AggregatedTotals) te
 		var templ_7745c5c3_Var43 string
 		templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(issue.Summary)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 346, Col: 18}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 356, Col: 18}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 		if templ_7745c5c3_Err != nil {
@@ -844,7 +854,7 @@ func parentIssueRow(issue types.ProjectTimeTracking, totals AggregatedTotals) te
 			var templ_7745c5c3_Var44 string
 			templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(issue.ProjectCharge)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 354, Col: 26}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 364, Col: 26}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
 			if templ_7745c5c3_Err != nil {
@@ -863,7 +873,7 @@ func parentIssueRow(issue types.ProjectTimeTracking, totals AggregatedTotals) te
 			var templ_7745c5c3_Var45 string
 			templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(formatSeconds(totals.EstimateSeconds))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 360, Col: 43}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 370, Col: 43}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
 			if templ_7745c5c3_Err != nil {
@@ -905,7 +915,7 @@ func parentIssueRow(issue types.ProjectTimeTracking, totals AggregatedTotals) te
 			var templ_7745c5c3_Var48 string
 			templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.JoinStringErrs(formatSeconds(totals.DevSeconds))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 368, Col: 39}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 378, Col: 39}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var48))
 			if templ_7745c5c3_Err != nil {
@@ -925,11 +935,11 @@ func parentIssueRow(issue types.ProjectTimeTracking, totals AggregatedTotals) te
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if totals.RemainingSeconds() > 0 {
+		if totals.JiraRemainingSeconds > 0 {
 			var templ_7745c5c3_Var49 string
-			templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(formatSeconds(totals.RemainingSeconds()))
+			templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(formatSeconds(totals.JiraRemainingSeconds))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 376, Col: 46}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 386, Col: 48}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
 			if templ_7745c5c3_Err != nil {
@@ -1003,7 +1013,7 @@ func parentIssueCard(issue types.ProjectTimeTracking, totals AggregatedTotals) t
 		var templ_7745c5c3_Var53 string
 		templ_7745c5c3_Var53, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%t", !issue.StillWithDev()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 388, Col: 387}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 398, Col: 387}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var53))
 		if templ_7745c5c3_Err != nil {
@@ -1016,7 +1026,7 @@ func parentIssueCard(issue types.ProjectTimeTracking, totals AggregatedTotals) t
 		var templ_7745c5c3_Var54 templ.SafeURL
 		templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("https://amagsymmetry.atlassian.net/browse/" + issue.Key))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 391, Col: 82}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 401, Col: 82}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var54))
 		if templ_7745c5c3_Err != nil {
@@ -1029,7 +1039,7 @@ func parentIssueCard(issue types.ProjectTimeTracking, totals AggregatedTotals) t
 		var templ_7745c5c3_Var55 string
 		templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinStringErrs(issue.Key)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 395, Col: 15}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 405, Col: 15}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var55))
 		if templ_7745c5c3_Err != nil {
@@ -1050,7 +1060,7 @@ func parentIssueCard(issue types.ProjectTimeTracking, totals AggregatedTotals) t
 		var templ_7745c5c3_Var56 string
 		templ_7745c5c3_Var56, templ_7745c5c3_Err = templ.JoinStringErrs(issue.Summary)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 400, Col: 70}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 410, Col: 70}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var56))
 		if templ_7745c5c3_Err != nil {
@@ -1072,7 +1082,7 @@ func parentIssueCard(issue types.ProjectTimeTracking, totals AggregatedTotals) t
 			var templ_7745c5c3_Var57 string
 			templ_7745c5c3_Var57, templ_7745c5c3_Err = templ.JoinStringErrs(issue.ProjectCharge)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 405, Col: 27}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 415, Col: 27}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var57))
 			if templ_7745c5c3_Err != nil {
@@ -1091,7 +1101,7 @@ func parentIssueCard(issue types.ProjectTimeTracking, totals AggregatedTotals) t
 			var templ_7745c5c3_Var58 string
 			templ_7745c5c3_Var58, templ_7745c5c3_Err = templ.JoinStringErrs(formatSeconds(totals.EstimateSeconds))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 414, Col: 46}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 424, Col: 46}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var58))
 			if templ_7745c5c3_Err != nil {
@@ -1133,7 +1143,7 @@ func parentIssueCard(issue types.ProjectTimeTracking, totals AggregatedTotals) t
 			var templ_7745c5c3_Var61 string
 			templ_7745c5c3_Var61, templ_7745c5c3_Err = templ.JoinStringErrs(formatSeconds(totals.DevSeconds))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 424, Col: 41}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 434, Col: 41}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var61))
 			if templ_7745c5c3_Err != nil {
@@ -1145,15 +1155,15 @@ func parentIssueCard(issue types.ProjectTimeTracking, totals AggregatedTotals) t
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, "</span></div><div><span class=\"text-gray-500\">Remaining:</span> <span class=\"font-mono font-semibold ml-1\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, "</span></div><div><span class=\"text-gray-500\">Dev Remaining:</span> <span class=\"font-mono font-semibold ml-1\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if totals.RemainingSeconds() > 0 {
+		if totals.RemainingDevSeconds() > 0 {
 			var templ_7745c5c3_Var62 string
-			templ_7745c5c3_Var62, templ_7745c5c3_Err = templ.JoinStringErrs(formatSeconds(totals.RemainingSeconds()))
+			templ_7745c5c3_Var62, templ_7745c5c3_Err = templ.JoinStringErrs(formatSeconds(totals.RemainingDevSeconds()))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 434, Col: 49}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 444, Col: 52}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var62))
 			if templ_7745c5c3_Err != nil {
@@ -1165,7 +1175,27 @@ func parentIssueCard(issue types.ProjectTimeTracking, totals AggregatedTotals) t
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "</span></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "</span></div><div><span class=\"text-gray-500\">Jira Remaining:</span> <span class=\"font-mono font-semibold ml-1\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if totals.JiraRemainingSeconds > 0 {
+			var templ_7745c5c3_Var63 string
+			templ_7745c5c3_Var63, templ_7745c5c3_Err = templ.JoinStringErrs(formatSeconds(totals.JiraRemainingSeconds))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 454, Col: 51}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var63))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, "-")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, "</span></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1173,7 +1203,7 @@ func parentIssueCard(issue types.ProjectTimeTracking, totals AggregatedTotals) t
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, "</div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, "</div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1197,88 +1227,88 @@ func aggregatedProgressBar(totals AggregatedTotals) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var63 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var63 == nil {
-			templ_7745c5c3_Var63 = templ.NopComponent
+		templ_7745c5c3_Var64 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var64 == nil {
+			templ_7745c5c3_Var64 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		if totals.EstimateSeconds == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, "<div class=\"text-xs text-gray-400\">No estimate</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, "<div class=\"text-xs text-gray-400\">No estimate</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, "<div class=\"flex items-center gap-2\"><div class=\"flex-grow bg-gray-200 rounded-full h-2 overflow-hidden\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, "<div class=\"flex items-center gap-2\"><div class=\"flex-grow bg-gray-200 rounded-full h-2 overflow-hidden\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var64 = []any{"h-2 rounded-full", progressBarColor(totals.Progress())}
-			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var64...)
+			var templ_7745c5c3_Var65 = []any{"h-2 rounded-full", progressBarColor(totals.Progress())}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var65...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, "<div class=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var65 string
-			templ_7745c5c3_Var65, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var64).String())
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 1, Col: 0}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var65))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, "\" style=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 100, "<div class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var66 string
-			templ_7745c5c3_Var66, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("width: %.0f%%", min(totals.Progress(), 100)))
+			templ_7745c5c3_Var66, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var65).String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 454, Col: 70}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 1, Col: 0}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var66))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 100, "\"></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 101, "\" style=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var67 = []any{"text-xs font-medium w-12 text-right", progressTextColor(totals.Progress())}
-			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var67...)
+			var templ_7745c5c3_Var67 string
+			templ_7745c5c3_Var67, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("width: %.0f%%", min(totals.Progress(), 100)))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 474, Col: 70}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var67))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 101, "<span class=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 102, "\"></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var68 string
-			templ_7745c5c3_Var68, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var67).String())
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 1, Col: 0}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var68))
+			var templ_7745c5c3_Var68 = []any{"text-xs font-medium w-12 text-right", progressTextColor(totals.Progress())}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var68...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 102, "\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, "<span class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var69 string
-			templ_7745c5c3_Var69, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f%%", totals.Progress()))
+			templ_7745c5c3_Var69, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var68).String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 458, Col: 46}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 1, Col: 0}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var69))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, "</span></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 104, "\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var70 string
+			templ_7745c5c3_Var70, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f%%", totals.Progress()))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 478, Col: 46}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var70))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 105, "</span></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1303,99 +1333,165 @@ func timeTrackingSummary(issues []types.ProjectTimeTracking) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var70 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var70 == nil {
-			templ_7745c5c3_Var70 = templ.NopComponent
+		templ_7745c5c3_Var71 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var71 == nil {
+			templ_7745c5c3_Var71 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 104, "<!-- Total Issues --><div class=\"bg-white rounded-lg shadow-md p-4\"><div class=\"text-sm text-gray-500\">Total Issues</div><div class=\"text-2xl font-bold text-gray-900\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var71 string
-		templ_7745c5c3_Var71, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(issues)))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 468, Col: 80}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var71))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 105, "</div></div><!-- Total Estimated --><div class=\"bg-white rounded-lg shadow-md p-4\"><div class=\"text-sm text-gray-500\">Total Estimated</div><div class=\"text-2xl font-bold text-blue-600\">")
+		summary := summaryWidgets(issues)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 106, "<!-- Total Issues --><div class=\"bg-white rounded-lg shadow-md p-4\"><div class=\"text-sm text-gray-500\">Total Issues</div><div class=\"text-2xl font-bold text-gray-900\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var72 string
-		templ_7745c5c3_Var72, templ_7745c5c3_Err = templ.JoinStringErrs(formatSeconds(sumEstimates(issues)))
+		templ_7745c5c3_Var72, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", summary.TotalIssues))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 474, Col: 85}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 489, Col: 88}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var72))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 106, "</div></div><!-- Total Dev Time --><div class=\"bg-white rounded-lg shadow-md p-4\"><div class=\"text-sm text-gray-500\">Total Dev Time</div><div class=\"text-2xl font-bold text-green-600\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 107, "</div></div><!-- Total Estimated --><div class=\"bg-white rounded-lg shadow-md p-4\"><div class=\"text-sm text-gray-500\">Total Estimated</div><div class=\"text-2xl font-bold text-blue-600\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var73 string
-		templ_7745c5c3_Var73, templ_7745c5c3_Err = templ.JoinStringErrs(formatSeconds(sumDevTime(issues)))
+		templ_7745c5c3_Var73, templ_7745c5c3_Err = templ.JoinStringErrs(formatSeconds(summary.EstimateTotal))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 480, Col: 84}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 495, Col: 86}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var73))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 107, "</div></div><!-- Remaining Dev Time --><div class=\"bg-white rounded-lg shadow-md p-4\"><div class=\"text-sm text-gray-500\">Remaining Dev Time</div><div class=\"text-2xl font-bold text-orange-600\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 108, "</div><div class=\"text-xl font-bold text-blue-600\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var74 string
-		templ_7745c5c3_Var74, templ_7745c5c3_Err = templ.JoinStringErrs(formatSeconds(sumRemainingDevTime(issues)))
+		templ_7745c5c3_Var74, templ_7745c5c3_Err = templ.JoinStringErrs(formatSecondsToHours(summary.EstimateTotal))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 486, Col: 94}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 496, Col: 92}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var74))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 108, "</div></div><!-- Over Budget Count --><div class=\"bg-white rounded-lg shadow-md p-4\"><div class=\"text-sm text-gray-500\">Over Budget</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 109, "h</div></div><!-- Total Dev Time --><div class=\"bg-white rounded-lg shadow-md p-4\"><div class=\"text-sm text-gray-500\">Total Dev Time</div><div class=\"text-2xl font-bold text-green-600\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var75 = []any{"text-2xl font-bold", overBudgetColor(countOverBudget(issues))}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var75...)
+		var templ_7745c5c3_Var75 string
+		templ_7745c5c3_Var75, templ_7745c5c3_Err = templ.JoinStringErrs(formatSeconds(summary.DevTimeTotal))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 502, Col: 86}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var75))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 109, "<div class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 110, "</div><div class=\"text-xl font-bold text-green-600\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var76 string
-		templ_7745c5c3_Var76, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var75).String())
+		templ_7745c5c3_Var76, templ_7745c5c3_Err = templ.JoinStringErrs(formatSecondsToHours(summary.DevTimeTotal))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 1, Col: 0}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 503, Col: 92}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var76))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 110, "\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 111, "h</div></div><!-- Remaining Dev Time --><div class=\"bg-white rounded-lg shadow-md p-4\"><div class=\"text-sm text-gray-500\">Remaining Dev Time</div><div class=\"text-2xl font-bold text-orange-600\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var77 string
-		templ_7745c5c3_Var77, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", countOverBudget(issues)))
+		templ_7745c5c3_Var77, templ_7745c5c3_Err = templ.JoinStringErrs(formatSeconds(summary.RemainingTimeTotal))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 492, Col: 124}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 509, Col: 93}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var77))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 111, "</div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 112, "</div><div class=\"text-xl font-bold text-orange-600\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var78 string
+		templ_7745c5c3_Var78, templ_7745c5c3_Err = templ.JoinStringErrs(formatSecondsToHours(summary.RemainingTimeTotal))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 510, Col: 99}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var78))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 113, "h</div></div><!-- Remaining Jira Time --><div class=\"bg-white rounded-lg shadow-md p-4\"><div class=\"text-sm text-gray-500\">Remaining Jira Time</div><div class=\"text-2xl font-bold text-orange-600\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var79 string
+		templ_7745c5c3_Var79, templ_7745c5c3_Err = templ.JoinStringErrs(formatSeconds(summary.JiraRemainingTimeTotal))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 516, Col: 97}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var79))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 114, "</div><div class=\"text-xl font-bold text-orange-600\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var80 string
+		templ_7745c5c3_Var80, templ_7745c5c3_Err = templ.JoinStringErrs(formatSecondsToHours(summary.JiraRemainingTimeTotal))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 517, Col: 103}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var80))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 115, "h</div></div><!-- Over Budget Count --><div class=\"bg-white rounded-lg shadow-md p-4\"><div class=\"text-sm text-gray-500\">Over Budget</div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var81 = []any{"text-2xl font-bold", overBudgetColor(summary.IssuesOverBudget)}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var81...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 116, "<div class=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var82 string
+		templ_7745c5c3_Var82, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var81).String())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 1, Col: 0}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var82))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 117, "\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var83 string
+		templ_7745c5c3_Var83, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", summary.IssuesOverBudget))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 523, Col: 126}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var83))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 118, "</div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1419,88 +1515,88 @@ func progressBar(issue types.ProjectTimeTracking) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var78 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var78 == nil {
-			templ_7745c5c3_Var78 = templ.NopComponent
+		templ_7745c5c3_Var84 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var84 == nil {
+			templ_7745c5c3_Var84 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		if !issue.EstimateSeconds.Valid || issue.EstimateSeconds.Int32 == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 112, "<div class=\"text-xs text-gray-400\">No estimate</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 119, "<div class=\"text-xs text-gray-400\">No estimate</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 113, "<div class=\"flex items-center gap-2\"><div class=\"flex-grow bg-gray-200 rounded-full h-2 overflow-hidden\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 120, "<div class=\"flex items-center gap-2\"><div class=\"flex-grow bg-gray-200 rounded-full h-2 overflow-hidden\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var79 = []any{"h-2 rounded-full", progressBarColor(issue.Progress())}
-			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var79...)
+			var templ_7745c5c3_Var85 = []any{"h-2 rounded-full", progressBarColor(issue.Progress())}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var85...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 114, "<div class=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 121, "<div class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var80 string
-			templ_7745c5c3_Var80, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var79).String())
+			var templ_7745c5c3_Var86 string
+			templ_7745c5c3_Var86, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var85).String())
 			if templ_7745c5c3_Err != nil {
 				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 1, Col: 0}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var80))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var86))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 115, "\" style=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 122, "\" style=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var81 string
-			templ_7745c5c3_Var81, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("width: %.0f%%", min(issue.Progress(), 100)))
+			var templ_7745c5c3_Var87 string
+			templ_7745c5c3_Var87, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("width: %.0f%%", min(issue.Progress(), 100)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 504, Col: 69}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 535, Col: 69}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var81))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 116, "\"></div></div>")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var87))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var82 = []any{"text-xs font-medium w-12 text-right", progressTextColor(issue.Progress())}
-			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var82...)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 123, "\"></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 117, "<span class=\"")
+			var templ_7745c5c3_Var88 = []any{"text-xs font-medium w-12 text-right", progressTextColor(issue.Progress())}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var88...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var83 string
-			templ_7745c5c3_Var83, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var82).String())
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 124, "<span class=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var89 string
+			templ_7745c5c3_Var89, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var88).String())
 			if templ_7745c5c3_Err != nil {
 				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 1, Col: 0}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var83))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var89))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 118, "\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 125, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var84 string
-			templ_7745c5c3_Var84, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f%%", issue.Progress()))
+			var templ_7745c5c3_Var90 string
+			templ_7745c5c3_Var90, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f%%", issue.Progress()))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 508, Col: 45}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 539, Col: 45}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var84))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var90))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 119, "</span></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 126, "</span></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1525,81 +1621,81 @@ func issueTypeBadge(issueType string) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var85 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var85 == nil {
-			templ_7745c5c3_Var85 = templ.NopComponent
+		templ_7745c5c3_Var91 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var91 == nil {
+			templ_7745c5c3_Var91 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		switch issueType {
 		case "Story":
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 120, "<span class=\"inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 127, "<span class=\"inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var86 string
-			templ_7745c5c3_Var86, templ_7745c5c3_Err = templ.JoinStringErrs(issueType)
+			var templ_7745c5c3_Var92 string
+			templ_7745c5c3_Var92, templ_7745c5c3_Err = templ.JoinStringErrs(issueType)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 518, Col: 15}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 549, Col: 15}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var86))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var92))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 121, "</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 128, "</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		case "Bug", "Customer Bug":
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 122, "<span class=\"inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 129, "<span class=\"inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var87 string
-			templ_7745c5c3_Var87, templ_7745c5c3_Err = templ.JoinStringErrs(issueType)
+			var templ_7745c5c3_Var93 string
+			templ_7745c5c3_Var93, templ_7745c5c3_Err = templ.JoinStringErrs(issueType)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 522, Col: 15}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 553, Col: 15}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var87))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var93))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 123, "</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 130, "</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		case "Task", "Sub-task":
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 124, "<span class=\"inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 131, "<span class=\"inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var88 string
-			templ_7745c5c3_Var88, templ_7745c5c3_Err = templ.JoinStringErrs(issueType)
+			var templ_7745c5c3_Var94 string
+			templ_7745c5c3_Var94, templ_7745c5c3_Err = templ.JoinStringErrs(issueType)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 526, Col: 15}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 557, Col: 15}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var88))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var94))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 125, "</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 132, "</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		default:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 126, "<span class=\"inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 133, "<span class=\"inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var89 string
-			templ_7745c5c3_Var89, templ_7745c5c3_Err = templ.JoinStringErrs(issueType)
+			var templ_7745c5c3_Var95 string
+			templ_7745c5c3_Var95, templ_7745c5c3_Err = templ.JoinStringErrs(issueType)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 530, Col: 15}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timetracking.templ`, Line: 561, Col: 15}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var89))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var95))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 127, "</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 134, "</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1622,6 +1718,9 @@ func calcGroupTotals(group IssueGroup) AggregatedTotals {
 		if group.Parent.DevSeconds.Valid {
 			totals.DevSeconds += group.Parent.DevSeconds.Int32
 		}
+		if group.Parent.RemainingSeconds.Valid {
+			totals.JiraRemainingSeconds += group.Parent.RemainingSeconds.Int32
+		}
 	}
 
 	// Add children's values
@@ -1631,6 +1730,9 @@ func calcGroupTotals(group IssueGroup) AggregatedTotals {
 		}
 		if child.DevSeconds.Valid {
 			totals.DevSeconds += child.DevSeconds.Int32
+		}
+		if child.RemainingSeconds.Valid {
+			totals.JiraRemainingSeconds += child.RemainingSeconds.Int32
 		}
 	}
 
@@ -1741,61 +1843,106 @@ func formatSeconds(seconds int32) string {
 	return result
 }
 
-func sumEstimates(issues []types.ProjectTimeTracking) int32 {
-	var total int32
+func formatSecondsToHours(seconds int32) int {
+	if seconds <= 0 {
+		return 0
+	}
+	return int(seconds) / 60 / 60
+}
+
+func summaryWidgets(issues []types.ProjectTimeTracking) SummaryWidget {
+	summary := SummaryWidget{
+		TotalIssues: len(issues),
+	}
 	for _, issue := range issues {
 		if issue.EstimateSeconds.Valid {
-			total += issue.EstimateSeconds.Int32
+			summary.EstimateTotal += issue.EstimateSeconds.Int32
 		}
-	}
-	return total
-}
-
-func sumDevTime(issues []types.ProjectTimeTracking) int32 {
-	var total int32
-	for _, issue := range issues {
 		if issue.DevSeconds.Valid {
-			total += issue.DevSeconds.Int32
+			summary.DevTimeTotal += issue.DevSeconds.Int32
+		}
+		if issue.IsOverBudget() {
+			summary.IssuesOverBudget++
 		}
 	}
-	return total
-}
-
-// sumRemainingDevTime calculates the remaining estimate for issues still with dev.
-// Remaining = estimate - dev time spent (only for issues where StillWithDev() is true).
-func sumRemainingDevTime(issues []types.ProjectTimeTracking) int32 {
-	var total int32
 
 	groups := groupIssuesByParent(issues)
 	for _, group := range groups {
 		if group.Parent.StillWithDev() {
-			total += group.Totals.RemainingSeconds()
+			summary.JiraRemainingTimeTotal += group.Totals.JiraRemainingSeconds
+			summary.RemainingTimeTotal += group.Totals.RemainingDevSeconds()
 		}
 	}
-
-	// for _, issue := range issues {
-	// 	if issue.StillWithDev() && issue.EstimateSeconds.Valid {
-	// 		remaining := issue.EstimateSeconds.Int32
-	// 		if issue.DevSeconds.Valid {
-	// 			remaining -= issue.DevSeconds.Int32
-	// 		}
-	// 		if remaining > 0 {
-	// 			total += remaining
-	// 		}
-	// 	}
-	// }
-	return total
+	return summary
 }
 
-func countOverBudget(issues []types.ProjectTimeTracking) int {
-	count := 0
-	for _, issue := range issues {
-		if issue.IsOverBudget() {
-			count++
-		}
-	}
-	return count
-}
+// func sumEstimates(issues []types.ProjectTimeTracking) int32 {
+// 	var total int32
+// 	for _, issue := range issues {
+// 		if issue.EstimateSeconds.Valid {
+// 			total += issue.EstimateSeconds.Int32
+// 		}
+// 	}
+// 	return total
+// }
+
+// func sumDevTime(issues []types.ProjectTimeTracking) int32 {
+// 	var total int32
+// 	for _, issue := range issues {
+// 		if issue.DevSeconds.Valid {
+// 			total += issue.DevSeconds.Int32
+// 		}
+// 	}
+// 	return total
+// }
+
+// func sumRemainingJiraTime(issues []types.ProjectTimeTracking) int32 {
+// 	var total int32
+
+// 	groups := groupIssuesByParent(issues)
+// 	for _, group := range groups {
+// 		if group.Parent.StillWithDev() {
+// 			total += group.Totals.JiraRemainingSeconds
+// 		}
+// 	}
+// 	return total
+// }
+
+// // sumRemainingDevTime calculates the remaining estimate for issues still with dev.
+// // Remaining = estimate - dev time spent (only for issues where StillWithDev() is true).
+// func sumRemainingDevTime(issues []types.ProjectTimeTracking) int32 {
+// 	var total int32
+
+// 	groups := groupIssuesByParent(issues)
+// 	for _, group := range groups {
+// 		if group.Parent.StillWithDev() {
+// 			total += group.Totals.RemainingDevSeconds()
+// 		}
+// 	}
+
+// 	// for _, issue := range issues {
+// 	// 	if issue.StillWithDev() && issue.EstimateSeconds.Valid {
+// 	// 		remaining := issue.EstimateSeconds.Int32
+// 	// 		if issue.DevSeconds.Valid {
+// 	// 			remaining -= issue.DevSeconds.Int32
+// 	// 		}
+// 	// 		if remaining > 0 {
+// 	// 			total += remaining
+// 	// 		}
+// 	// 	}
+// 	// }
+// 	return total
+// }
+
+// func countOverBudget(issues []types.ProjectTimeTracking) int {
+// 	count := 0
+// 	for _, issue := range issues {
+// 		if issue.IsOverBudget() {
+// 			count++
+// 		}
+// 	}
+// 	return count
+// }
 
 func overBudgetColor(count int) string {
 	if count == 0 {

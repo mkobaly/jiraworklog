@@ -6,6 +6,15 @@ import (
 	"github.com/mkobaly/jiraworklog/types"
 )
 
+type SummaryWidget struct {
+	TotalIssues int
+	EstimateTotal int32
+	DevTimeTotal int32
+	JiraRemainingTimeTotal int32 //This represents the remaining time displayed in Jira. 
+	RemainingTimeTotal int32 //This represents Estimate - DevTime logged
+	IssuesOverBudget int
+}
+
 // IssueGroup represents a parent issue with its children
 type IssueGroup struct {
 	Parent   *types.ProjectTimeTracking
@@ -17,6 +26,7 @@ type IssueGroup struct {
 type AggregatedTotals struct {
 	EstimateSeconds int32
 	DevSeconds      int32
+	JiraRemainingSeconds int32
 }
 
 // Progress returns the percentage of dev time vs estimate
@@ -27,7 +37,7 @@ func (a AggregatedTotals) Progress() float64 {
 	return float64(a.DevSeconds) / float64(a.EstimateSeconds) * 100
 }
 
-func (a AggregatedTotals) RemainingSeconds() int32 {
+func (a AggregatedTotals) RemainingDevSeconds() int32 {
 	remaining := a.EstimateSeconds - a.DevSeconds
 	if remaining > 0 {
 		return remaining
@@ -103,7 +113,7 @@ templ ProjectTimeTracking(issues []types.ProjectTimeTracking, fixedVersion strin
 			</div>
 		} else {
 			<!-- Summary Stats -->
-			<div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+			<div class="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
 				@timeTrackingSummary(issues)
 			</div>
 
@@ -372,8 +382,8 @@ templ parentIssueRow(issue types.ProjectTimeTracking, totals AggregatedTotals) {
 			}
 		</td>
 		<td class="px-4 py-3 text-sm text-right font-mono whitespace-nowrap">
-			if totals.RemainingSeconds() > 0 {
-				{ formatSeconds(totals.RemainingSeconds()) }
+			if   totals.JiraRemainingSeconds > 0 {
+				{ formatSeconds(totals.JiraRemainingSeconds) }
 			} else {
 				<span class="text-gray-400">-</span>
 			}
@@ -428,10 +438,20 @@ templ parentIssueCard(issue types.ProjectTimeTracking, totals AggregatedTotals) 
 					</span>
 				</div>
 				<div>
-					<span class="text-gray-500">Remaining:</span>
+					<span class="text-gray-500">Dev Remaining:</span>
 					<span class="font-mono font-semibold ml-1">
-						if totals.RemainingSeconds() > 0 {
-							{ formatSeconds(totals.RemainingSeconds()) }
+						if totals.RemainingDevSeconds() > 0 {
+							{ formatSeconds(totals.RemainingDevSeconds()) }
+						} else {
+							-
+						}
+					</span>
+				</div>
+				<div>
+					<span class="text-gray-500">Jira Remaining:</span>
+					<span class="font-mono font-semibold ml-1">
+						if totals.JiraRemainingSeconds > 0 {
+							{ formatSeconds(totals.JiraRemainingSeconds) }
 						} else {
 							-
 						}
@@ -462,34 +482,45 @@ templ aggregatedProgressBar(totals AggregatedTotals) {
 }
 
 templ timeTrackingSummary(issues []types.ProjectTimeTracking) {
+	{{ summary := summaryWidgets(issues) }}
 	<!-- Total Issues -->
 	<div class="bg-white rounded-lg shadow-md p-4">
 		<div class="text-sm text-gray-500">Total Issues</div>
-		<div class="text-2xl font-bold text-gray-900">{ fmt.Sprintf("%d", len(issues)) }</div>
+		<div class="text-2xl font-bold text-gray-900">{ fmt.Sprintf("%d", summary.TotalIssues) }</div>
 	</div>
 
 	<!-- Total Estimated -->
 	<div class="bg-white rounded-lg shadow-md p-4">
 		<div class="text-sm text-gray-500">Total Estimated</div>
-		<div class="text-2xl font-bold text-blue-600">{ formatSeconds(sumEstimates(issues)) }</div>
+		<div class="text-2xl font-bold text-blue-600">{ formatSeconds(summary.EstimateTotal) }</div>
+		<div class="text-xl font-bold text-blue-600">{ formatSecondsToHours(summary.EstimateTotal) }h</div>
 	</div>
 
 	<!-- Total Dev Time -->
 	<div class="bg-white rounded-lg shadow-md p-4">
 		<div class="text-sm text-gray-500">Total Dev Time</div>
-		<div class="text-2xl font-bold text-green-600">{ formatSeconds(sumDevTime(issues)) }</div>
+		<div class="text-2xl font-bold text-green-600">{ formatSeconds(summary.DevTimeTotal) }</div>
+		<div class="text-xl font-bold text-green-600">{ formatSecondsToHours(summary.DevTimeTotal) }h</div>
 	</div>
 
 	<!-- Remaining Dev Time -->
 	<div class="bg-white rounded-lg shadow-md p-4">
 		<div class="text-sm text-gray-500">Remaining Dev Time</div>
-		<div class="text-2xl font-bold text-orange-600">{ formatSeconds(sumRemainingDevTime(issues)) }</div>
+		<div class="text-2xl font-bold text-orange-600">{ formatSeconds(summary.RemainingTimeTotal) }</div>
+		<div class="text-xl font-bold text-orange-600">{ formatSecondsToHours(summary.RemainingTimeTotal) }h</div>
+	</div>
+
+	<!-- Remaining Jira Time -->
+	<div class="bg-white rounded-lg shadow-md p-4">
+		<div class="text-sm text-gray-500">Remaining Jira Time</div>
+		<div class="text-2xl font-bold text-orange-600">{ formatSeconds(summary.JiraRemainingTimeTotal) }</div>
+		<div class="text-xl font-bold text-orange-600">{ formatSecondsToHours(summary.JiraRemainingTimeTotal) }h</div>
 	</div>
 
 	<!-- Over Budget Count -->
 	<div class="bg-white rounded-lg shadow-md p-4">
 		<div class="text-sm text-gray-500">Over Budget</div>
-		<div class={ "text-2xl font-bold", overBudgetColor(countOverBudget(issues)) }>{ fmt.Sprintf("%d", countOverBudget(issues)) }</div>
+		<div class={ "text-2xl font-bold", overBudgetColor(summary.IssuesOverBudget) }>{ fmt.Sprintf("%d", summary.IssuesOverBudget) }</div>
 	</div>
 }
 
@@ -546,6 +577,9 @@ func calcGroupTotals(group IssueGroup) AggregatedTotals {
 		if group.Parent.DevSeconds.Valid {
 			totals.DevSeconds += group.Parent.DevSeconds.Int32
 		}
+		if group.Parent.RemainingSeconds.Valid {
+			totals.JiraRemainingSeconds += group.Parent.RemainingSeconds.Int32
+		}
 	}
 
 	// Add children's values
@@ -555,6 +589,9 @@ func calcGroupTotals(group IssueGroup) AggregatedTotals {
 		}
 		if child.DevSeconds.Valid {
 			totals.DevSeconds += child.DevSeconds.Int32
+		}
+		if child.RemainingSeconds.Valid {
+			totals.JiraRemainingSeconds += child.RemainingSeconds.Int32
 		}
 	}
 
@@ -665,61 +702,107 @@ func formatSeconds(seconds int32) string {
 	return result
 }
 
-func sumEstimates(issues []types.ProjectTimeTracking) int32 {
-	var total int32
+func formatSecondsToHours(seconds int32) int {
+	if seconds <= 0 {
+		return 0
+	}
+	return int(seconds) / 60 / 60
+}
+
+
+func summaryWidgets(issues []types.ProjectTimeTracking) SummaryWidget {
+	summary := SummaryWidget{
+		TotalIssues: len(issues),
+	}
 	for _, issue := range issues {
 		if issue.EstimateSeconds.Valid {
-			total += issue.EstimateSeconds.Int32
+			summary.EstimateTotal += issue.EstimateSeconds.Int32
 		}
-	}
-	return total
-}
-
-func sumDevTime(issues []types.ProjectTimeTracking) int32 {
-	var total int32
-	for _, issue := range issues {
 		if issue.DevSeconds.Valid {
-			total += issue.DevSeconds.Int32
+			summary.DevTimeTotal += issue.DevSeconds.Int32
+		}
+		if issue.IsOverBudget() {
+			summary.IssuesOverBudget++
 		}
 	}
-	return total
-}
-
-// sumRemainingDevTime calculates the remaining estimate for issues still with dev.
-// Remaining = estimate - dev time spent (only for issues where StillWithDev() is true).
-func sumRemainingDevTime(issues []types.ProjectTimeTracking) int32 {
-	var total int32
 
 	groups := groupIssuesByParent(issues)
 	for _, group := range groups {
 		if group.Parent.StillWithDev() {
-			total += group.Totals.RemainingSeconds()
+			summary.JiraRemainingTimeTotal += group.Totals.JiraRemainingSeconds
+			summary.RemainingTimeTotal += group.Totals.RemainingDevSeconds()
 		}
 	}
-
-	// for _, issue := range issues {
-	// 	if issue.StillWithDev() && issue.EstimateSeconds.Valid {
-	// 		remaining := issue.EstimateSeconds.Int32
-	// 		if issue.DevSeconds.Valid {
-	// 			remaining -= issue.DevSeconds.Int32
-	// 		}
-	// 		if remaining > 0 {
-	// 			total += remaining
-	// 		}
-	// 	}
-	// }
-	return total
+	return summary
 }
 
-func countOverBudget(issues []types.ProjectTimeTracking) int {
-	count := 0
-	for _, issue := range issues {
-		if issue.IsOverBudget() {
-			count++
-		}
-	}
-	return count
-}
+// func sumEstimates(issues []types.ProjectTimeTracking) int32 {
+// 	var total int32
+// 	for _, issue := range issues {
+// 		if issue.EstimateSeconds.Valid {
+// 			total += issue.EstimateSeconds.Int32
+// 		}
+// 	}
+// 	return total
+// }
+
+// func sumDevTime(issues []types.ProjectTimeTracking) int32 {
+// 	var total int32
+// 	for _, issue := range issues {
+// 		if issue.DevSeconds.Valid {
+// 			total += issue.DevSeconds.Int32
+// 		}
+// 	}
+// 	return total
+// }
+
+// func sumRemainingJiraTime(issues []types.ProjectTimeTracking) int32 {
+// 	var total int32
+
+// 	groups := groupIssuesByParent(issues)
+// 	for _, group := range groups {
+// 		if group.Parent.StillWithDev() {
+// 			total += group.Totals.JiraRemainingSeconds
+// 		}
+// 	}
+// 	return total
+// }
+
+// // sumRemainingDevTime calculates the remaining estimate for issues still with dev.
+// // Remaining = estimate - dev time spent (only for issues where StillWithDev() is true).
+// func sumRemainingDevTime(issues []types.ProjectTimeTracking) int32 {
+// 	var total int32
+
+// 	groups := groupIssuesByParent(issues)
+// 	for _, group := range groups {
+// 		if group.Parent.StillWithDev() {
+// 			total += group.Totals.RemainingDevSeconds()
+// 		}
+// 	}
+
+// 	// for _, issue := range issues {
+// 	// 	if issue.StillWithDev() && issue.EstimateSeconds.Valid {
+// 	// 		remaining := issue.EstimateSeconds.Int32
+// 	// 		if issue.DevSeconds.Valid {
+// 	// 			remaining -= issue.DevSeconds.Int32
+// 	// 		}
+// 	// 		if remaining > 0 {
+// 	// 			total += remaining
+// 	// 		}
+// 	// 	}
+// 	// }
+// 	return total
+// }
+
+// func countOverBudget(issues []types.ProjectTimeTracking) int {
+// 	count := 0
+// 	for _, issue := range issues {
+// 		if issue.IsOverBudget() {
+// 			count++
+// 		}
+// 	}
+// 	return count
+// }
 
 func overBudgetColor(count int) string {
 	if count == 0 {

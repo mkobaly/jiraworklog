@@ -713,6 +713,41 @@ func (s *Postgres) ProjectKPIs(epicOrVersion string) (types.ProjectKPIData, erro
 		return data, err
 	}
 
+	// ── 10. Burn-up — completed hours vs total scope hours ──────────────────
+	// completed_seconds: cumulative timespent logged on project issues up to each day
+	// total_scope_seconds: cumulative originalestimate as issues are created (steps up on scope creep)
+	err = s.DB.Select(&data.BurnupHistory, projectIssuesCTE+`,
+		daily_logged AS (
+			SELECT w.date::date AS day, SUM(w.timespentseconds)::float AS seconds_logged
+			FROM worklog w
+			WHERE w.issueid IN (SELECT id FROM project_issues)
+			GROUP BY w.date::date
+		),
+		daily_scope AS (
+			SELECT i.createdate::date AS day, SUM(i.originalestimate)::float AS scope_added
+			FROM issue i
+			WHERE i.id IN (SELECT id FROM project_issues)
+			GROUP BY i.createdate::date
+		)
+		SELECT
+			gs.day::date AS day,
+			SUM(COALESCE(dl.seconds_logged, 0)) OVER (ORDER BY gs.day) AS completed_seconds,
+			SUM(COALESCE(ds.scope_added, 0))    OVER (ORDER BY gs.day) AS total_scope_seconds
+		FROM generate_series(
+			LEAST(
+				(SELECT MIN(w.date)::date    FROM worklog w WHERE w.issueid IN (SELECT id FROM project_issues)),
+				(SELECT MIN(i.createdate)::date FROM issue i WHERE i.id   IN (SELECT id FROM project_issues))
+			),
+			NOW()::date,
+			'1 day'::interval
+		) gs(day)
+		LEFT JOIN daily_logged dl ON dl.day = gs.day::date
+		LEFT JOIN daily_scope   ds ON ds.day = gs.day::date
+		ORDER BY gs.day`, epicOrVersion)
+	if err != nil {
+		return data, err
+	}
+
 	return data, nil
 }
 

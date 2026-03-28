@@ -72,9 +72,10 @@ func (j *JiraSyncIssuesJob) Run() error {
 
 	lastUpdated := j.cfg.IssueLastTimestamp
 	lastUpdatedDateOnly := dateOnly(time.Unix(lastUpdated, 0)).Unix()
-	today := dateOnly(time.Now()).Unix()
+
+	today := dateOnly(time.Now().UTC().Add(time.Hour * time.Duration(j.cfg.UtcOffsetHours))).Unix()
 	if lastUpdatedDateOnly < today {
-		ts, te := internal.GetDateRange(lastUpdated, time.Now().Unix())
+		ts, te := internal.GetDateRange(lastUpdated, time.Now().UTC().Unix(), j.cfg.UtcOffsetHours)
 		//fmt.Println("callinng syncUpdatedIssues less than today")
 		err = j.syncUpdatedIssues(ts, te)
 		if err != nil {
@@ -95,7 +96,7 @@ func (j *JiraSyncIssuesJob) Run() error {
 		hour := time.Now().Hour()
 		minute := time.Now().Minute()
 		if j.todaysHour != hour || minute%10 == 0 {
-			ts, te := internal.GetDateRange(lastUpdated, time.Now().Unix())
+			ts, te := internal.GetDateRange(lastUpdated, time.Now().UTC().Unix(), j.cfg.UtcOffsetHours)
 			//slog.Info("syncing issues and project charges for today", slog.Time("start", time.Unix(ts, 0)), slog.Time("end", time.Unix(te, 0)))
 			err = j.syncUpdatedIssues(ts, te)
 			if err != nil {

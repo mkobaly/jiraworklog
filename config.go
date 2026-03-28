@@ -42,6 +42,7 @@ type Config struct {
 	ExcludedProjects []string
 	AuthorizedUsers  []string
 	HTTPSecureCookie bool
+	UtcOffsetHours   int
 }
 
 // Save will persist the configuration information
