@@ -814,6 +814,7 @@ func (h *Handler) GetProjectTimeTracking(c echo.Context) error {
 	fixedVersion := c.QueryParam("version")
 
 	var data []types.ProjectTimeTracking
+	var projectName string
 	var err error
 
 	if fixedVersion != "" {
@@ -822,10 +823,11 @@ func (h *Handler) GetProjectTimeTracking(c echo.Context) error {
 			h.logger.Error("error fetching project time tracking", "error", err)
 			return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch time tracking data")
 		}
+		projectName, _ = h.repo.ProjectName(fixedVersion)
 	}
 
 	if wantsHTML(c) {
-		return pages.ProjectTimeTracking(data, fixedVersion).Render(c.Request().Context(), c.Response().Writer)
+		return pages.ProjectTimeTracking(data, fixedVersion, projectName).Render(c.Request().Context(), c.Response().Writer)
 	}
 
 	return c.JSON(http.StatusOK, data)
@@ -835,6 +837,7 @@ func (h *Handler) GetProjectKPIs(c echo.Context) error {
 	epicOrVersion := c.QueryParam("project")
 
 	var data types.ProjectKPIData
+	var projectName string
 	var err error
 
 	if epicOrVersion != "" {
@@ -843,10 +846,11 @@ func (h *Handler) GetProjectKPIs(c echo.Context) error {
 			h.logger.Error("error fetching project KPIs", "error", err)
 			return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch project KPIs")
 		}
+		projectName, _ = h.repo.ProjectName(epicOrVersion)
 	}
 
 	if wantsHTML(c) {
-		return pages.ProjectKPIs(data, epicOrVersion).Render(c.Request().Context(), c.Response().Writer)
+		return pages.ProjectKPIs(data, epicOrVersion, projectName).Render(c.Request().Context(), c.Response().Writer)
 	}
 
 	return c.JSON(http.StatusOK, data)

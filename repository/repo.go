@@ -54,6 +54,7 @@ type Repo interface {
 
 	// Project time tracking
 	ProjectTimeTracking(fixedVersion string) ([]types.ProjectTimeTracking, error)
+	ProjectName(epicOrVersion string) (string, error)
 
 	BulkInsertChangelogs(transitions []types.ChangelogStatus) error
 	RefreshStatusStints(issueID int) error

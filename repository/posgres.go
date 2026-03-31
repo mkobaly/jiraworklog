@@ -233,6 +233,17 @@ func (s *Postgres) DailyHoursByRole(roles []string, startDate, endDate time.Time
 	return result, err
 }
 
+// ProjectName returns the summary of the epic or fixed version for display purposes.
+func (s *Postgres) ProjectName(epicOrVersion string) (string, error) {
+	var name string
+	err := s.DB.QueryRow(`
+		SELECT summary FROM issue
+		WHERE key = $1
+		   OR id IN (SELECT id FROM issue WHERE $1 = ANY(fixedversions) AND type = 'Epic')
+		LIMIT 1`, epicOrVersion).Scan(&name)
+	return name, err
+}
+
 // ProjectTimeTracking returns time tracking data for issues in a given fixed version
 func (s *Postgres) ProjectTimeTracking(fixedVersion string) ([]types.ProjectTimeTracking, error) {
 	result := []types.ProjectTimeTracking{}

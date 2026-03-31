@@ -50,14 +50,18 @@ func (a AggregatedTotals) IsOverBudget() bool {
 	return a.Progress() > 100
 }
 
-templ ProjectTimeTracking(issues []types.ProjectTimeTracking, fixedVersion string) {
+templ ProjectTimeTracking(issues []types.ProjectTimeTracking, fixedVersion string, projectName string) {
 	@layouts.Base("Project Time Tracking") {
 		<style>
 			main.container { max-width: none !important; }
 		</style>
 		<div class="mb-6">
 			<h1 class="text-3xl font-bold text-gray-900">Project Time Tracking</h1>
-			<p class="text-gray-600 mt-2">View time tracking progress for issues in a specific version</p>
+			if projectName != "" {
+				<p class="text-lg font-medium text-blue-700 mt-1">{ projectName }</p>
+			} else {
+				<p class="text-gray-600 mt-2">View time tracking progress for issues in a specific version</p>
+			}
 		</div>
 
 		<!-- Version Input Form -->

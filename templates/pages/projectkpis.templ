@@ -8,14 +8,17 @@ import (
 	"github.com/mkobaly/jiraworklog/types"
 )
 
-templ ProjectKPIs(data types.ProjectKPIData, project string) {
+templ ProjectKPIs(data types.ProjectKPIData, project string, projectName string) {
 	@layouts.Base("Project KPIs") {
 		<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 		<div class="space-y-6">
 			<!-- Header + search form -->
 			<div class="bg-white rounded-lg shadow p-6">
-				<h1 class="text-2xl font-bold text-gray-800 mb-4">Project KPIs</h1>
+				<h1 class="text-2xl font-bold text-gray-800 mb-1">Project KPIs</h1>
+				if projectName != "" {
+					<p class="text-lg font-medium text-blue-700 mb-3">{ projectName }</p>
+				}
 				<form method="GET" action="/reports/project-kpis" class="flex gap-3 items-end flex-wrap">
 					<div class="flex-1 min-w-48">
 						<label for="project" class="block text-sm font-medium text-gray-700 mb-1">Epic Key or Fixed Version</label>
