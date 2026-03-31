@@ -2,16 +2,15 @@ package pages
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/mkobaly/jiraworklog/templates/layouts"
 	"github.com/mkobaly/jiraworklog/types"
 )
 
-templ CustomerBugs(data []types.CustomerBugCount, projects []string, selectedProject string, aggregate bool) {
+templ CustomerBugs(trends []types.CustomerBugTrend, projects []string, selectedProject string) {
 	@layouts.Base("Customer Bugs") {
 		<div class="mb-6">
-			<h1 class="text-3xl font-bold text-gray-900">Customer Bugs</h1>
-			<p class="text-gray-600 mt-2">Customer bug trends by priority over time</p>
+			<h1 class="text-3xl font-bold text-gray-900">Stability Team</h1>
+			<p class="text-gray-600 mt-2">Customer bug trends over time</p>
 		</div>
 
 		<!-- Filters -->
@@ -29,82 +28,84 @@ templ CustomerBugs(data []types.CustomerBugCount, projects []string, selectedPro
 					}
 				</select>
 			</div>
-			<div class="flex items-center">
-				<label class="flex items-center cursor-pointer px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50">
-					<input
-						type="checkbox"
-						id="aggregate-checkbox"
-						class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-						onchange="applyFilters()"
-						if aggregate {
-							checked
-						}
-					/>
-					<span class="ml-2 text-sm text-gray-700">Aggregate Priorities</span>
-				</label>
-			</div>
 		</div>
 
-		if len(data) == 0 {
+		if len(trends) == 0 {
 			<div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
 				<p class="text-yellow-700">No customer bug data found for the selected project.</p>
 			</div>
 		} else {
-			<div class="bg-white rounded-lg shadow-md p-6">
-				<div class="h-96 md:h-[500px]">
-					<canvas id="customerBugsChart"></canvas>
+			
+			
+			<!-- Hidden element with chart data -->
+			// if aggregate {
+			// 	<div id="chartData" data-chart={ toBugChartDataAggregated(data, selectedProject) } data-aggregate="true" style="display:none;"></div>
+			// } else {
+			// 	<div id="chartData" data-chart={ toBugChartData(data) } data-aggregate="false" style="display:none;"></div>
+			// }
+
+			
+			<!-- Stability trend chart -->
+			
+			<div class="bg-white rounded-lg shadow-md p-6 mt-6">
+				<h2 class="text-lg font-semibold text-gray-900 mb-1">Stability Team Performance</h2>
+				<p class="text-xs text-gray-400 mb-4">New bugs opened, bugs closed, and total open bugs per month</p>
+				<div class="h-80 md:h-96">
+					<canvas id="stabilityChart"></canvas>
 				</div>
 			</div>
+			<div id="stabilityData" data-chart={ toStabilityChartData(trends) } style="display:none;"></div>
+		
+
+			// <div class="bg-white rounded-lg shadow-md p-6">
+			// 	<div class="h-96 md:h-[500px]">
+			// 		<canvas id="customerBugsChart"></canvas>
+			// 	</div>
+			// </div>
 
 			<!-- Data table (hidden on mobile) -->
-			<div class="hidden md:block mt-6 bg-white rounded-lg shadow-md overflow-hidden">
-				<div class="px-4 py-3 bg-gray-50 border-b">
-					<h2 class="text-lg font-semibold text-gray-900">Data Table</h2>
-				</div>
-				<div class="overflow-x-auto max-h-96">
-					<table class="min-w-full divide-y divide-gray-200">
-						<thead class="bg-gray-50 sticky top-0">
-							<tr>
-								<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Project</th>
-								if !aggregate {
-									<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Priority</th>
-								}
-								<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Month</th>
-								<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Count</th>
-							</tr>
-						</thead>
-						<tbody class="bg-white divide-y divide-gray-200">
-							if aggregate {
-								for _, item := range aggregateData(data) {
-									<tr class="hover:bg-gray-50">
-										<td class="px-4 py-2 text-sm text-gray-900">{ item.Project }</td>
-										<td class="px-4 py-2 text-sm text-gray-900">{ item.YearMonth }</td>
-										<td class="px-4 py-2 text-sm text-gray-900 text-right font-medium">{ fmt.Sprintf("%d", item.Count) }</td>
-									</tr>
-								}
-							} else {
-								for _, item := range data {
-									<tr class="hover:bg-gray-50">
-										<td class="px-4 py-2 text-sm text-gray-900">{ item.Project }</td>
-										<td class="px-4 py-2 text-sm">
-											@bugPriorityBadge(item.Priority)
-										</td>
-										<td class="px-4 py-2 text-sm text-gray-900">{ item.YearMonth }</td>
-										<td class="px-4 py-2 text-sm text-gray-900 text-right font-medium">{ fmt.Sprintf("%d", item.Count) }</td>
-									</tr>
-								}
-							}
-						</tbody>
-					</table>
-				</div>
-			</div>
+			// <div class="hidden md:block mt-6 bg-white rounded-lg shadow-md overflow-hidden">
+			// 	<div class="px-4 py-3 bg-gray-50 border-b">
+			// 		<h2 class="text-lg font-semibold text-gray-900">Data Table</h2>
+			// 	</div>
+			// 	<div class="overflow-x-auto max-h-96">
+			// 		<table class="min-w-full divide-y divide-gray-200">
+			// 			<thead class="bg-gray-50 sticky top-0">
+			// 				<tr>
+			// 					<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Project</th>
+			// 					if !aggregate {
+			// 						<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Priority</th>
+			// 					}
+			// 					<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Month</th>
+			// 					<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Count</th>
+			// 				</tr>
+			// 			</thead>
+			// 			<tbody class="bg-white divide-y divide-gray-200">
+			// 				if aggregate {
+			// 					for _, item := range aggregateData(data) {
+			// 						<tr class="hover:bg-gray-50">
+			// 							<td class="px-4 py-2 text-sm text-gray-900">{ item.Project }</td>
+			// 							<td class="px-4 py-2 text-sm text-gray-900">{ item.YearMonth }</td>
+			// 							<td class="px-4 py-2 text-sm text-gray-900 text-right font-medium">{ fmt.Sprintf("%d", item.Count) }</td>
+			// 						</tr>
+			// 					}
+			// 				} else {
+			// 					for _, item := range data {
+			// 						<tr class="hover:bg-gray-50">
+			// 							<td class="px-4 py-2 text-sm text-gray-900">{ item.Project }</td>
+			// 							<td class="px-4 py-2 text-sm">
+			// 								@bugPriorityBadge(item.Priority)
+			// 							</td>
+			// 							<td class="px-4 py-2 text-sm text-gray-900">{ item.YearMonth }</td>
+			// 							<td class="px-4 py-2 text-sm text-gray-900 text-right font-medium">{ fmt.Sprintf("%d", item.Count) }</td>
+			// 						</tr>
+			// 					}
+			// 				}
+			// 			</tbody>
+			// 		</table>
+			// 	</div>
+			// </div>
 
-			<!-- Hidden element with chart data -->
-			if aggregate {
-				<div id="chartData" data-chart={ toBugChartDataAggregated(data, selectedProject) } data-aggregate="true" style="display:none;"></div>
-			} else {
-				<div id="chartData" data-chart={ toBugChartData(data) } data-aggregate="false" style="display:none;"></div>
-			}
 
 			<!-- Chart.js from CDN -->
 			<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -114,189 +115,79 @@ templ CustomerBugs(data []types.CustomerBugCount, projects []string, selectedPro
 	}
 }
 
-templ bugPriorityBadge(priority string) {
-	switch priority {
-		case "Highest", "Critical":
-			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-				{ priority }
-			</span>
-		case "High":
-			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-				{ priority }
-			</span>
-		case "Medium":
-			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-				{ priority }
-			</span>
-		case "Low", "Lowest":
-			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-				{ priority }
-			</span>
-		case "Hotfix":
-			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-800">
-				{ priority }
-			</span>
-		default:
-			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-				{ priority }
-			</span>
-	}
-}
+// templ bugPriorityBadge(priority string) {
+// 	switch priority {
+// 		case "Highest", "Critical":
+// 			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+// 				{ priority }
+// 			</span>
+// 		case "High":
+// 			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+// 				{ priority }
+// 			</span>
+// 		case "Medium":
+// 			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+// 				{ priority }
+// 			</span>
+// 		case "Low", "Lowest":
+// 			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+// 				{ priority }
+// 			</span>
+// 		case "Hotfix":
+// 			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-800">
+// 				{ priority }
+// 			</span>
+// 		default:
+// 			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+// 				{ priority }
+// 			</span>
+// 	}
+// }
 
 templ customerBugsChartScript() {
 	<script>
 		function applyFilters() {
 			const project = document.getElementById('project-select').value;
-			const aggregate = document.getElementById('aggregate-checkbox').checked;
+			//const aggregate = document.getElementById('aggregate-checkbox').checked;
 
 			const params = new URLSearchParams();
 			if (project) {
 				params.set('project', project);
 			}
-			if (aggregate) {
-				params.set('aggregate', 'true');
-			}
+			// if (aggregate) {
+			// 	params.set('aggregate', 'true');
+			// }
 			const queryString = params.toString();
 			window.location.href = '/reports/customer-bugs' + (queryString ? '?' + queryString : '');
 		}
 
-		function initCustomerBugsChart() {
-			const chartDataEl = document.getElementById('chartData');
-			if (!chartDataEl) return;
-			const chartData = JSON.parse(chartDataEl.dataset.chart);
-			const isAggregated = chartDataEl.dataset.aggregate === 'true';
-
-			// Priority colors (for non-aggregated view)
-			const priorityColors = {
-				'Highest': '#dc2626',
-				'Critical': '#dc2626',
-				'High': '#fff02b',
-				'Medium': '#2b47ff',
-				'Low': '#16a34a',
-				'Lowest': '#22c55e',
-				'Hotfix': '#ff282f',
-				'Blocker / Urgent': '#000000'
-			};
-
-			// Project colors (for aggregated view)
-			const projectColors = [
-				'#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
-				'#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1',
-				'#14b8a6', '#a855f7', '#22c55e', '#eab308', '#0ea5e9'
-			];
-
-			const defaultColor = '#6b7280';
-
-			let datasets;
-			let chartTitle;
-
-			if (isAggregated) {
-				// Aggregated view: one line per project (or single line if project selected)
-				chartTitle = 'Customer Bugs by Project Over Time';
-				datasets = Object.keys(chartData.series).map((key, index) => {
-					const color = projectColors[index % projectColors.length];
-					return {
-						label: key,
-						data: chartData.labels.map(month => chartData.series[key][month] || 0),
-						borderColor: color,
-						backgroundColor: color,
-						borderWidth: 2,
-						tension: 0.3,
-						pointRadius: 4,
-						pointHoverRadius: 6,
-						fill: false,
-						trendlineLinear: {
-							colorMin: color,
-							colorMax: color,
-							lineStyle: 'dashed',
-							width: 2
-						}
-					};
-				});
-			} else {
-				// Normal view: one line per priority
-				chartTitle = 'Customer Bugs by Priority Over Time';
-				datasets = Object.keys(chartData.priorities).map(priority => {
-					const color = priorityColors[priority] || defaultColor;
-					return {
-						label: priority,
-						data: chartData.labels.map(month => chartData.priorities[priority][month] || 0),
-						borderColor: color,
-						backgroundColor: color,
-						borderWidth: 2,
-						tension: 0.3,
-						pointRadius: 4,
-						pointHoverRadius: 6,
-						fill: false,
-						trendlineLinear: {
-							colorMin: color,
-							colorMax: color,
-							lineStyle: 'dashed',
-							width: 2
-						}
-					};
-				});
-			}
-
-			const ctx = document.getElementById('customerBugsChart').getContext('2d');
+		
+		function initStabilityChart() {
+			const el = document.getElementById('stabilityData');
+			if (!el) return;
+			const d = JSON.parse(el.dataset.chart);
+			const ctx = document.getElementById('stabilityChart').getContext('2d');
 			new Chart(ctx, {
 				type: 'line',
 				data: {
-					labels: chartData.labels,
-					datasets: datasets
+					labels: d.labels,
+					datasets: [
+						{ label: 'Total', data: d.open,   borderColor: 'rgba(59,130,246,1)',  backgroundColor: 'rgba(59,130,246,0)', borderWidth: 2, tension: 0.3, pointRadius: 3, fill: true },
+						{ label: 'Completed', data: d.closed, borderColor: 'rgba(249,115,22,1)',  backgroundColor: 'rgba(249,115,22,0)', borderWidth: 2, tension: 0.3, pointRadius: 3, fill: true },
+						{ label: 'New',        data: d.new,    borderColor: 'rgba(156,163,175,1)', backgroundColor: 'rgba(156,163,175,0)', borderWidth: 2, tension: 0.3, pointRadius: 3, fill: true },
+					]
 				},
 				options: {
 					responsive: true,
 					maintainAspectRatio: false,
-					interaction: {
-						intersect: false,
-						mode: 'index'
-					},
+					interaction: { intersect: false, mode: 'index' },
 					plugins: {
-						title: {
-							display: true,
-							text: chartTitle,
-							font: {
-								size: 18
-							}
-						},
-						legend: {
-							position: 'bottom'
-						},
-						tooltip: {
-							callbacks: {
-								label: function(context) {
-									if (context.dataset.label === 'Trend (Total)') {
-										return context.dataset.label + ': ' + context.parsed.y.toFixed(1);
-									}
-									return context.dataset.label + ': ' + context.parsed.y + ' bugs';
-								}
-							}
-						}
+						//title: { display: true, text: 'Stability Team Performance', font: { size: 16 } },
+						legend: { position: 'right' }
 					},
 					scales: {
-						x: {
-							title: {
-								display: true,
-								text: 'Month'
-							},
-							grid: {
-								display: false
-							}
-						},
-						y: {
-							title: {
-								display: true,
-								text: 'Bug Count'
-							},
-							beginAtZero: true,
-							ticks: {
-								stepSize: 1
-							},
-							grid: {
-								color: 'rgba(0, 0, 0, 0.1)'
-							}
-						}
+						x: { grid: { display: false } },
+						y: { beginAtZero: true, title: { display: true, text: 'Bug Count' } }
 					}
 				}
 			});
@@ -305,7 +196,8 @@ templ customerBugsChartScript() {
 		// Wait for Chart.js to be available before initializing
 		function waitForChart() {
 			if (typeof Chart !== 'undefined') {
-				initCustomerBugsChart();
+				//initCustomerBugsChart();
+				initStabilityChart();
 			} else {
 				setTimeout(waitForChart, 50);
 			}
@@ -322,143 +214,166 @@ type AggregatedBugCount struct {
 }
 
 // Helper to aggregate data by project (for table display)
-func aggregateData(data []types.CustomerBugCount) []AggregatedBugCount {
-	// Map of project -> month -> count
-	aggregated := make(map[string]map[string]int)
+// func aggregateData(data []types.CustomerBugCount) []AggregatedBugCount {
+// 	// Map of project -> month -> count
+// 	aggregated := make(map[string]map[string]int)
 
-	for _, item := range data {
-		if _, ok := aggregated[item.Project]; !ok {
-			aggregated[item.Project] = make(map[string]int)
-		}
-		aggregated[item.Project][item.YearMonth] += item.Count
-	}
+// 	for _, item := range data {
+// 		if _, ok := aggregated[item.Project]; !ok {
+// 			aggregated[item.Project] = make(map[string]int)
+// 		}
+// 		aggregated[item.Project][item.YearMonth] += item.Count
+// 	}
 
-	// Convert to slice
-	result := []AggregatedBugCount{}
-	for project, months := range aggregated {
-		for month, count := range months {
-			result = append(result, AggregatedBugCount{
-				Project:   project,
-				YearMonth: month,
-				Count:     count,
-			})
-		}
-	}
+// 	// Convert to slice
+// 	result := []AggregatedBugCount{}
+// 	for project, months := range aggregated {
+// 		for month, count := range months {
+// 			result = append(result, AggregatedBugCount{
+// 				Project:   project,
+// 				YearMonth: month,
+// 				Count:     count,
+// 			})
+// 		}
+// 	}
 
-	// Sort by project, then by month
-	for i := 0; i < len(result)-1; i++ {
-		for j := i + 1; j < len(result); j++ {
-			if result[i].Project > result[j].Project ||
-				(result[i].Project == result[j].Project && result[i].YearMonth > result[j].YearMonth) {
-				result[i], result[j] = result[j], result[i]
-			}
-		}
-	}
+// 	// Sort by project, then by month
+// 	for i := 0; i < len(result)-1; i++ {
+// 		for j := i + 1; j < len(result); j++ {
+// 			if result[i].Project > result[j].Project ||
+// 				(result[i].Project == result[j].Project && result[i].YearMonth > result[j].YearMonth) {
+// 				result[i], result[j] = result[j], result[i]
+// 			}
+// 		}
+// 	}
 
-	return result
-}
+// 	return result
+// }
 
 // Helper function to convert data to chart-friendly JSON (by priority)
-func toBugChartData(data []types.CustomerBugCount) string {
+// func toBugChartData(data []types.CustomerBugCount) string {
+// 	type chartData struct {
+// 		Labels     []string                  `json:"labels"`
+// 		Priorities map[string]map[string]int `json:"priorities"`
+// 	}
+
+// 	// Collect unique months and priorities
+// 	monthSet := make(map[string]bool)
+// 	prioritySet := make(map[string]bool)
+
+// 	for _, item := range data {
+// 		monthSet[item.YearMonth] = true
+// 		prioritySet[item.Priority] = true
+// 	}
+
+// 	// Sort months
+// 	months := make([]string, 0, len(monthSet))
+// 	for month := range monthSet {
+// 		months = append(months, month)
+// 	}
+// 	for i := 0; i < len(months)-1; i++ {
+// 		for j := i + 1; j < len(months); j++ {
+// 			if months[i] > months[j] {
+// 				months[i], months[j] = months[j], months[i]
+// 			}
+// 		}
+// 	}
+
+// 	// Build priority data maps
+// 	priorities := make(map[string]map[string]int)
+// 	for priority := range prioritySet {
+// 		priorities[priority] = make(map[string]int)
+// 	}
+
+// 	for _, item := range data {
+// 		priorities[item.Priority][item.YearMonth] += item.Count
+// 	}
+
+// 	cd := chartData{
+// 		Labels:     months,
+// 		Priorities: priorities,
+// 	}
+
+// 	jsonBytes, _ := json.Marshal(cd)
+// 	return string(jsonBytes)
+// }
+
+func toStabilityChartData(trends []types.CustomerBugTrend) string {
 	type chartData struct {
-		Labels     []string                  `json:"labels"`
-		Priorities map[string]map[string]int `json:"priorities"`
+		Labels []string `json:"labels"`
+		New    []int    `json:"new"`
+		Closed []int    `json:"closed"`
+		Open   []int    `json:"open"`
 	}
-
-	// Collect unique months and priorities
-	monthSet := make(map[string]bool)
-	prioritySet := make(map[string]bool)
-
-	for _, item := range data {
-		monthSet[item.YearMonth] = true
-		prioritySet[item.Priority] = true
-	}
-
-	// Sort months
-	months := make([]string, 0, len(monthSet))
-	for month := range monthSet {
-		months = append(months, month)
-	}
-	for i := 0; i < len(months)-1; i++ {
-		for j := i + 1; j < len(months); j++ {
-			if months[i] > months[j] {
-				months[i], months[j] = months[j], months[i]
-			}
-		}
-	}
-
-	// Build priority data maps
-	priorities := make(map[string]map[string]int)
-	for priority := range prioritySet {
-		priorities[priority] = make(map[string]int)
-	}
-
-	for _, item := range data {
-		priorities[item.Priority][item.YearMonth] += item.Count
-	}
-
 	cd := chartData{
-		Labels:     months,
-		Priorities: priorities,
+		Labels: make([]string, len(trends)),
+		New:    make([]int, len(trends)),
+		Closed: make([]int, len(trends)),
+		Open:   make([]int, len(trends)),
 	}
-
-	jsonBytes, _ := json.Marshal(cd)
-	return string(jsonBytes)
+	for i, t := range trends {
+		cd.Labels[i] = t.YearMonth
+		cd.New[i] = t.NewCount
+		cd.Closed[i] = t.ClosedCount
+		cd.Open[i] = t.OpenCount
+	}
+	b, _ := json.Marshal(cd)
+	return string(b)
 }
 
-// Helper function to convert data to chart-friendly JSON (aggregated by project)
-func toBugChartDataAggregated(data []types.CustomerBugCount, selectedProject string) string {
-	type chartData struct {
-		Labels []string                  `json:"labels"`
-		Series map[string]map[string]int `json:"series"`
-	}
+// // Helper function to convert data to chart-friendly JSON (aggregated by project)
+// func toBugChartDataAggregated(data []types.CustomerBugCount, selectedProject string) string {
+// 	type chartData struct {
+// 		Labels []string                  `json:"labels"`
+// 		Series map[string]map[string]int `json:"series"`
+// 	}
 
-	// Collect unique months and projects
-	monthSet := make(map[string]bool)
-	projectSet := make(map[string]bool)
+// 	// Collect unique months and projects
+// 	monthSet := make(map[string]bool)
+// 	projectSet := make(map[string]bool)
 
-	for _, item := range data {
-		monthSet[item.YearMonth] = true
-		projectSet[item.Project] = true
-	}
+// 	for _, item := range data {
+// 		monthSet[item.YearMonth] = true
+// 		projectSet[item.Project] = true
+// 	}
 
-	// Sort months
-	months := make([]string, 0, len(monthSet))
-	for month := range monthSet {
-		months = append(months, month)
-	}
-	for i := 0; i < len(months)-1; i++ {
-		for j := i + 1; j < len(months); j++ {
-			if months[i] > months[j] {
-				months[i], months[j] = months[j], months[i]
-			}
-		}
-	}
+// 	// Sort months
+// 	months := make([]string, 0, len(monthSet))
+// 	for month := range monthSet {
+// 		months = append(months, month)
+// 	}
+// 	for i := 0; i < len(months)-1; i++ {
+// 		for j := i + 1; j < len(months); j++ {
+// 			if months[i] > months[j] {
+// 				months[i], months[j] = months[j], months[i]
+// 			}
+// 		}
+// 	}
 
-	// Build series data maps (aggregated by project)
-	series := make(map[string]map[string]int)
+// 	// Build series data maps (aggregated by project)
+// 	series := make(map[string]map[string]int)
 
-	if selectedProject != "" {
-		// Single project selected: show single line labeled with project name
-		series[selectedProject] = make(map[string]int)
-		for _, item := range data {
-			series[selectedProject][item.YearMonth] += item.Count
-		}
-	} else {
-		// All projects: show one line per project
-		for project := range projectSet {
-			series[project] = make(map[string]int)
-		}
-		for _, item := range data {
-			series[item.Project][item.YearMonth] += item.Count
-		}
-	}
+// 	if selectedProject != "" {
+// 		// Single project selected: show single line labeled with project name
+// 		series[selectedProject] = make(map[string]int)
+// 		for _, item := range data {
+// 			series[selectedProject][item.YearMonth] += item.Count
+// 		}
+// 	} else {
+// 		// All projects: show one line per project
+// 		for project := range projectSet {
+// 			series[project] = make(map[string]int)
+// 		}
+// 		for _, item := range data {
+// 			series[item.Project][item.YearMonth] += item.Count
+// 		}
+// 	}
 
-	cd := chartData{
-		Labels: months,
-		Series: series,
-	}
+// 	cd := chartData{
+// 		Labels: months,
+// 		Series: series,
+// 	}
 
-	jsonBytes, _ := json.Marshal(cd)
-	return string(jsonBytes)
-}
+// 	jsonBytes, _ := json.Marshal(cd)
+// 	return string(jsonBytes)
+// }

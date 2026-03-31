@@ -141,6 +141,61 @@ func (s *Postgres) CustomerBugCounts(project string) ([]types.CustomerBugCount, 
 	return result, err
 }
 
+func (s *Postgres) CustomerBugTrends(project string) ([]types.CustomerBugTrend, error) {
+	result := []types.CustomerBugTrend{}
+	query := `
+		WITH months AS (
+			SELECT to_char(gs, 'YYYY-MM') AS year_month
+			FROM generate_series(
+				date_trunc('month', now() - INTERVAL '2 years'),
+				date_trunc('month', now() - INTERVAL '1 month'),
+				'1 month'::interval
+			) gs
+		),
+		new_bugs AS (
+			SELECT to_char(createdate, 'YYYY-MM') AS year_month, COUNT(*) AS cnt
+			FROM issue
+			WHERE type IN ('Customer Bug', 'HW / FW Customer Bug')
+			AND createdate >= date_trunc('month', now() - INTERVAL '2 years')
+			AND createdate < date_trunc('month', now())
+			AND ($1 = '' OR project = $1)
+			GROUP BY to_char(createdate, 'YYYY-MM')
+		),
+		closed_bugs AS (
+			SELECT to_char(coalesce(resolveddate, updatedate), 'YYYY-MM') AS year_month, COUNT(*) AS cnt
+			FROM issue
+			WHERE type IN ('Customer Bug', 'HW / FW Customer Bug')
+			AND ($1 = '' OR project = $1)
+			AND (resolveddate >= date_trunc('month', now() - INTERVAL '2 years') AND resolveddate < date_trunc('month', now())
+					OR (status like 'Awaiting Release%' AND updatedate >= date_trunc('month', now() - INTERVAL '2 years') AND updatedate < date_trunc('month', now() )
+				))
+			GROUP BY to_char(coalesce(resolveddate, updatedate), 'YYYY-MM')
+		),
+		baseline AS (
+			SELECT COUNT(*) AS open_count
+			FROM issue
+			WHERE type IN ('Customer Bug', 'HW / FW Customer Bug')
+			AND createdate < date_trunc('month', now() - INTERVAL '2 years')
+			AND (resolveddate IS NULL OR resolveddate >= date_trunc('month', now() - INTERVAL '2 years'))
+			AND ($1 = '' OR project = $1)
+		)
+		SELECT
+			m.year_month,
+			COALESCE(n.cnt, 0) AS new_count,
+			COALESCE(c.cnt, 0) AS closed_count,
+			SUM(COALESCE(n.cnt, 0) - COALESCE(c.cnt, 0)) OVER (
+				ORDER BY m.year_month
+				ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+			) + b.open_count AS open_count
+		FROM months m
+		LEFT JOIN new_bugs    n ON n.year_month = m.year_month
+		LEFT JOIN closed_bugs c ON c.year_month = m.year_month
+		CROSS JOIN baseline b
+		ORDER BY m.year_month`
+	err := s.DB.Select(&result, query, project)
+	return result, err
+}
+
 func (s *Postgres) CustomerBugProjects() ([]string, error) {
 	result := []string{}
 	err := s.DB.Select(&result, `

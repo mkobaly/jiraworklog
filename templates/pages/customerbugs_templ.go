@@ -10,12 +10,11 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/mkobaly/jiraworklog/templates/layouts"
 	"github.com/mkobaly/jiraworklog/types"
 )
 
-func CustomerBugs(data []types.CustomerBugCount, projects []string, selectedProject string, aggregate bool) templ.Component {
+func CustomerBugs(trends []types.CustomerBugTrend, projects []string, selectedProject string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -48,7 +47,7 @@ func CustomerBugs(data []types.CustomerBugCount, projects []string, selectedProj
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"mb-6\"><h1 class=\"text-3xl font-bold text-gray-900\">Customer Bugs</h1><p class=\"text-gray-600 mt-2\">Customer bug trends by priority over time</p></div><!-- Filters --> <div class=\"mb-6 flex flex-wrap items-end gap-4\"><div><label for=\"project-select\" class=\"block text-sm font-medium text-gray-700 mb-2\">Select Project</label> <select id=\"project-select\" class=\"block w-64 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500\" onchange=\"applyFilters()\"><option value=\"\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"mb-6\"><h1 class=\"text-3xl font-bold text-gray-900\">Stability Team</h1><p class=\"text-gray-600 mt-2\">Customer bug trends over time</p></div><!-- Filters --> <div class=\"mb-6 flex flex-wrap items-end gap-4\"><div><label for=\"project-select\" class=\"block text-sm font-medium text-gray-700 mb-2\">Select Project</label> <select id=\"project-select\" class=\"block w-64 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500\" onchange=\"applyFilters()\"><option value=\"\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -70,7 +69,7 @@ func CustomerBugs(data []types.CustomerBugCount, projects []string, selectedProj
 				var templ_7745c5c3_Var3 string
 				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(project)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/customerbugs.templ`, Line: 28, Col: 29}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/customerbugs.templ`, Line: 27, Col: 29}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 				if templ_7745c5c3_Err != nil {
@@ -93,7 +92,7 @@ func CustomerBugs(data []types.CustomerBugCount, projects []string, selectedProj
 				var templ_7745c5c3_Var4 string
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(project)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/customerbugs.templ`, Line: 28, Col: 84}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/customerbugs.templ`, Line: 27, Col: 84}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -104,183 +103,30 @@ func CustomerBugs(data []types.CustomerBugCount, projects []string, selectedProj
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</select></div><div class=\"flex items-center\"><label class=\"flex items-center cursor-pointer px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50\"><input type=\"checkbox\" id=\"aggregate-checkbox\" class=\"h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500\" onchange=\"applyFilters()\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</select></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if aggregate {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, " checked")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "> <span class=\"ml-2 text-sm text-gray-700\">Aggregate Priorities</span></label></div></div>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			if len(data) == 0 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<div class=\"bg-yellow-50 border-l-4 border-yellow-400 p-4\"><p class=\"text-yellow-700\">No customer bug data found for the selected project.</p></div>")
+			if len(trends) == 0 {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<div class=\"bg-yellow-50 border-l-4 border-yellow-400 p-4\"><p class=\"text-yellow-700\">No customer bug data found for the selected project.</p></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<div class=\"bg-white rounded-lg shadow-md p-6\"><div class=\"h-96 md:h-[500px]\"><canvas id=\"customerBugsChart\"></canvas></div></div><!-- Data table (hidden on mobile) --> <div class=\"hidden md:block mt-6 bg-white rounded-lg shadow-md overflow-hidden\"><div class=\"px-4 py-3 bg-gray-50 border-b\"><h2 class=\"text-lg font-semibold text-gray-900\">Data Table</h2></div><div class=\"overflow-x-auto max-h-96\"><table class=\"min-w-full divide-y divide-gray-200\"><thead class=\"bg-gray-50 sticky top-0\"><tr><th class=\"px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase\">Project</th>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<!-- Hidden element with chart data -->      <!-- Stability trend chart --> <div class=\"bg-white rounded-lg shadow-md p-6 mt-6\"><h2 class=\"text-lg font-semibold text-gray-900 mb-1\">Stability Team Performance</h2><p class=\"text-xs text-gray-400 mb-4\">New bugs opened, bugs closed, and total open bugs per month</p><div class=\"h-80 md:h-96\"><canvas id=\"stabilityChart\"></canvas></div></div><div id=\"stabilityData\" data-chart=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				if !aggregate {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<th class=\"px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase\">Priority</th>")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
+				var templ_7745c5c3_Var5 string
+				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(toStabilityChartData(trends))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/customerbugs.templ`, Line: 57, Col: 68}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<th class=\"px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase\">Month</th><th class=\"px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase\">Count</th></tr></thead> <tbody class=\"bg-white divide-y divide-gray-200\">")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				if aggregate {
-					for _, item := range aggregateData(data) {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<tr class=\"hover:bg-gray-50\"><td class=\"px-4 py-2 text-sm text-gray-900\">")
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						var templ_7745c5c3_Var5 string
-						templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(item.Project)
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/customerbugs.templ`, Line: 80, Col: 68}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</td><td class=\"px-4 py-2 text-sm text-gray-900\">")
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						var templ_7745c5c3_Var6 string
-						templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(item.YearMonth)
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/customerbugs.templ`, Line: 81, Col: 70}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</td><td class=\"px-4 py-2 text-sm text-gray-900 text-right font-medium\">")
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						var templ_7745c5c3_Var7 string
-						templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", item.Count))
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/customerbugs.templ`, Line: 82, Col: 108}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</td></tr>")
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-					}
-				} else {
-					for _, item := range data {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<tr class=\"hover:bg-gray-50\"><td class=\"px-4 py-2 text-sm text-gray-900\">")
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						var templ_7745c5c3_Var8 string
-						templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(item.Project)
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/customerbugs.templ`, Line: 88, Col: 68}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</td><td class=\"px-4 py-2 text-sm\">")
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						templ_7745c5c3_Err = bugPriorityBadge(item.Priority).Render(ctx, templ_7745c5c3_Buffer)
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "</td><td class=\"px-4 py-2 text-sm text-gray-900\">")
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						var templ_7745c5c3_Var9 string
-						templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(item.YearMonth)
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/customerbugs.templ`, Line: 92, Col: 70}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</td><td class=\"px-4 py-2 text-sm text-gray-900 text-right font-medium\">")
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						var templ_7745c5c3_Var10 string
-						templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", item.Count))
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/customerbugs.templ`, Line: 93, Col: 108}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</td></tr>")
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-					}
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</tbody></table></div></div><!-- Hidden element with chart data --> ")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				if aggregate {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<div id=\"chartData\" data-chart=\"")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var11 string
-					templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(toBugChartDataAggregated(data, selectedProject))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/customerbugs.templ`, Line: 104, Col: 84}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\" data-aggregate=\"true\" style=\"display:none;\"></div>")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<div id=\"chartData\" data-chart=\"")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var12 string
-					templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(toBugChartData(data))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/customerbugs.templ`, Line: 106, Col: 57}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "\" data-aggregate=\"false\" style=\"display:none;\"></div>")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, " <!-- Chart.js from CDN --> <script src=\"https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js\"></script> <script src=\"https://cdn.jsdelivr.net/npm/chartjs-plugin-trendline\"></script> ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" style=\"display:none;\"></div>     <!-- Data table (hidden on mobile) -->                                          <!-- Chart.js from CDN --> <script src=\"https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js\"></script> <script src=\"https://cdn.jsdelivr.net/npm/chartjs-plugin-trendline\"></script> ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -299,141 +145,34 @@ func CustomerBugs(data []types.CustomerBugCount, projects []string, selectedProj
 	})
 }
 
-func bugPriorityBadge(priority string) templ.Component {
-	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
-			return templ_7745c5c3_CtxErr
-		}
-		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-		if !templ_7745c5c3_IsBuffer {
-			defer func() {
-				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-				if templ_7745c5c3_Err == nil {
-					templ_7745c5c3_Err = templ_7745c5c3_BufErr
-				}
-			}()
-		}
-		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var13 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var13 == nil {
-			templ_7745c5c3_Var13 = templ.NopComponent
-		}
-		ctx = templ.ClearChildren(ctx)
-		switch priority {
-		case "Highest", "Critical":
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<span class=\"inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var14 string
-			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(priority)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/customerbugs.templ`, Line: 121, Col: 14}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "</span>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		case "High":
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<span class=\"inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var15 string
-			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(priority)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/customerbugs.templ`, Line: 125, Col: 14}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</span>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		case "Medium":
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<span class=\"inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var16 string
-			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(priority)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/customerbugs.templ`, Line: 129, Col: 14}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</span>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		case "Low", "Lowest":
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "<span class=\"inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var17 string
-			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(priority)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/customerbugs.templ`, Line: 133, Col: 14}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "</span>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		case "Hotfix":
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<span class=\"inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-800\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var18 string
-			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(priority)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/customerbugs.templ`, Line: 137, Col: 14}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "</span>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		default:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "<span class=\"inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var19 string
-			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(priority)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/customerbugs.templ`, Line: 141, Col: 14}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "</span>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		return nil
-	})
-}
-
+//	templ bugPriorityBadge(priority string) {
+//		switch priority {
+//			case "Highest", "Critical":
+//				<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+//					{ priority }
+//				</span>
+//			case "High":
+//				<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+//					{ priority }
+//				</span>
+//			case "Medium":
+//				<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+//					{ priority }
+//				</span>
+//			case "Low", "Lowest":
+//				<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+//					{ priority }
+//				</span>
+//			case "Hotfix":
+//				<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-800">
+//					{ priority }
+//				</span>
+//			default:
+//				<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+//					{ priority }
+//				</span>
+//		}
+//	}
 func customerBugsChartScript() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -450,12 +189,12 @@ func customerBugsChartScript() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var20 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var20 == nil {
-			templ_7745c5c3_Var20 = templ.NopComponent
+		templ_7745c5c3_Var6 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var6 == nil {
+			templ_7745c5c3_Var6 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "<script>\n\t\tfunction applyFilters() {\n\t\t\tconst project = document.getElementById('project-select').value;\n\t\t\tconst aggregate = document.getElementById('aggregate-checkbox').checked;\n\n\t\t\tconst params = new URLSearchParams();\n\t\t\tif (project) {\n\t\t\t\tparams.set('project', project);\n\t\t\t}\n\t\t\tif (aggregate) {\n\t\t\t\tparams.set('aggregate', 'true');\n\t\t\t}\n\t\t\tconst queryString = params.toString();\n\t\t\twindow.location.href = '/reports/customer-bugs' + (queryString ? '?' + queryString : '');\n\t\t}\n\n\t\tfunction initCustomerBugsChart() {\n\t\t\tconst chartDataEl = document.getElementById('chartData');\n\t\t\tif (!chartDataEl) return;\n\t\t\tconst chartData = JSON.parse(chartDataEl.dataset.chart);\n\t\t\tconst isAggregated = chartDataEl.dataset.aggregate === 'true';\n\n\t\t\t// Priority colors (for non-aggregated view)\n\t\t\tconst priorityColors = {\n\t\t\t\t'Highest': '#dc2626',\n\t\t\t\t'Critical': '#dc2626',\n\t\t\t\t'High': '#fff02b',\n\t\t\t\t'Medium': '#2b47ff',\n\t\t\t\t'Low': '#16a34a',\n\t\t\t\t'Lowest': '#22c55e',\n\t\t\t\t'Hotfix': '#ff282f',\n\t\t\t\t'Blocker / Urgent': '#000000'\n\t\t\t};\n\n\t\t\t// Project colors (for aggregated view)\n\t\t\tconst projectColors = [\n\t\t\t\t'#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',\n\t\t\t\t'#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1',\n\t\t\t\t'#14b8a6', '#a855f7', '#22c55e', '#eab308', '#0ea5e9'\n\t\t\t];\n\n\t\t\tconst defaultColor = '#6b7280';\n\n\t\t\tlet datasets;\n\t\t\tlet chartTitle;\n\n\t\t\tif (isAggregated) {\n\t\t\t\t// Aggregated view: one line per project (or single line if project selected)\n\t\t\t\tchartTitle = 'Customer Bugs by Project Over Time';\n\t\t\t\tdatasets = Object.keys(chartData.series).map((key, index) => {\n\t\t\t\t\tconst color = projectColors[index % projectColors.length];\n\t\t\t\t\treturn {\n\t\t\t\t\t\tlabel: key,\n\t\t\t\t\t\tdata: chartData.labels.map(month => chartData.series[key][month] || 0),\n\t\t\t\t\t\tborderColor: color,\n\t\t\t\t\t\tbackgroundColor: color,\n\t\t\t\t\t\tborderWidth: 2,\n\t\t\t\t\t\ttension: 0.3,\n\t\t\t\t\t\tpointRadius: 4,\n\t\t\t\t\t\tpointHoverRadius: 6,\n\t\t\t\t\t\tfill: false,\n\t\t\t\t\t\ttrendlineLinear: {\n\t\t\t\t\t\t\tcolorMin: color,\n\t\t\t\t\t\t\tcolorMax: color,\n\t\t\t\t\t\t\tlineStyle: 'dashed',\n\t\t\t\t\t\t\twidth: 2\n\t\t\t\t\t\t}\n\t\t\t\t\t};\n\t\t\t\t});\n\t\t\t} else {\n\t\t\t\t// Normal view: one line per priority\n\t\t\t\tchartTitle = 'Customer Bugs by Priority Over Time';\n\t\t\t\tdatasets = Object.keys(chartData.priorities).map(priority => {\n\t\t\t\t\tconst color = priorityColors[priority] || defaultColor;\n\t\t\t\t\treturn {\n\t\t\t\t\t\tlabel: priority,\n\t\t\t\t\t\tdata: chartData.labels.map(month => chartData.priorities[priority][month] || 0),\n\t\t\t\t\t\tborderColor: color,\n\t\t\t\t\t\tbackgroundColor: color,\n\t\t\t\t\t\tborderWidth: 2,\n\t\t\t\t\t\ttension: 0.3,\n\t\t\t\t\t\tpointRadius: 4,\n\t\t\t\t\t\tpointHoverRadius: 6,\n\t\t\t\t\t\tfill: false,\n\t\t\t\t\t\ttrendlineLinear: {\n\t\t\t\t\t\t\tcolorMin: color,\n\t\t\t\t\t\t\tcolorMax: color,\n\t\t\t\t\t\t\tlineStyle: 'dashed',\n\t\t\t\t\t\t\twidth: 2\n\t\t\t\t\t\t}\n\t\t\t\t\t};\n\t\t\t\t});\n\t\t\t}\n\n\t\t\tconst ctx = document.getElementById('customerBugsChart').getContext('2d');\n\t\t\tnew Chart(ctx, {\n\t\t\t\ttype: 'line',\n\t\t\t\tdata: {\n\t\t\t\t\tlabels: chartData.labels,\n\t\t\t\t\tdatasets: datasets\n\t\t\t\t},\n\t\t\t\toptions: {\n\t\t\t\t\tresponsive: true,\n\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\tinteraction: {\n\t\t\t\t\t\tintersect: false,\n\t\t\t\t\t\tmode: 'index'\n\t\t\t\t\t},\n\t\t\t\t\tplugins: {\n\t\t\t\t\t\ttitle: {\n\t\t\t\t\t\t\tdisplay: true,\n\t\t\t\t\t\t\ttext: chartTitle,\n\t\t\t\t\t\t\tfont: {\n\t\t\t\t\t\t\t\tsize: 18\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t},\n\t\t\t\t\t\tlegend: {\n\t\t\t\t\t\t\tposition: 'bottom'\n\t\t\t\t\t\t},\n\t\t\t\t\t\ttooltip: {\n\t\t\t\t\t\t\tcallbacks: {\n\t\t\t\t\t\t\t\tlabel: function(context) {\n\t\t\t\t\t\t\t\t\tif (context.dataset.label === 'Trend (Total)') {\n\t\t\t\t\t\t\t\t\t\treturn context.dataset.label + ': ' + context.parsed.y.toFixed(1);\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t\treturn context.dataset.label + ': ' + context.parsed.y + ' bugs';\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\tscales: {\n\t\t\t\t\t\tx: {\n\t\t\t\t\t\t\ttitle: {\n\t\t\t\t\t\t\t\tdisplay: true,\n\t\t\t\t\t\t\t\ttext: 'Month'\n\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\tgrid: {\n\t\t\t\t\t\t\t\tdisplay: false\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t},\n\t\t\t\t\t\ty: {\n\t\t\t\t\t\t\ttitle: {\n\t\t\t\t\t\t\t\tdisplay: true,\n\t\t\t\t\t\t\t\ttext: 'Bug Count'\n\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\tbeginAtZero: true,\n\t\t\t\t\t\t\tticks: {\n\t\t\t\t\t\t\t\tstepSize: 1\n\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\tgrid: {\n\t\t\t\t\t\t\t\tcolor: 'rgba(0, 0, 0, 0.1)'\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t});\n\t\t}\n\n\t\t// Wait for Chart.js to be available before initializing\n\t\tfunction waitForChart() {\n\t\t\tif (typeof Chart !== 'undefined') {\n\t\t\t\tinitCustomerBugsChart();\n\t\t\t} else {\n\t\t\t\tsetTimeout(waitForChart, 50);\n\t\t\t}\n\t\t}\n\t\twaitForChart();\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<script>\n\t\tfunction applyFilters() {\n\t\t\tconst project = document.getElementById('project-select').value;\n\t\t\t//const aggregate = document.getElementById('aggregate-checkbox').checked;\n\n\t\t\tconst params = new URLSearchParams();\n\t\t\tif (project) {\n\t\t\t\tparams.set('project', project);\n\t\t\t}\n\t\t\t// if (aggregate) {\n\t\t\t// \tparams.set('aggregate', 'true');\n\t\t\t// }\n\t\t\tconst queryString = params.toString();\n\t\t\twindow.location.href = '/reports/customer-bugs' + (queryString ? '?' + queryString : '');\n\t\t}\n\n\t\t\n\t\tfunction initStabilityChart() {\n\t\t\tconst el = document.getElementById('stabilityData');\n\t\t\tif (!el) return;\n\t\t\tconst d = JSON.parse(el.dataset.chart);\n\t\t\tconst ctx = document.getElementById('stabilityChart').getContext('2d');\n\t\t\tnew Chart(ctx, {\n\t\t\t\ttype: 'line',\n\t\t\t\tdata: {\n\t\t\t\t\tlabels: d.labels,\n\t\t\t\t\tdatasets: [\n\t\t\t\t\t\t{ label: 'Total', data: d.open,   borderColor: 'rgba(59,130,246,1)',  backgroundColor: 'rgba(59,130,246,0)', borderWidth: 2, tension: 0.3, pointRadius: 3, fill: true },\n\t\t\t\t\t\t{ label: 'Completed', data: d.closed, borderColor: 'rgba(249,115,22,1)',  backgroundColor: 'rgba(249,115,22,0)', borderWidth: 2, tension: 0.3, pointRadius: 3, fill: true },\n\t\t\t\t\t\t{ label: 'New',        data: d.new,    borderColor: 'rgba(156,163,175,1)', backgroundColor: 'rgba(156,163,175,0)', borderWidth: 2, tension: 0.3, pointRadius: 3, fill: true },\n\t\t\t\t\t]\n\t\t\t\t},\n\t\t\t\toptions: {\n\t\t\t\t\tresponsive: true,\n\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\tinteraction: { intersect: false, mode: 'index' },\n\t\t\t\t\tplugins: {\n\t\t\t\t\t\t//title: { display: true, text: 'Stability Team Performance', font: { size: 16 } },\n\t\t\t\t\t\tlegend: { position: 'right' }\n\t\t\t\t\t},\n\t\t\t\t\tscales: {\n\t\t\t\t\t\tx: { grid: { display: false } },\n\t\t\t\t\t\ty: { beginAtZero: true, title: { display: true, text: 'Bug Count' } }\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t});\n\t\t}\n\n\t\t// Wait for Chart.js to be available before initializing\n\t\tfunction waitForChart() {\n\t\t\tif (typeof Chart !== 'undefined') {\n\t\t\t\t//initCustomerBugsChart();\n\t\t\t\tinitStabilityChart();\n\t\t\t} else {\n\t\t\t\tsetTimeout(waitForChart, 50);\n\t\t\t}\n\t\t}\n\t\twaitForChart();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -471,145 +210,167 @@ type AggregatedBugCount struct {
 }
 
 // Helper to aggregate data by project (for table display)
-func aggregateData(data []types.CustomerBugCount) []AggregatedBugCount {
-	// Map of project -> month -> count
-	aggregated := make(map[string]map[string]int)
+// func aggregateData(data []types.CustomerBugCount) []AggregatedBugCount {
+// 	// Map of project -> month -> count
+// 	aggregated := make(map[string]map[string]int)
 
-	for _, item := range data {
-		if _, ok := aggregated[item.Project]; !ok {
-			aggregated[item.Project] = make(map[string]int)
-		}
-		aggregated[item.Project][item.YearMonth] += item.Count
-	}
+// 	for _, item := range data {
+// 		if _, ok := aggregated[item.Project]; !ok {
+// 			aggregated[item.Project] = make(map[string]int)
+// 		}
+// 		aggregated[item.Project][item.YearMonth] += item.Count
+// 	}
 
-	// Convert to slice
-	result := []AggregatedBugCount{}
-	for project, months := range aggregated {
-		for month, count := range months {
-			result = append(result, AggregatedBugCount{
-				Project:   project,
-				YearMonth: month,
-				Count:     count,
-			})
-		}
-	}
+// 	// Convert to slice
+// 	result := []AggregatedBugCount{}
+// 	for project, months := range aggregated {
+// 		for month, count := range months {
+// 			result = append(result, AggregatedBugCount{
+// 				Project:   project,
+// 				YearMonth: month,
+// 				Count:     count,
+// 			})
+// 		}
+// 	}
 
-	// Sort by project, then by month
-	for i := 0; i < len(result)-1; i++ {
-		for j := i + 1; j < len(result); j++ {
-			if result[i].Project > result[j].Project ||
-				(result[i].Project == result[j].Project && result[i].YearMonth > result[j].YearMonth) {
-				result[i], result[j] = result[j], result[i]
-			}
-		}
-	}
+// 	// Sort by project, then by month
+// 	for i := 0; i < len(result)-1; i++ {
+// 		for j := i + 1; j < len(result); j++ {
+// 			if result[i].Project > result[j].Project ||
+// 				(result[i].Project == result[j].Project && result[i].YearMonth > result[j].YearMonth) {
+// 				result[i], result[j] = result[j], result[i]
+// 			}
+// 		}
+// 	}
 
-	return result
-}
+// 	return result
+// }
 
 // Helper function to convert data to chart-friendly JSON (by priority)
-func toBugChartData(data []types.CustomerBugCount) string {
+// func toBugChartData(data []types.CustomerBugCount) string {
+// 	type chartData struct {
+// 		Labels     []string                  `json:"labels"`
+// 		Priorities map[string]map[string]int `json:"priorities"`
+// 	}
+
+// 	// Collect unique months and priorities
+// 	monthSet := make(map[string]bool)
+// 	prioritySet := make(map[string]bool)
+
+// 	for _, item := range data {
+// 		monthSet[item.YearMonth] = true
+// 		prioritySet[item.Priority] = true
+// 	}
+
+// 	// Sort months
+// 	months := make([]string, 0, len(monthSet))
+// 	for month := range monthSet {
+// 		months = append(months, month)
+// 	}
+// 	for i := 0; i < len(months)-1; i++ {
+// 		for j := i + 1; j < len(months); j++ {
+// 			if months[i] > months[j] {
+// 				months[i], months[j] = months[j], months[i]
+// 			}
+// 		}
+// 	}
+
+// 	// Build priority data maps
+// 	priorities := make(map[string]map[string]int)
+// 	for priority := range prioritySet {
+// 		priorities[priority] = make(map[string]int)
+// 	}
+
+// 	for _, item := range data {
+// 		priorities[item.Priority][item.YearMonth] += item.Count
+// 	}
+
+// 	cd := chartData{
+// 		Labels:     months,
+// 		Priorities: priorities,
+// 	}
+
+// 	jsonBytes, _ := json.Marshal(cd)
+// 	return string(jsonBytes)
+// }
+
+func toStabilityChartData(trends []types.CustomerBugTrend) string {
 	type chartData struct {
-		Labels     []string                  `json:"labels"`
-		Priorities map[string]map[string]int `json:"priorities"`
+		Labels []string `json:"labels"`
+		New    []int    `json:"new"`
+		Closed []int    `json:"closed"`
+		Open   []int    `json:"open"`
 	}
-
-	// Collect unique months and priorities
-	monthSet := make(map[string]bool)
-	prioritySet := make(map[string]bool)
-
-	for _, item := range data {
-		monthSet[item.YearMonth] = true
-		prioritySet[item.Priority] = true
-	}
-
-	// Sort months
-	months := make([]string, 0, len(monthSet))
-	for month := range monthSet {
-		months = append(months, month)
-	}
-	for i := 0; i < len(months)-1; i++ {
-		for j := i + 1; j < len(months); j++ {
-			if months[i] > months[j] {
-				months[i], months[j] = months[j], months[i]
-			}
-		}
-	}
-
-	// Build priority data maps
-	priorities := make(map[string]map[string]int)
-	for priority := range prioritySet {
-		priorities[priority] = make(map[string]int)
-	}
-
-	for _, item := range data {
-		priorities[item.Priority][item.YearMonth] += item.Count
-	}
-
 	cd := chartData{
-		Labels:     months,
-		Priorities: priorities,
+		Labels: make([]string, len(trends)),
+		New:    make([]int, len(trends)),
+		Closed: make([]int, len(trends)),
+		Open:   make([]int, len(trends)),
 	}
-
-	jsonBytes, _ := json.Marshal(cd)
-	return string(jsonBytes)
+	for i, t := range trends {
+		cd.Labels[i] = t.YearMonth
+		cd.New[i] = t.NewCount
+		cd.Closed[i] = t.ClosedCount
+		cd.Open[i] = t.OpenCount
+	}
+	b, _ := json.Marshal(cd)
+	return string(b)
 }
 
-// Helper function to convert data to chart-friendly JSON (aggregated by project)
-func toBugChartDataAggregated(data []types.CustomerBugCount, selectedProject string) string {
-	type chartData struct {
-		Labels []string                  `json:"labels"`
-		Series map[string]map[string]int `json:"series"`
-	}
+// // Helper function to convert data to chart-friendly JSON (aggregated by project)
+// func toBugChartDataAggregated(data []types.CustomerBugCount, selectedProject string) string {
+// 	type chartData struct {
+// 		Labels []string                  `json:"labels"`
+// 		Series map[string]map[string]int `json:"series"`
+// 	}
 
-	// Collect unique months and projects
-	monthSet := make(map[string]bool)
-	projectSet := make(map[string]bool)
+// 	// Collect unique months and projects
+// 	monthSet := make(map[string]bool)
+// 	projectSet := make(map[string]bool)
 
-	for _, item := range data {
-		monthSet[item.YearMonth] = true
-		projectSet[item.Project] = true
-	}
+// 	for _, item := range data {
+// 		monthSet[item.YearMonth] = true
+// 		projectSet[item.Project] = true
+// 	}
 
-	// Sort months
-	months := make([]string, 0, len(monthSet))
-	for month := range monthSet {
-		months = append(months, month)
-	}
-	for i := 0; i < len(months)-1; i++ {
-		for j := i + 1; j < len(months); j++ {
-			if months[i] > months[j] {
-				months[i], months[j] = months[j], months[i]
-			}
-		}
-	}
+// 	// Sort months
+// 	months := make([]string, 0, len(monthSet))
+// 	for month := range monthSet {
+// 		months = append(months, month)
+// 	}
+// 	for i := 0; i < len(months)-1; i++ {
+// 		for j := i + 1; j < len(months); j++ {
+// 			if months[i] > months[j] {
+// 				months[i], months[j] = months[j], months[i]
+// 			}
+// 		}
+// 	}
 
-	// Build series data maps (aggregated by project)
-	series := make(map[string]map[string]int)
+// 	// Build series data maps (aggregated by project)
+// 	series := make(map[string]map[string]int)
 
-	if selectedProject != "" {
-		// Single project selected: show single line labeled with project name
-		series[selectedProject] = make(map[string]int)
-		for _, item := range data {
-			series[selectedProject][item.YearMonth] += item.Count
-		}
-	} else {
-		// All projects: show one line per project
-		for project := range projectSet {
-			series[project] = make(map[string]int)
-		}
-		for _, item := range data {
-			series[item.Project][item.YearMonth] += item.Count
-		}
-	}
+// 	if selectedProject != "" {
+// 		// Single project selected: show single line labeled with project name
+// 		series[selectedProject] = make(map[string]int)
+// 		for _, item := range data {
+// 			series[selectedProject][item.YearMonth] += item.Count
+// 		}
+// 	} else {
+// 		// All projects: show one line per project
+// 		for project := range projectSet {
+// 			series[project] = make(map[string]int)
+// 		}
+// 		for _, item := range data {
+// 			series[item.Project][item.YearMonth] += item.Count
+// 		}
+// 	}
 
-	cd := chartData{
-		Labels: months,
-		Series: series,
-	}
+// 	cd := chartData{
+// 		Labels: months,
+// 		Series: series,
+// 	}
 
-	jsonBytes, _ := json.Marshal(cd)
-	return string(jsonBytes)
-}
-
+//		jsonBytes, _ := json.Marshal(cd)
+//		return string(jsonBytes)
+//	}
 var _ = templruntime.GeneratedTemplate

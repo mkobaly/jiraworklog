@@ -313,6 +313,14 @@ type CustomerBugCount struct {
 	Count     int    `db:"count"`
 }
 
+// CustomerBugTrend holds monthly new/closed/open counts for the stability chart
+type CustomerBugTrend struct {
+	YearMonth   string `db:"year_month"`
+	NewCount    int    `db:"new_count"`
+	ClosedCount int    `db:"closed_count"`
+	OpenCount   int    `db:"open_count"`
+}
+
 // ProjectCharge represents a project charge entry
 type ProjectCharge struct {
 	Name    string         `db:"name"`

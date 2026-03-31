@@ -518,26 +518,22 @@ func (h *Handler) GetCustomerBugs(c echo.Context) error {
 	selectedProject := c.QueryParam("project")
 
 	// Get aggregate option from query param
-	aggregate := c.QueryParam("aggregate") == "true"
+	//aggregate := c.QueryParam("aggregate") == "true"
 
 	// Get bug data
-	data, err := h.repo.CustomerBugCounts(selectedProject)
+	// data, err := h.repo.CustomerBugCounts(selectedProject)
+	// if err != nil {
+	// 	h.logger.Error("error fetching customer bug counts", "error", err)
+	// 	return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch bug data")
+	// }
+
+	trends, err := h.repo.CustomerBugTrends(selectedProject)
 	if err != nil {
-		h.logger.Error("error fetching customer bug counts", "error", err)
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch bug data")
+		h.logger.Error("error fetching customer bug trends", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch bug trends")
 	}
 
-	if wantsHTML(c) {
-		return pages.CustomerBugs(data, projects, selectedProject, aggregate).Render(c.Request().Context(), c.Response().Writer)
-	}
-
-	// JSON response
-	return c.JSON(http.StatusOK, map[string]interface{}{
-		"data":            data,
-		"projects":        projects,
-		"selectedProject": selectedProject,
-		"aggregate":       aggregate,
-	})
+	return pages.CustomerBugs(trends, projects, selectedProject).Render(c.Request().Context(), c.Response().Writer)
 }
 
 func (h *Handler) GetProjectCharges(c echo.Context) error {

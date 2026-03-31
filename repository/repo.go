@@ -40,6 +40,7 @@ type Repo interface {
 	IssuesMismatchedProjectCharge() ([]types.IssueMismatchedCharge, error)
 
 	CustomerBugCounts(project string) ([]types.CustomerBugCount, error)
+	CustomerBugTrends(project string) ([]types.CustomerBugTrend, error)
 	CustomerBugProjects() ([]string, error)
 
 	ProjectCharges() ([]types.ProjectCharge, error)
