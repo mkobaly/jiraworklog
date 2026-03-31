@@ -19,7 +19,8 @@
       "Bash(head:*)",
       "Bash(git -C /home/developer/code/github/jiraworklog log --oneline --graph -20)",
       "Bash(git -C /home/developer/code/github/jiraworklog diff HEAD~5..HEAD -- repository/posgres.go types/parentIssue.go)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(go test:*)"
     ]
   }
 }

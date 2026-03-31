@@ -36,7 +36,7 @@ func (j *JiraSyncIssuesJob) GetName() string {
 }
 
 func (j *JiraSyncIssuesJob) GetInterval() time.Duration {
-	return time.Second * 25
+	return time.Second * 31
 }
 
 func (j *JiraSyncIssuesJob) Run() error {
@@ -70,14 +70,15 @@ func (j *JiraSyncIssuesJob) Run() error {
 		}
 	}
 
+	tz := j.jira.GetTimezone()
 	lastUpdated := j.cfg.IssueLastTimestamp
-	lastUpdatedDateOnly := dateOnly(time.Unix(lastUpdated, 0)).Unix()
+	lastUpdatedDateOnly := internal.DateOnly(time.Unix(lastUpdated, 0)).In(tz).Unix()
 
-	today := dateOnly(time.Now().UTC().Add(time.Hour * time.Duration(j.cfg.UtcOffsetHours))).Unix()
+	today := internal.DateOnly(time.Now().In(tz)).Unix()
 	if lastUpdatedDateOnly < today {
-		ts, te := internal.GetDateRange(lastUpdated, time.Now().UTC().Unix(), j.cfg.UtcOffsetHours)
+		ts, te := internal.GetDateRange(lastUpdated, time.Now().UTC().Unix(), tz)
 		//fmt.Println("callinng syncUpdatedIssues less than today")
-		err = j.syncUpdatedIssues(ts, te)
+		err = j.syncUpdatedIssues(ts, te, tz)
 		if err != nil {
 			return err
 		}
@@ -89,16 +90,13 @@ func (j *JiraSyncIssuesJob) Run() error {
 		//lastUpdated = lastUpdated + 86400 //add day
 	}
 
-	//lu := dateOnly(time.Unix(lastUpdated, 0))
-	//if caught up, for today once every 10 mins
+	//if caught up, for today sync once every 10 mins
 	if lastUpdatedDateOnly == today {
-		//fmt.Println("in for today")
 		hour := time.Now().Hour()
 		minute := time.Now().Minute()
 		if j.todaysHour != hour || minute%10 == 0 {
-			ts, te := internal.GetDateRange(lastUpdated, time.Now().UTC().Unix(), j.cfg.UtcOffsetHours)
-			//slog.Info("syncing issues and project charges for today", slog.Time("start", time.Unix(ts, 0)), slog.Time("end", time.Unix(te, 0)))
-			err = j.syncUpdatedIssues(ts, te)
+			ts, te := internal.GetDateRange(lastUpdated, time.Now().UTC().Unix(), tz)
+			err = j.syncUpdatedIssues(ts, te, tz)
 			if err != nil {
 				return err
 			}
@@ -175,11 +173,13 @@ func (j *JiraSyncIssuesJob) fetchAndSaveIssues(jiraIds []string) error {
 	return nil
 }
 
-func (j *JiraSyncIssuesJob) syncUpdatedIssues(startDate, endDate int64) error {
+func (j *JiraSyncIssuesJob) syncUpdatedIssues(startDate, endDate int64, tz *time.Location) error {
 	jiraIds := []string{}
 	nextPageToken := ""
+	start := internal.JiraDateString(startDate, tz)
+	end := internal.JiraDateString(endDate, tz)
 	for {
-		updatedIssues, err := j.jira.IssuesUpdated(startDate, endDate, nextPageToken)
+		updatedIssues, err := j.jira.IssuesUpdated(start, end, nextPageToken)
 		if err != nil {
 			return errors.Wrap(err, "error fetching updated jira issues")
 		}
@@ -192,8 +192,8 @@ func (j *JiraSyncIssuesJob) syncUpdatedIssues(startDate, endDate int64) error {
 		}
 	}
 
+	slog.Warn("fetching updated jira issues", slog.String("start", start), slog.Int("count", len(jiraIds)), slog.String("end", end))
 	if len(jiraIds) > 0 {
-		slog.Info("fetching updated jira issues", slog.Time("start", time.Unix(startDate, 0)), slog.Int("count", len(jiraIds)), slog.Time("end", time.Unix(endDate, 0)))
 		err := j.fetchAndSaveIssues(jiraIds)
 		if err != nil {
 			return err
@@ -217,9 +217,4 @@ func (j *JiraSyncIssuesJob) fetchIssueChangelog(issueId int) ([]types.ChangelogS
 		}
 	}
 	return changelog, nil
-}
-
-func dateOnly(t time.Time) time.Time {
-	y, m, d := t.Date()
-	return time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
 }

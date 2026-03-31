@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -20,14 +22,18 @@ type JiraReader interface {
 	WorklogDetails(ids []int) ([]Worklog, error)
 	Issue(idOrKey string) (Issue, error)
 	BulkFetchIssues(idOrKeys []string) ([]Issue, error)
-	IssuesUpdated(timestampStart int64, timestampEnd int64, nextPageToken string) (IssuesUpdated, error)
+	IssuesUpdated(timeStart string, timeEnd string, nextPageToken string) (IssuesUpdated, error)
 
 	Changelog(id int, startAt int) (Changelog, error)
+	GetJiraUser() (JiraUser, error)
+	GetTimezone() *time.Location
 }
 
 type Jira struct {
-	Config *Config
-	client *http.Client
+	Config   *Config
+	client   *http.Client
+	timezone *time.Location
+	mu       sync.Mutex
 }
 
 func NewJira(c *Config) *Jira {
@@ -150,13 +156,10 @@ func (j *Jira) Issue(idOrKey string) (Issue, error) {
 
 // IssuesUpdated will fetch all issues that were updated within the calculated date range.
 // For past days it queries the full day; for today it queries the current hour window.
-func (j *Jira) IssuesUpdated(timestampStart int64, timestampEnd int64, nextPageToken string) (IssuesUpdated, error) {
+func (j *Jira) IssuesUpdated(timeStart string, timeEnd string, nextPageToken string) (IssuesUpdated, error) {
 	issuesUpdated := IssuesUpdated{}
 
-	ts := time.Unix(timestampStart, 0).Format("2006-01-02 15:04")
-	te := time.Unix(timestampEnd, 0).Format("2006-01-02 15:04")
-
-	query := fmt.Sprintf("jql=updated>=\"%s\" AND updated < \"%s\" order by updated ASC", ts, te)
+	query := fmt.Sprintf("jql=updated>=\"%s\" AND updated < \"%s\" order by updated ASC", timeStart, timeEnd)
 	//slog.Info("Issue Updated", slog.String("start", ts), slog.String("end", te))
 	if nextPageToken != "" {
 		query += fmt.Sprintf("&nextPageToken=%s", nextPageToken)
@@ -253,6 +256,48 @@ func (j *Jira) Changelog(id int, startAt int) (Changelog, error) {
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&changelog)
 	return changelog, err
+}
+
+func (j *Jira) GetJiraUser() (JiraUser, error) {
+	user := JiraUser{}
+
+	req, err := http.NewRequest("GET", j.Config.Jira.URL+"/myself", nil)
+	req.SetBasicAuth(j.Config.Jira.Username, j.Config.Jira.Password)
+	resp, err := j.client.Do(req)
+	if err != nil {
+		return user, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return user, fmt.Errorf("Not 200 response %d", resp.StatusCode)
+	}
+
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&user)
+	if err != nil {
+		return user, err
+	}
+	return user, nil
+}
+
+func (j *Jira) GetTimezone() *time.Location {
+	j.mu.Lock()
+	defer j.mu.Unlock()
+	if j.timezone == nil {
+		user, err := j.GetJiraUser()
+		if err != nil {
+			slog.Error("error getting jira user. Needed to fetch timezone", slog.Any("error", err))
+			return time.Local
+		}
+		tz, err := time.LoadLocation(user.TimeZone)
+		if err != nil {
+			slog.Error("error loading location from jira user timezone. Needed to fetch timezone", slog.String("timezone", user.TimeZone))
+			return time.Local
+		}
+		j.timezone = tz
+	}
+	return j.timezone
 }
 
 type UpdatedWorklogs struct {
@@ -535,4 +580,12 @@ type Changelog struct {
 		HistoryMetadata struct {
 		} `json:"historyMetadata,omitempty"`
 	} `json:"values"`
+}
+
+type JiraUser struct {
+	EmailAddress string `json:"emailAddress"`
+	DisplayName  string `json:"displayName"`
+	Active       bool   `json:"active"`
+	TimeZone     string `json:"timeZone"`
+	Locale       string `json:"locale"`
 }
