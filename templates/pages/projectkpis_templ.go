@@ -62,7 +62,7 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" placeholder=\"e.g. PROJ-123 or 2024.1\" class=\"w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500\"></div><button type=\"submit\" class=\"bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition\">Load KPIs</button></form></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" placeholder=\"e.g. PROJ-123 or 2024.1\" class=\"w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500\"></div><button id=\"loadKpisBtn\" type=\"submit\" class=\"bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition flex items-center gap-2\"><svg id=\"loadKpisSpinner\" class=\"hidden animate-spin h-4 w-4 text-white\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\"><circle class=\"opacity-25\" cx=\"12\" cy=\"12\" r=\"10\" stroke=\"currentColor\" stroke-width=\"4\"></circle> <path class=\"opacity-75\" fill=\"currentColor\" d=\"M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z\"></path></svg> <span id=\"loadKpisBtnText\">Load KPIs</span></button></form></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -79,7 +79,7 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 				var templ_7745c5c3_Var4 string
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(project)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 43, Col: 42}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 47, Col: 42}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -142,7 +142,7 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(kpiFmtDuration(data.MedianCycleTimeSecs))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 88, Col: 97}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 92, Col: 97}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
@@ -155,7 +155,7 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 				var templ_7745c5c3_Var6 string
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(kpiFmtDuration(data.P85CycleTimeSecs))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 92, Col: 94}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 96, Col: 94}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
@@ -168,7 +168,7 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(kpiFmtDuration(data.P95CycleTimeSecs))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 96, Col: 94}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 100, Col: 94}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -181,7 +181,7 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 				var templ_7745c5c3_Var8 string
 				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(kpyCycleDistValues(data))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 102, Col: 45}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 106, Col: 45}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 				if templ_7745c5c3_Err != nil {
@@ -194,7 +194,7 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 				var templ_7745c5c3_Var9 string
 				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(kpiBucketLabels(data.FlowBuckets))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 115, Col: 54}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 119, Col: 54}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 				if templ_7745c5c3_Err != nil {
@@ -207,7 +207,7 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 				var templ_7745c5c3_Var10 string
 				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(kpiBucketValues(data.FlowBuckets))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 116, Col: 54}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 120, Col: 54}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 				if templ_7745c5c3_Err != nil {
@@ -225,7 +225,7 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 					var templ_7745c5c3_Var11 string
 					templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(kpiTimeLabels(wipDays(data.WIPHistory)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 127, Col: 61}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 131, Col: 61}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 					if templ_7745c5c3_Err != nil {
@@ -238,7 +238,7 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 					var templ_7745c5c3_Var12 string
 					templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(kpiWIPValues(data.WIPHistory))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 128, Col: 51}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 132, Col: 51}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 					if templ_7745c5c3_Err != nil {
@@ -261,7 +261,7 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 					var templ_7745c5c3_Var13 string
 					templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(kpiTimeLabels(burndownDays(data.BurndownHistory)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 142, Col: 70}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 146, Col: 70}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 					if templ_7745c5c3_Err != nil {
@@ -274,7 +274,7 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 					var templ_7745c5c3_Var14 string
 					templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(kpiBurndownRemaining(data))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 143, Col: 50}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 147, Col: 50}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 					if templ_7745c5c3_Err != nil {
@@ -287,7 +287,7 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 					var templ_7745c5c3_Var15 string
 					templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(kpiBurndownDevRemaining(data))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 144, Col: 57}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 148, Col: 57}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 					if templ_7745c5c3_Err != nil {
@@ -303,14 +303,14 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				if len(data.BurnupHistory) > 0 {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<div class=\"bg-white rounded-lg shadow p-6\"><h2 class=\"text-lg font-semibold text-gray-700 mb-1\">Burn-up Chart</h2><p class=\"text-xs text-gray-400 mb-4\">Cumulative hours logged vs total estimated scope. When the green line reaches the orange line, the project is fully logged.</p><canvas id=\"burnupChart\" data-labels=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<div class=\"bg-white rounded-lg shadow p-6\"><h2 class=\"text-lg font-semibold text-gray-700 mb-1\">Burn-up Chart</h2><p class=\"text-xs text-gray-400 mb-4\">Cumulative hours logged vs scope. Orange dashed = total scope (incl. bugs found in QA). Blue dashed = planned scope (excludes bugs).</p><canvas id=\"burnupChart\" data-labels=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var16 string
 					templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(kpiTimeLabels(burnupDays(data.BurnupHistory)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 157, Col: 65}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 161, Col: 65}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 					if templ_7745c5c3_Err != nil {
@@ -323,7 +323,7 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 					var templ_7745c5c3_Var17 string
 					templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(kpiBurnupCompleted(data.BurnupHistory))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 158, Col: 61}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 162, Col: 61}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 					if templ_7745c5c3_Err != nil {
@@ -336,113 +336,126 @@ func ProjectKPIs(data types.ProjectKPIData, project string) templ.Component {
 					var templ_7745c5c3_Var18 string
 					templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(kpiBurnupScope(data.BurnupHistory))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 159, Col: 53}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 163, Col: 53}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\" height=\"180\"></canvas></div>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\" data-planned-scope=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var19 string
+					templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(kpiBurnupPlannedScope(data.BurnupHistory))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 164, Col: 68}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\" height=\"180\"></canvas></div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, " <!-- Row 5: Time Spent per Status detail table --> ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, " <!-- Row 5: Time Spent per Status detail table --> ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if len(data.CycleTimeByStatus) > 0 {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<div class=\"bg-white rounded-lg shadow overflow-hidden\"><div class=\"px-6 py-4 border-b border-gray-200\"><h2 class=\"text-lg font-semibold text-gray-700\">Time Spent per Status</h2></div><table class=\"min-w-full divide-y divide-gray-200 text-sm\"><thead class=\"bg-gray-50\"><tr><th class=\"px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider\">Status</th><th class=\"px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider\">Phase</th><th class=\"px-6 py-3 text-right font-medium text-gray-500 uppercase tracking-wider\">Avg Time</th><th class=\"px-6 py-3 text-right font-medium text-gray-500 uppercase tracking-wider\">Issues</th></tr></thead> <tbody class=\"bg-white divide-y divide-gray-100\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<div class=\"bg-white rounded-lg shadow overflow-hidden\"><div class=\"px-6 py-4 border-b border-gray-200\"><h2 class=\"text-lg font-semibold text-gray-700\">Time Spent per Status</h2></div><table class=\"min-w-full divide-y divide-gray-200 text-sm\"><thead class=\"bg-gray-50\"><tr><th class=\"px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider\">Status</th><th class=\"px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider\">Phase</th><th class=\"px-6 py-3 text-right font-medium text-gray-500 uppercase tracking-wider\">Avg Time</th><th class=\"px-6 py-3 text-right font-medium text-gray-500 uppercase tracking-wider\">Issues</th></tr></thead> <tbody class=\"bg-white divide-y divide-gray-100\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					for _, s := range data.CycleTimeByStatus {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<tr class=\"hover:bg-gray-50\"><td class=\"px-6 py-3 text-gray-800\">")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "<tr class=\"hover:bg-gray-50\"><td class=\"px-6 py-3 text-gray-800\">")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var19 string
-						templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(s.Status)
+						var templ_7745c5c3_Var20 string
+						templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(s.Status)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 183, Col: 56}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 188, Col: 56}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</td><td class=\"px-6 py-3\">")
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var20 = []any{"px-2 py-0.5 rounded text-xs font-medium " + bucketBadgeClass(s.Bucket)}
-						templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var20...)
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "</td><td class=\"px-6 py-3\">")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<span class=\"")
+						var templ_7745c5c3_Var21 = []any{"px-2 py-0.5 rounded text-xs font-medium " + bucketBadgeClass(s.Bucket)}
+						templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var21...)
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var21 string
-						templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var20).String())
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 1, Col: 0}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\">")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<span class=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 						var templ_7745c5c3_Var22 string
-						templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(s.Bucket)
+						templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var21).String())
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 185, Col: 109}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 1, Col: 0}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "</span></td><td class=\"px-6 py-3 text-right text-gray-600\">")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\">")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 						var templ_7745c5c3_Var23 string
-						templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(kpiFmtDuration(s.AvgSecs))
+						templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(s.Bucket)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 187, Col: 84}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 190, Col: 109}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</td><td class=\"px-6 py-3 text-right text-gray-600\">")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</span></td><td class=\"px-6 py-3 text-right text-gray-600\">")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 						var templ_7745c5c3_Var24 string
-						templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", s.IssueCount))
+						templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(kpiFmtDuration(s.AvgSecs))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 188, Col: 90}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 192, Col: 84}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "</td></tr>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "</td><td class=\"px-6 py-3 text-right text-gray-600\">")
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						var templ_7745c5c3_Var25 string
+						templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", s.IssueCount))
+						if templ_7745c5c3_Err != nil {
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 193, Col: 90}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</td></tr>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</tbody></table></div>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "</tbody></table></div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "</div><script>\r\n\t\t\t(function () {\r\n\t\t\t\tfunction load(id) {\r\n\t\t\t\t\tconst el = document.getElementById(id);\r\n\t\t\t\t\tif (!el) return null;\r\n\t\t\t\t\ttry {\r\n\t\t\t\t\t\treturn {\r\n\t\t\t\t\t\t\tel: el,\r\n\t\t\t\t\t\t\tlabels: JSON.parse(el.dataset.labels || '[]'),\r\n\t\t\t\t\t\t\tvalues: JSON.parse(el.dataset.values || '[]'),\r\n\t\t\t\t\t\t};\r\n\t\t\t\t\t} catch(e) { return null; }\r\n\t\t\t\t}\r\n\r\n\t\t\t\tfunction secsToHours(v) {\r\n\t\t\t\t\treturn Math.round(v / 3600 * 10) / 10;\r\n\t\t\t\t}\r\n\r\n\t\t\t\t// Delivery Predictability — P50/P85/P95 bar\r\n\t\t\t\t(function() {\r\n\t\t\t\t\tconst d = load('cycleDistChart');\r\n\t\t\t\t\tif (!d || !d.values.length) return;\r\n\t\t\t\t\tnew Chart(d.el, {\r\n\t\t\t\t\t\ttype: 'bar',\r\n\t\t\t\t\t\tdata: {\r\n\t\t\t\t\t\t\tlabels: d.labels,\r\n\t\t\t\t\t\t\tdatasets: [{\r\n\t\t\t\t\t\t\t\tlabel: 'Hours',\r\n\t\t\t\t\t\t\t\tdata: d.values.map(secsToHours),\r\n\t\t\t\t\t\t\t\tbackgroundColor: ['rgba(139,92,246,0.7)','rgba(109,40,217,0.7)','rgba(76,29,149,0.7)'],\r\n\t\t\t\t\t\t\t}]\r\n\t\t\t\t\t\t},\r\n\t\t\t\t\t\toptions: {\r\n\t\t\t\t\t\t\tresponsive: true,\r\n\t\t\t\t\t\t\tplugins: { legend: { display: false } },\r\n\t\t\t\t\t\t\tscales: { y: { beginAtZero: true, title: { display: true, text: 'Hours' } } }\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t});\r\n\t\t\t\t})();\r\n\r\n\t\t\t\t// Bottleneck Breakdown — horizontal bar by bucket\r\n\t\t\t\t(function() {\r\n\t\t\t\t\tconst d = load('bucketChart');\r\n\t\t\t\t\tif (!d || !d.values.length) return;\r\n\t\t\t\t\tconst colors = {\r\n\t\t\t\t\t\t'Dev':     'rgba(59,130,246,0.75)',\r\n\t\t\t\t\t\t'QA':      'rgba(139,92,246,0.75)',\r\n\t\t\t\t\t\t'Waiting': 'rgba(249,115,22,0.75)',\r\n\t\t\t\t\t\t'Done':    'rgba(34,197,94,0.75)',\r\n\t\t\t\t\t\t'Other':   'rgba(156,163,175,0.75)',\r\n\t\t\t\t\t};\r\n\t\t\t\t\tconst bgColors = d.labels.map(function(l) { return colors[l] || colors['Other']; });\r\n\t\t\t\t\tnew Chart(d.el, {\r\n\t\t\t\t\t\ttype: 'bar',\r\n\t\t\t\t\t\tdata: {\r\n\t\t\t\t\t\t\tlabels: d.labels,\r\n\t\t\t\t\t\t\tdatasets: [{\r\n\t\t\t\t\t\t\t\tlabel: 'Avg Hours per Issue',\r\n\t\t\t\t\t\t\t\tdata: d.values.map(secsToHours),\r\n\t\t\t\t\t\t\t\tbackgroundColor: bgColors,\r\n\t\t\t\t\t\t\t}]\r\n\t\t\t\t\t\t},\r\n\t\t\t\t\t\toptions: {\r\n\t\t\t\t\t\t\tindexAxis: 'y',\r\n\t\t\t\t\t\t\tresponsive: true,\r\n\t\t\t\t\t\t\tplugins: { legend: { display: false } },\r\n\t\t\t\t\t\t\tscales: { x: { beginAtZero: true, title: { display: true, text: 'Hours' } } }\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t});\r\n\t\t\t\t})();\r\n\r\n\t\t\t\t// Flow Stability — WIP line\r\n\t\t\t\t(function() {\r\n\t\t\t\t\tconst d = load('wipChart');\r\n\t\t\t\t\tif (!d || !d.values.length) return;\r\n\t\t\t\t\tnew Chart(d.el, {\r\n\t\t\t\t\t\ttype: 'line',\r\n\t\t\t\t\t\tdata: {\r\n\t\t\t\t\t\t\tlabels: d.labels,\r\n\t\t\t\t\t\t\tdatasets: [{ label: 'WIP Count', data: d.values,\r\n\t\t\t\t\t\t\t\tborderColor: 'rgba(59,130,246,1)', backgroundColor: 'rgba(59,130,246,0.1)',\r\n\t\t\t\t\t\t\t\tborderWidth: 2, fill: true, tension: 0.3, pointRadius: 2 }]\r\n\t\t\t\t\t\t},\r\n\t\t\t\t\t\toptions: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }\r\n\t\t\t\t\t});\r\n\t\t\t\t})();\r\n\r\n\t\t\t\t// Burn-up — completed hours vs total scope\r\n\t\t\t\t(function() {\r\n\t\t\t\t\tconst el = document.getElementById('burnupChart');\r\n\t\t\t\t\tif (!el) return;\r\n\t\t\t\t\ttry {\r\n\t\t\t\t\t\tconst labels    = JSON.parse(el.dataset.labels    || '[]');\r\n\t\t\t\t\t\tconst completed = JSON.parse(el.dataset.completed  || '[]');\r\n\t\t\t\t\t\tconst scope     = JSON.parse(el.dataset.scope      || '[]');\r\n\t\t\t\t\t\tif (!labels.length) return;\r\n\t\t\t\t\t\tnew Chart(el, {\r\n\t\t\t\t\t\t\ttype: 'line',\r\n\t\t\t\t\t\t\tdata: {\r\n\t\t\t\t\t\t\t\tlabels: labels,\r\n\t\t\t\t\t\t\t\tdatasets: [\r\n\t\t\t\t\t\t\t\t\t{ label: 'Completed Work', data: completed,\r\n\t\t\t\t\t\t\t\t\t  borderColor: 'rgba(34,197,94,1)', backgroundColor: 'rgba(34,197,94,0.1)',\r\n\t\t\t\t\t\t\t\t\t  borderWidth: 2, fill: true, tension: 0.3, pointRadius: 0 },\r\n\t\t\t\t\t\t\t\t\t{ label: 'Total Scope', data: scope,\r\n\t\t\t\t\t\t\t\t\t  borderColor: 'rgba(249,115,22,1)', backgroundColor: 'transparent',\r\n\t\t\t\t\t\t\t\t\t  borderWidth: 2, borderDash: [6,3], fill: false, tension: 0, pointRadius: 0 },\r\n\t\t\t\t\t\t\t\t]\r\n\t\t\t\t\t\t\t},\r\n\t\t\t\t\t\t\toptions: {\r\n\t\t\t\t\t\t\t\tresponsive: true,\r\n\t\t\t\t\t\t\t\tplugins: { legend: { display: true, position: 'top' } },\r\n\t\t\t\t\t\t\t\tscales: {\r\n\t\t\t\t\t\t\t\t\tx: { ticks: { maxTicksLimit: 10 } },\r\n\t\t\t\t\t\t\t\t\ty: { beginAtZero: true, title: { display: true, text: 'Hours' } }\r\n\t\t\t\t\t\t\t\t}\r\n\t\t\t\t\t\t\t}\r\n\t\t\t\t\t\t});\r\n\t\t\t\t\t} catch(e) {}\r\n\t\t\t\t})();\r\n\r\n\t\t\t\t// Sprint Progress — 2-line burndown\r\n\t\t\t\t(function() {\r\n\t\t\t\t\tconst el = document.getElementById('burndownChart');\r\n\t\t\t\t\tif (!el) return;\r\n\t\t\t\t\ttry {\r\n\t\t\t\t\t\tconst labels       = JSON.parse(el.dataset.labels        || '[]');\r\n\t\t\t\t\t\tconst remaining    = JSON.parse(el.dataset.remaining      || '[]');\r\n\t\t\t\t\t\tconst devRemaining = JSON.parse(el.dataset.devRemaining   || '[]');\r\n\t\t\t\t\t\tif (!labels.length) return;\r\n\t\t\t\t\t\tnew Chart(el, {\r\n\t\t\t\t\t\t\ttype: 'line',\r\n\t\t\t\t\t\t\tdata: {\r\n\t\t\t\t\t\t\t\tlabels: labels,\r\n\t\t\t\t\t\t\t\tdatasets: [\r\n\t\t\t\t\t\t\t\t\t{ label: 'Remaining (overall)', data: remaining,\r\n\t\t\t\t\t\t\t\t\t  borderColor: 'rgba(239,68,68,1)', backgroundColor: 'rgba(239,68,68,0.08)',\r\n\t\t\t\t\t\t\t\t\t  borderWidth: 2, fill: true, tension: 0.3, pointRadius: 0 },\r\n\t\t\t\t\t\t\t\t\t{ label: 'Remaining in Dev', data: devRemaining,\r\n\t\t\t\t\t\t\t\t\t  borderColor: 'rgba(59,130,246,1)', backgroundColor: 'rgba(59,130,246,0.08)',\r\n\t\t\t\t\t\t\t\t\t  borderWidth: 2, fill: true, tension: 0.3, pointRadius: 0 },\r\n\t\t\t\t\t\t\t\t]\r\n\t\t\t\t\t\t\t},\r\n\t\t\t\t\t\t\toptions: {\r\n\t\t\t\t\t\t\t\tresponsive: true,\r\n\t\t\t\t\t\t\t\tplugins: { legend: { display: true, position: 'top' } },\r\n\t\t\t\t\t\t\t\tscales: { y: { beginAtZero: true } }\r\n\t\t\t\t\t\t\t}\r\n\t\t\t\t\t\t});\r\n\t\t\t\t\t} catch(e) {}\r\n\t\t\t\t})();\r\n\t\t\t})();\r\n\t\t</script>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "</div><script>\r\n\t\t\t(function () {\r\n\t\t\t\tfunction load(id) {\r\n\t\t\t\t\tconst el = document.getElementById(id);\r\n\t\t\t\t\tif (!el) return null;\r\n\t\t\t\t\ttry {\r\n\t\t\t\t\t\treturn {\r\n\t\t\t\t\t\t\tel: el,\r\n\t\t\t\t\t\t\tlabels: JSON.parse(el.dataset.labels || '[]'),\r\n\t\t\t\t\t\t\tvalues: JSON.parse(el.dataset.values || '[]'),\r\n\t\t\t\t\t\t};\r\n\t\t\t\t\t} catch(e) { return null; }\r\n\t\t\t\t}\r\n\r\n\t\t\t\tfunction secsToHours(v) {\r\n\t\t\t\t\treturn Math.round(v / 3600 * 10) / 10;\r\n\t\t\t\t}\r\n\r\n\t\t\t\t// Delivery Predictability — P50/P85/P95 bar\r\n\t\t\t\t(function() {\r\n\t\t\t\t\tconst d = load('cycleDistChart');\r\n\t\t\t\t\tif (!d || !d.values.length) return;\r\n\t\t\t\t\tnew Chart(d.el, {\r\n\t\t\t\t\t\ttype: 'bar',\r\n\t\t\t\t\t\tdata: {\r\n\t\t\t\t\t\t\tlabels: d.labels,\r\n\t\t\t\t\t\t\tdatasets: [{\r\n\t\t\t\t\t\t\t\tlabel: 'Hours',\r\n\t\t\t\t\t\t\t\tdata: d.values.map(secsToHours),\r\n\t\t\t\t\t\t\t\tbackgroundColor: ['rgba(139,92,246,0.7)','rgba(109,40,217,0.7)','rgba(76,29,149,0.7)'],\r\n\t\t\t\t\t\t\t}]\r\n\t\t\t\t\t\t},\r\n\t\t\t\t\t\toptions: {\r\n\t\t\t\t\t\t\tresponsive: true,\r\n\t\t\t\t\t\t\tplugins: { legend: { display: false } },\r\n\t\t\t\t\t\t\tscales: { y: { beginAtZero: true, title: { display: true, text: 'Hours' } } }\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t});\r\n\t\t\t\t})();\r\n\r\n\t\t\t\t// Bottleneck Breakdown — horizontal bar by bucket\r\n\t\t\t\t(function() {\r\n\t\t\t\t\tconst d = load('bucketChart');\r\n\t\t\t\t\tif (!d || !d.values.length) return;\r\n\t\t\t\t\tconst colors = {\r\n\t\t\t\t\t\t'Dev':     'rgba(59,130,246,0.75)',\r\n\t\t\t\t\t\t'QA':      'rgba(139,92,246,0.75)',\r\n\t\t\t\t\t\t'Waiting': 'rgba(249,115,22,0.75)',\r\n\t\t\t\t\t\t'Done':    'rgba(34,197,94,0.75)',\r\n\t\t\t\t\t\t'Other':   'rgba(156,163,175,0.75)',\r\n\t\t\t\t\t};\r\n\t\t\t\t\tconst bgColors = d.labels.map(function(l) { return colors[l] || colors['Other']; });\r\n\t\t\t\t\tnew Chart(d.el, {\r\n\t\t\t\t\t\ttype: 'bar',\r\n\t\t\t\t\t\tdata: {\r\n\t\t\t\t\t\t\tlabels: d.labels,\r\n\t\t\t\t\t\t\tdatasets: [{\r\n\t\t\t\t\t\t\t\tlabel: 'Avg Hours per Issue',\r\n\t\t\t\t\t\t\t\tdata: d.values.map(secsToHours),\r\n\t\t\t\t\t\t\t\tbackgroundColor: bgColors,\r\n\t\t\t\t\t\t\t}]\r\n\t\t\t\t\t\t},\r\n\t\t\t\t\t\toptions: {\r\n\t\t\t\t\t\t\tindexAxis: 'y',\r\n\t\t\t\t\t\t\tresponsive: true,\r\n\t\t\t\t\t\t\tplugins: { legend: { display: false } },\r\n\t\t\t\t\t\t\tscales: { x: { beginAtZero: true, title: { display: true, text: 'Hours' } } }\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t});\r\n\t\t\t\t})();\r\n\r\n\t\t\t\t// Flow Stability — WIP line\r\n\t\t\t\t(function() {\r\n\t\t\t\t\tconst d = load('wipChart');\r\n\t\t\t\t\tif (!d || !d.values.length) return;\r\n\t\t\t\t\tnew Chart(d.el, {\r\n\t\t\t\t\t\ttype: 'line',\r\n\t\t\t\t\t\tdata: {\r\n\t\t\t\t\t\t\tlabels: d.labels,\r\n\t\t\t\t\t\t\tdatasets: [{ label: 'WIP Count', data: d.values,\r\n\t\t\t\t\t\t\t\tborderColor: 'rgba(59,130,246,1)', backgroundColor: 'rgba(59,130,246,0.1)',\r\n\t\t\t\t\t\t\t\tborderWidth: 2, fill: true, tension: 0.3, pointRadius: 2 }]\r\n\t\t\t\t\t\t},\r\n\t\t\t\t\t\toptions: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }\r\n\t\t\t\t\t});\r\n\t\t\t\t})();\r\n\r\n\t\t\t\t// Burn-up — completed hours vs total scope\r\n\t\t\t\t(function() {\r\n\t\t\t\t\tconst el = document.getElementById('burnupChart');\r\n\t\t\t\t\tif (!el) return;\r\n\t\t\t\t\ttry {\r\n\t\t\t\t\t\tconst labels       = JSON.parse(el.dataset.labels       || '[]');\r\n\t\t\t\t\t\tconst completed    = JSON.parse(el.dataset.completed    || '[]');\r\n\t\t\t\t\t\tconst scope        = JSON.parse(el.dataset.scope        || '[]');\r\n\t\t\t\t\t\tconst plannedScope = JSON.parse(el.dataset.plannedScope || '[]');\r\n\t\t\t\t\t\tif (!labels.length) return;\r\n\t\t\t\t\t\tnew Chart(el, {\r\n\t\t\t\t\t\t\ttype: 'line',\r\n\t\t\t\t\t\t\tdata: {\r\n\t\t\t\t\t\t\t\tlabels: labels,\r\n\t\t\t\t\t\t\t\tdatasets: [\r\n\t\t\t\t\t\t\t\t\t{ label: 'Completed Work', data: completed,\r\n\t\t\t\t\t\t\t\t\t  borderColor: 'rgba(34,197,94,1)', backgroundColor: 'rgba(34,197,94,0.1)',\r\n\t\t\t\t\t\t\t\t\t  borderWidth: 2, fill: true, tension: 0.3, pointRadius: 0 },\r\n\t\t\t\t\t\t\t\t\t{ label: 'Total Scope', data: scope,\r\n\t\t\t\t\t\t\t\t\t  borderColor: 'rgba(249,115,22,1)', backgroundColor: 'transparent',\r\n\t\t\t\t\t\t\t\t\t  borderWidth: 2, borderDash: [6,3], fill: false, tension: 0, pointRadius: 0 },\r\n\t\t\t\t\t\t\t\t\t{ label: 'Planned Scope', data: plannedScope,\r\n\t\t\t\t\t\t\t\t\t  borderColor: 'rgba(59,130,246,1)', backgroundColor: 'transparent',\r\n\t\t\t\t\t\t\t\t\t  borderWidth: 2, borderDash: [4,4], fill: false, tension: 0, pointRadius: 0 },\r\n\t\t\t\t\t\t\t\t]\r\n\t\t\t\t\t\t\t},\r\n\t\t\t\t\t\t\toptions: {\r\n\t\t\t\t\t\t\t\tresponsive: true,\r\n\t\t\t\t\t\t\t\tplugins: { legend: { display: true, position: 'top' } },\r\n\t\t\t\t\t\t\t\tscales: {\r\n\t\t\t\t\t\t\t\t\tx: { ticks: { maxTicksLimit: 10 } },\r\n\t\t\t\t\t\t\t\t\ty: { beginAtZero: true, title: { display: true, text: 'Hours' } }\r\n\t\t\t\t\t\t\t\t}\r\n\t\t\t\t\t\t\t}\r\n\t\t\t\t\t\t});\r\n\t\t\t\t\t} catch(e) {}\r\n\t\t\t\t})();\r\n\r\n\t\t\t\t// Sprint Progress — 2-line burndown\r\n\t\t\t\t(function() {\r\n\t\t\t\t\tconst el = document.getElementById('burndownChart');\r\n\t\t\t\t\tif (!el) return;\r\n\t\t\t\t\ttry {\r\n\t\t\t\t\t\tconst labels       = JSON.parse(el.dataset.labels        || '[]');\r\n\t\t\t\t\t\tconst remaining    = JSON.parse(el.dataset.remaining      || '[]');\r\n\t\t\t\t\t\tconst devRemaining = JSON.parse(el.dataset.devRemaining   || '[]');\r\n\t\t\t\t\t\tif (!labels.length) return;\r\n\t\t\t\t\t\tnew Chart(el, {\r\n\t\t\t\t\t\t\ttype: 'line',\r\n\t\t\t\t\t\t\tdata: {\r\n\t\t\t\t\t\t\t\tlabels: labels,\r\n\t\t\t\t\t\t\t\tdatasets: [\r\n\t\t\t\t\t\t\t\t\t{ label: 'Remaining (overall)', data: remaining,\r\n\t\t\t\t\t\t\t\t\t  borderColor: 'rgba(239,68,68,1)', backgroundColor: 'rgba(239,68,68,0.08)',\r\n\t\t\t\t\t\t\t\t\t  borderWidth: 2, fill: true, tension: 0.3, pointRadius: 0 },\r\n\t\t\t\t\t\t\t\t\t{ label: 'Remaining in Dev', data: devRemaining,\r\n\t\t\t\t\t\t\t\t\t  borderColor: 'rgba(59,130,246,1)', backgroundColor: 'rgba(59,130,246,0.08)',\r\n\t\t\t\t\t\t\t\t\t  borderWidth: 2, fill: true, tension: 0.3, pointRadius: 0 },\r\n\t\t\t\t\t\t\t\t]\r\n\t\t\t\t\t\t\t},\r\n\t\t\t\t\t\t\toptions: {\r\n\t\t\t\t\t\t\t\tresponsive: true,\r\n\t\t\t\t\t\t\t\tplugins: { legend: { display: true, position: 'top' } },\r\n\t\t\t\t\t\t\t\tscales: { y: { beginAtZero: true } }\r\n\t\t\t\t\t\t\t}\r\n\t\t\t\t\t\t});\r\n\t\t\t\t\t} catch(e) {}\r\n\t\t\t\t})();\r\n\t\t\t})();\r\n\r\n\t\t\t// Spinner: show on submit, hide on page load\r\n\t\t\t(function() {\r\n\t\t\t\tconst form    = document.querySelector('form[action=\"/reports/project-kpis\"]');\r\n\t\t\t\tconst spinner = document.getElementById('loadKpisSpinner');\r\n\t\t\t\tconst btnText = document.getElementById('loadKpisBtnText');\r\n\t\t\t\tconst btn     = document.getElementById('loadKpisBtn');\r\n\t\t\t\tif (!form || !spinner) return;\r\n\t\t\t\tform.addEventListener('submit', function() {\r\n\t\t\t\t\tspinner.classList.remove('hidden');\r\n\t\t\t\t\tbtnText.textContent = 'Loading…';\r\n\t\t\t\t\tbtn.disabled = true;\r\n\t\t\t\t});\r\n\t\t\t\tdocument.addEventListener('turbo:load', function() {\r\n\t\t\t\t\tspinner.classList.add('hidden');\r\n\t\t\t\t\tif (btnText) btnText.textContent = 'Load KPIs';\r\n\t\t\t\t\tif (btn) btn.disabled = false;\r\n\t\t\t\t}, { once: true });\r\n\t\t\t})();\r\n\t\t</script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -472,84 +485,84 @@ func summaryRow(label, value, valueClass string) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var25 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var25 == nil {
-			templ_7745c5c3_Var25 = templ.NopComponent
+		templ_7745c5c3_Var26 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var26 == nil {
+			templ_7745c5c3_Var26 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<tr><td class=\"py-2.5 pr-4 text-gray-500 w-1/2\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<tr><td class=\"py-2.5 pr-4 text-gray-500 w-1/2\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var26 string
-		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(label)
+		var templ_7745c5c3_Var27 string
+		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 356, Col: 53}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 384, Col: 53}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "</td>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "</td>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if valueClass != "" {
-			var templ_7745c5c3_Var27 = []any{"py-2.5 font-semibold " + valueClass}
-			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var27...)
+			var templ_7745c5c3_Var28 = []any{"py-2.5 font-semibold " + valueClass}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var28...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "<td class=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var28 string
-			templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var27).String())
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 1, Col: 0}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "<td class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var29 string
-			templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(value)
+			templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var28).String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 358, Col: 61}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 1, Col: 0}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "</td>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "<td class=\"py-2.5 font-semibold text-gray-800\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var30 string
 			templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 360, Col: 57}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 386, Col: 61}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "</td>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "</td>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "<td class=\"py-2.5 font-semibold text-gray-800\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var31 string
+			templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(value)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 388, Col: 57}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "</td>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "</tr>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "</tr>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -573,97 +586,97 @@ func summaryRowWithSub(label, value, subtitle, valueClass string) templ.Componen
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var31 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var31 == nil {
-			templ_7745c5c3_Var31 = templ.NopComponent
+		templ_7745c5c3_Var32 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var32 == nil {
+			templ_7745c5c3_Var32 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "<tr><td class=\"py-2.5 pr-4 w-1/2\"><span class=\"text-gray-500\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var32 string
-		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(label)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 368, Col: 38}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "</span><p class=\"text-xs text-gray-400 mt-0.5\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "<tr><td class=\"py-2.5 pr-4 w-1/2\"><span class=\"text-gray-500\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var33 string
-		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(subtitle)
+		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 369, Col: 53}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 396, Col: 38}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "</p></td>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "</span><p class=\"text-xs text-gray-400 mt-0.5\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var34 string
+		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(subtitle)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 397, Col: 53}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "</p></td>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if valueClass != "" {
-			var templ_7745c5c3_Var34 = []any{"py-2.5 font-semibold align-top " + valueClass}
-			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var34...)
+			var templ_7745c5c3_Var35 = []any{"py-2.5 font-semibold align-top " + valueClass}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var35...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "<td class=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var35 string
-			templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var34).String())
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 1, Col: 0}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "<td class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var36 string
-			templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(value)
+			templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var35).String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 372, Col: 71}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 1, Col: 0}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "</td>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "<td class=\"py-2.5 font-semibold text-gray-800 align-top\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var37 string
 			templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 374, Col: 67}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 400, Col: 71}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "</td>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "</td>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "<td class=\"py-2.5 font-semibold text-gray-800 align-top\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var38 string
+			templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(value)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectkpis.templ`, Line: 402, Col: 67}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "</td>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "</tr>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "</tr>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -820,6 +833,15 @@ func kpiBurnupScope(pts []types.BurnupDataPoint) string {
 	vals := make([]float64, len(pts))
 	for i, p := range pts {
 		vals[i] = math.Round(p.TotalScopeSeconds/3600*10) / 10
+	}
+	b, _ := json.Marshal(vals)
+	return string(b)
+}
+
+func kpiBurnupPlannedScope(pts []types.BurnupDataPoint) string {
+	vals := make([]float64, len(pts))
+	for i, p := range pts {
+		vals[i] = math.Round(p.PlannedScopeSeconds/3600*10) / 10
 	}
 	b, _ := json.Marshal(vals)
 	return string(b)

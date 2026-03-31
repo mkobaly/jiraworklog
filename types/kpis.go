@@ -62,7 +62,8 @@ type BurndownDataPoint struct {
 }
 
 type BurnupDataPoint struct {
-	Day                time.Time `db:"day"`
-	CompletedSeconds   float64   `db:"completed_seconds"`    // cumulative hours logged on project issues
-	TotalScopeSeconds  float64   `db:"total_scope_seconds"`  // sum of original estimates for all project issues
+	Day                  time.Time `db:"day"`
+	CompletedSeconds     float64   `db:"completed_seconds"`       // cumulative hours logged on project issues
+	TotalScopeSeconds    float64   `db:"total_scope_seconds"`     // cumulative originalestimate for all issues (inc. bugs)
+	PlannedScopeSeconds  float64   `db:"planned_scope_seconds"`   // cumulative originalestimate excluding Bug / Hardware Bug
 }

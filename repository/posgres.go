@@ -714,8 +714,9 @@ func (s *Postgres) ProjectKPIs(epicOrVersion string) (types.ProjectKPIData, erro
 	}
 
 	// ── 10. Burn-up — completed hours vs total scope hours ──────────────────
-	// completed_seconds: cumulative timespent logged on project issues up to each day
-	// total_scope_seconds: cumulative originalestimate as issues are created (steps up on scope creep)
+	// completed_seconds:    cumulative timespent logged on project issues up to each day
+	// total_scope_seconds:  cumulative originalestimate for all issues (incl. Bug / Hardware Bug = scope creep)
+	// planned_scope_seconds: same but excluding Bug / Hardware Bug (original plan only)
 	err = s.DB.Select(&data.BurnupHistory, projectIssuesCTE+`,
 		daily_logged AS (
 			SELECT w.date::date AS day, SUM(w.timespentseconds)::float AS seconds_logged
@@ -724,19 +725,23 @@ func (s *Postgres) ProjectKPIs(epicOrVersion string) (types.ProjectKPIData, erro
 			GROUP BY w.date::date
 		),
 		daily_scope AS (
-			SELECT i.createdate::date AS day, SUM(i.originalestimate)::float AS scope_added
+			SELECT
+				i.createdate::date AS day,
+				SUM(i.originalestimate)::float AS scope_added,
+				SUM(CASE WHEN i.type NOT IN ('Bug','Hardware Bug') THEN i.originalestimate ELSE 0 END)::float AS planned_scope_added
 			FROM issue i
 			WHERE i.id IN (SELECT id FROM project_issues)
 			GROUP BY i.createdate::date
 		)
 		SELECT
 			gs.day::date AS day,
-			SUM(COALESCE(dl.seconds_logged, 0)) OVER (ORDER BY gs.day) AS completed_seconds,
-			SUM(COALESCE(ds.scope_added, 0))    OVER (ORDER BY gs.day) AS total_scope_seconds
+			SUM(COALESCE(dl.seconds_logged,       0)) OVER (ORDER BY gs.day) AS completed_seconds,
+			SUM(COALESCE(ds.scope_added,          0)) OVER (ORDER BY gs.day) AS total_scope_seconds,
+			SUM(COALESCE(ds.planned_scope_added,  0)) OVER (ORDER BY gs.day) AS planned_scope_seconds
 		FROM generate_series(
 			LEAST(
-				(SELECT MIN(w.date)::date    FROM worklog w WHERE w.issueid IN (SELECT id FROM project_issues)),
-				(SELECT MIN(i.createdate)::date FROM issue i WHERE i.id   IN (SELECT id FROM project_issues))
+				(SELECT MIN(w.date)::date       FROM worklog w WHERE w.issueid IN (SELECT id FROM project_issues)),
+				(SELECT MIN(i.createdate)::date FROM issue i   WHERE i.id      IN (SELECT id FROM project_issues))
 			),
 			NOW()::date,
 			'1 day'::interval

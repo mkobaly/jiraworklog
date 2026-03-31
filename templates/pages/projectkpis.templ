@@ -28,8 +28,12 @@ templ ProjectKPIs(data types.ProjectKPIData, project string) {
 							class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
 						/>
 					</div>
-					<button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition">
-						Load KPIs
+					<button id="loadKpisBtn" type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition flex items-center gap-2">
+						<svg id="loadKpisSpinner" class="hidden animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+							<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+							<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+						</svg>
+						<span id="loadKpisBtnText">Load KPIs</span>
 					</button>
 				</form>
 			</div>
@@ -151,12 +155,13 @@ templ ProjectKPIs(data types.ProjectKPIData, project string) {
 			if len(data.BurnupHistory) > 0 {
 				<div class="bg-white rounded-lg shadow p-6">
 					<h2 class="text-lg font-semibold text-gray-700 mb-1">Burn-up Chart</h2>
-					<p class="text-xs text-gray-400 mb-4">Cumulative hours logged vs total estimated scope. When the green line reaches the orange line, the project is fully logged.</p>
+					<p class="text-xs text-gray-400 mb-4">Cumulative hours logged vs scope. Orange dashed = total scope (incl. bugs found in QA). Blue dashed = planned scope (excludes bugs).</p>
 					<canvas
 						id="burnupChart"
 						data-labels={ kpiTimeLabels(burnupDays(data.BurnupHistory)) }
 						data-completed={ kpiBurnupCompleted(data.BurnupHistory) }
 						data-scope={ kpiBurnupScope(data.BurnupHistory) }
+						data-planned-scope={ kpiBurnupPlannedScope(data.BurnupHistory) }
 						height="180"
 					></canvas>
 				</div>
@@ -287,9 +292,10 @@ templ ProjectKPIs(data types.ProjectKPIData, project string) {
 					const el = document.getElementById('burnupChart');
 					if (!el) return;
 					try {
-						const labels    = JSON.parse(el.dataset.labels    || '[]');
-						const completed = JSON.parse(el.dataset.completed  || '[]');
-						const scope     = JSON.parse(el.dataset.scope      || '[]');
+						const labels       = JSON.parse(el.dataset.labels       || '[]');
+						const completed    = JSON.parse(el.dataset.completed    || '[]');
+						const scope        = JSON.parse(el.dataset.scope        || '[]');
+						const plannedScope = JSON.parse(el.dataset.plannedScope || '[]');
 						if (!labels.length) return;
 						new Chart(el, {
 							type: 'line',
@@ -302,6 +308,9 @@ templ ProjectKPIs(data types.ProjectKPIData, project string) {
 									{ label: 'Total Scope', data: scope,
 									  borderColor: 'rgba(249,115,22,1)', backgroundColor: 'transparent',
 									  borderWidth: 2, borderDash: [6,3], fill: false, tension: 0, pointRadius: 0 },
+									{ label: 'Planned Scope', data: plannedScope,
+									  borderColor: 'rgba(59,130,246,1)', backgroundColor: 'transparent',
+									  borderWidth: 2, borderDash: [4,4], fill: false, tension: 0, pointRadius: 0 },
 								]
 							},
 							options: {
@@ -346,6 +355,25 @@ templ ProjectKPIs(data types.ProjectKPIData, project string) {
 						});
 					} catch(e) {}
 				})();
+			})();
+
+			// Spinner: show on submit, hide on page load
+			(function() {
+				const form    = document.querySelector('form[action="/reports/project-kpis"]');
+				const spinner = document.getElementById('loadKpisSpinner');
+				const btnText = document.getElementById('loadKpisBtnText');
+				const btn     = document.getElementById('loadKpisBtn');
+				if (!form || !spinner) return;
+				form.addEventListener('submit', function() {
+					spinner.classList.remove('hidden');
+					btnText.textContent = 'Loading…';
+					btn.disabled = true;
+				});
+				document.addEventListener('turbo:load', function() {
+					spinner.classList.add('hidden');
+					if (btnText) btnText.textContent = 'Load KPIs';
+					if (btn) btn.disabled = false;
+				}, { once: true });
 			})();
 		</script>
 	}
@@ -525,6 +553,15 @@ func kpiBurnupScope(pts []types.BurnupDataPoint) string {
 	vals := make([]float64, len(pts))
 	for i, p := range pts {
 		vals[i] = math.Round(p.TotalScopeSeconds/3600*10) / 10
+	}
+	b, _ := json.Marshal(vals)
+	return string(b)
+}
+
+func kpiBurnupPlannedScope(pts []types.BurnupDataPoint) string {
+	vals := make([]float64, len(pts))
+	for i, p := range pts {
+		vals[i] = math.Round(p.PlannedScopeSeconds/3600*10) / 10
 	}
 	b, _ := json.Marshal(vals)
 	return string(b)
