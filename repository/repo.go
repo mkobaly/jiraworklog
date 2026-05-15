@@ -19,6 +19,10 @@ type Repo interface {
 
 	MissingIssues() ([]int, error)
 
+	LastSeenIssues(threshold time.Duration) ([]int, error)
+	DeleteIssue(id int) error
+	UpdateIssueLastSeen(id int) error
+
 	//AllIssues() ([]types.ParentIssue, error)
 	IssuesGroupedBy(groupBy string, start time.Time, stop time.Time) ([]types.IssueChartData, error)
 	IssueAccuracy(start time.Time, stop time.Time) ([]types.IssueAccuracy, error)
@@ -47,11 +51,11 @@ type Repo interface {
 	UpdateProjectCharge(name string, visible bool, label string) error
 	SyncProjectCharges() error
 
-	// Project charge hours reporting
-	ProjectChargeHours() ([]types.ProjectChargeHours, error)
-
 	// Weekly hours by author
 	DailyHoursByRole(roles []string, startDate, endDate time.Time) ([]types.DailyHours, error)
+
+	// Project charge hours reporting (fromMonth/toMonth are YYYY-MM, empty = default range)
+	ProjectChargeHours(fromMonth, toMonth string) ([]types.ProjectChargeHours, error)
 
 	// Project time tracking
 	ProjectTimeTracking(fixedVersion string) ([]types.ProjectTimeTracking, error)

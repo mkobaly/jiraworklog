@@ -40,6 +40,13 @@ func (j *JiraSyncIssuesJob) GetInterval() time.Duration {
 }
 
 func (j *JiraSyncIssuesJob) Run() error {
+
+	//Run this first since bulk fetching jira issues fails silently (returns 200 and empty resultset) even when you don't have correct permissions
+	tz, err := j.jira.GetTimezone()
+	if err != nil {
+		return errors.Wrap(err, "error getting jira timezone")
+	}
+
 	//Grab all missing issues that have worklog ids
 	missingIssues, err := j.repo.MissingIssues()
 	if err != nil {
@@ -70,7 +77,6 @@ func (j *JiraSyncIssuesJob) Run() error {
 		}
 	}
 
-	tz := j.jira.GetTimezone()
 	lastUpdated := j.cfg.IssueLastTimestamp
 	lastUpdatedDateOnly := internal.DateOnly(time.Unix(lastUpdated, 0)).In(tz).Unix()
 
@@ -110,6 +116,11 @@ func (j *JiraSyncIssuesJob) Run() error {
 				return errors.Wrap(err, "error saving config")
 			}
 		}
+	}
+	//older than 60 days
+	err = j.processDeletes(time.Hour * 1440)
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -217,4 +228,28 @@ func (j *JiraSyncIssuesJob) fetchIssueChangelog(issueId int) ([]types.ChangelogS
 		}
 	}
 	return changelog, nil
+}
+
+func (j *JiraSyncIssuesJob) processDeletes(threshold time.Duration) error {
+	lastSeenIssues, err := j.repo.LastSeenIssues(threshold)
+	if err != nil {
+		return errors.Wrap(err, "error fetching last seen jira issues")
+	}
+	slog.Info("processing potentially deleted issues", slog.Int("cnt", len(lastSeenIssues)))
+	for _, id := range lastSeenIssues {
+		_, err := j.jira.Issue(strconv.Itoa(id))
+		if errors.Is(err, jiraworklog.ErrIssueNotFound) {
+			err = j.repo.DeleteIssue(id)
+			if err != nil {
+				slog.Error("error deleting issue", slog.Int("id", id))
+			}
+		}
+		if err == nil {
+			err = j.repo.UpdateIssueLastSeen(id)
+			if err != nil {
+				slog.Error("error updating last seen for issue", slog.Int("id", id))
+			}
+		}
+	}
+	return nil
 }

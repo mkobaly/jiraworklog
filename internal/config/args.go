@@ -1,9 +1,20 @@
 package config
 
 type Args struct {
-	Config string `arg:"-c,--cfg" default:"config.yaml" help:"config file holding settings"`
-	Port   int    `arg:"-p,--port" default:"8380" help:"port the web server uses"`
-	Debug  bool   `arg:"-d,--debug" help:"enable verbose logging and don't send any login emails"`
+	Config  string `arg:"-c,--cfg" default:"config.yaml" help:"config file holding settings"`
+	Port    int    `arg:"-p,--port" default:"8380" help:"port the web server uses"`
+	Debug   bool   `arg:"-d,--debug" help:"enable verbose logging and don't send any login emails"`
+	version string
+}
+
+func NewArgs(vesion string) Args {
+	return Args{
+		version: vesion,
+	}
+}
+
+func (a Args) Version() string {
+	return a.version
 }
 
 // //Define command line params and parse input

@@ -6,7 +6,7 @@ import (
 	"github.com/mkobaly/jiraworklog/types"
 )
 
-templ Dashboard(latestMaintenance *types.MaitenanceRatio, missingChargesCount int, mismatchedChargesCount int, peopleMissingRolesCount int) {
+templ Dashboard(latestMaintenance *types.MaitenanceRatio, missingChargesCount int, mismatchedChargesCount int, peopleMissingRolesCount int, jiraConnected bool, jiraDisplayName string) {
 	@layouts.Base("Dashboard") {
 		<div class="mb-6">
 			<h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
@@ -152,6 +152,31 @@ templ Dashboard(latestMaintenance *types.MaitenanceRatio, missingChargesCount in
 				}
 			</a>
 
+			<!-- Jira Connection Widget -->
+			<div class={ "block bg-white rounded-lg shadow-md p-6", jiraConnectionBorder(jiraConnected) }>
+				<div class="flex items-center justify-between mb-4">
+					<h2 class="text-lg font-semibold text-gray-900">Jira Connection</h2>
+					<svg class={ "w-6 h-6", jiraConnectionIconColor(jiraConnected) } fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						if jiraConnected {
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+						} else {
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+						}
+					</svg>
+				</div>
+				<div class="text-center">
+					if jiraConnected {
+						<p class="text-green-600 font-semibold text-lg">Connected</p>
+						if jiraDisplayName != "" {
+							<p class="text-gray-500 text-sm mt-1">{ jiraDisplayName }</p>
+						}
+					} else {
+						<p class="text-red-600 font-semibold text-lg">Not Connected</p>
+						<p class="text-gray-500 text-sm mt-1">API token may be expired or invalid</p>
+					}
+				</div>
+			</div>
+
 			<!-- Quick Links Widget -->
 			<div class="bg-white rounded-lg shadow-md p-6">
 				<h2 class="text-lg font-semibold text-gray-900 mb-4">Quick Links</h2>
@@ -284,4 +309,18 @@ func mismatchedChargesTextColor(count int) string {
 		return "text-yellow-600"
 	}
 	return "text-orange-600"
+}
+
+func jiraConnectionBorder(connected bool) string {
+	if connected {
+		return "border-l-4 border-green-500"
+	}
+	return "border-l-4 border-red-500"
+}
+
+func jiraConnectionIconColor(connected bool) string {
+	if connected {
+		return "text-green-500"
+	}
+	return "text-red-500"
 }

@@ -144,11 +144,16 @@ func (s *Postgres) CustomerBugCounts(project string) ([]types.CustomerBugCount, 
 func (s *Postgres) CustomerBugTrends(project string) ([]types.CustomerBugTrend, error) {
 	result := []types.CustomerBugTrend{}
 	query := `
-		WITH months AS (
+		WITH window_start AS (
+			-- Start of the 12-month window: same month one year before the last complete month.
+			-- e.g. today = Apr 21 2026 → last complete month = Mar 2026 → start = Mar 2025
+			SELECT date_trunc('month', now()) - INTERVAL '13 months' AS ts
+		),
+		months AS (
 			SELECT to_char(gs, 'YYYY-MM') AS year_month
 			FROM generate_series(
-				date_trunc('month', now() - INTERVAL '2 years'),
-				date_trunc('month', now() - INTERVAL '1 month'),
+				(SELECT ts FROM window_start),
+				date_trunc('month', now()) - INTERVAL '1 month',
 				'1 month'::interval
 			) gs
 		),
@@ -156,7 +161,7 @@ func (s *Postgres) CustomerBugTrends(project string) ([]types.CustomerBugTrend, 
 			SELECT to_char(createdate, 'YYYY-MM') AS year_month, COUNT(*) AS cnt
 			FROM issue
 			WHERE type IN ('Customer Bug', 'HW / FW Customer Bug')
-			AND createdate >= date_trunc('month', now() - INTERVAL '2 years')
+			AND createdate >= (SELECT ts FROM window_start)
 			AND createdate < date_trunc('month', now())
 			AND ($1 = '' OR project = $1)
 			GROUP BY to_char(createdate, 'YYYY-MM')
@@ -166,17 +171,17 @@ func (s *Postgres) CustomerBugTrends(project string) ([]types.CustomerBugTrend, 
 			FROM issue
 			WHERE type IN ('Customer Bug', 'HW / FW Customer Bug')
 			AND ($1 = '' OR project = $1)
-			AND (resolveddate >= date_trunc('month', now() - INTERVAL '2 years') AND resolveddate < date_trunc('month', now())
-					OR (status like 'Awaiting Release%' AND updatedate >= date_trunc('month', now() - INTERVAL '2 years') AND updatedate < date_trunc('month', now() )
-				))
+			AND (resolveddate >= (SELECT ts FROM window_start) AND resolveddate < date_trunc('month', now())
+					OR (status LIKE 'Awaiting Release%' AND updatedate >= (SELECT ts FROM window_start) AND updatedate < date_trunc('month', now()))
+				)
 			GROUP BY to_char(coalesce(resolveddate, updatedate), 'YYYY-MM')
 		),
 		baseline AS (
 			SELECT COUNT(*) AS open_count
 			FROM issue
 			WHERE type IN ('Customer Bug', 'HW / FW Customer Bug')
-			AND createdate < date_trunc('month', now() - INTERVAL '2 years')
-			AND (resolveddate IS NULL OR resolveddate >= date_trunc('month', now() - INTERVAL '2 years'))
+			AND createdate < (SELECT ts FROM window_start)
+			AND (resolveddate IS NULL OR resolveddate >= (SELECT ts FROM window_start))
 			AND ($1 = '' OR project = $1)
 		)
 		SELECT
@@ -226,10 +231,13 @@ func (s *Postgres) UpdateProjectCharge(name string, visible bool, label string) 
 	return err
 }
 
-// ProjectChargeHours returns hours worked per project charge and role
-func (s *Postgres) ProjectChargeHours() ([]types.ProjectChargeHours, error) {
+// ProjectChargeHours returns hours worked per project charge and role.
+// fromMonth and toMonth are YYYY-MM strings; empty strings fall back to the last 13 months.
+func (s *Postgres) ProjectChargeHours(fromYearMonth, toYearMonth string) ([]types.ProjectChargeHours, error) {
 	result := []types.ProjectChargeHours{}
-	err := s.DB.Select(&result, `
+	from, to := s.calculateDateRange(fromYearMonth, toYearMonth)
+
+	query := `
 		SELECT
 			COALESCE(p.label, 'UNDEFINED') as label,
 			COALESCE(NULLIF(j.projectcharge, ''), 'PROJECT CHARGE MISSING') as projectcharge,
@@ -239,14 +247,39 @@ func (s *Postgres) ProjectChargeHours() ([]types.ProjectChargeHours, error) {
 			per.location,
 			SUM(w.timespenthours) as hours
 		FROM worklog w
-				JOIN issue j ON w.issueid = j.id
-				LEFT JOIN project_charge p ON j.projectcharge = p.name
-				LEFT JOIN people per ON w.author = per.name
-		WHERE w.date >= now() - INTERVAL '13 months'
-		AND COALESCE(p.visible, true)  = true
+			JOIN issue j ON w.issueid = j.id
+			LEFT JOIN project_charge p ON j.projectcharge = p.name
+			LEFT JOIN people per ON w.author = per.name
+		WHERE COALESCE(p.visible, true) = true
+			AND w.date >= $1 AND w.date < $2
 		GROUP BY p.name, j.projectcharge, to_char(w.date, 'YYYY-MM'), per.role, per.isemployee, per.location
-		ORDER BY p.name, j.projectcharge;`)
+		ORDER BY p.name, j.projectcharge`
+
+	err := s.DB.Select(&result, query, from, to)
 	return result, err
+}
+
+// calculateDateRange converts optional YYYY-MM strings into concrete time.Time boundaries.
+// When blank, from defaults to 13 months ago (start of that month) and to defaults to now.
+// When provided, from is the first day of fromYearMonth and to is the first day of the month
+// after toYearMonth (exclusive upper bound), giving a complete inclusive month range.
+func (s *Postgres) calculateDateRange(fromYearMonth, toYearMonth string) (from time.Time, to time.Time) {
+	now := time.Now().UTC()
+	if fromYearMonth == "" {
+		t := now.AddDate(0, -13, 0)
+		from = time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, time.UTC)
+	} else {
+		t, _ := time.Parse("2006-01", fromYearMonth)
+		from = time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, time.UTC)
+	}
+	if toYearMonth == "" {
+		to = now
+	} else {
+		t, _ := time.Parse("2006-01", toYearMonth)
+		// exclusive upper bound: first day of the next month captures the entire toYearMonth
+		to = time.Date(t.Year(), t.Month()+1, 1, 0, 0, 0, 0, time.UTC)
+	}
+	return
 }
 
 // DailyHoursByRole returns daily hours breakdown by author for the given date range
@@ -345,8 +378,20 @@ func (s *Postgres) MissingIssues() ([]int, error) {
 		(
 			SELECT id FROM issue
 		)
+		AND date >= now() - INTERVAL '3 months'
 		UNION
 		SELECT parentid from issue where parentid not in (select id from issue);`)
+	return result, err
+}
+
+func (s *Postgres) LastSeenIssues(threshold time.Duration) ([]int, error) {
+	cutoff := time.Now().Add(-threshold)
+	result := []int{}
+	err := s.DB.Select(&result, `	
+		SELECT id 
+		FROM issue
+		WHERE dateUpdated < $1
+		LIMIT 200;`, cutoff)
 	return result, err
 }
 
@@ -413,12 +458,34 @@ func (s *Postgres) SyncProjectCharges() error {
 }
 
 func (s *Postgres) DeleteWorklog(id int) error {
-	stmt, err := s.DB.Prepare(`
-        DELETE FROM worklog WHERE id = $1`)
+	stmt, err := s.DB.Prepare(`DELETE FROM worklog WHERE id = $1`)
 	if err != nil {
 		return err
 	}
+	_, err = stmt.Exec(id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
+func (s *Postgres) DeleteIssue(id int) error {
+	stmt, err := s.DB.Prepare(`DELETE FROM issue WHERE id = $1`)
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Postgres) UpdateIssueLastSeen(id int) error {
+	stmt, err := s.DB.Prepare(`UPDATE issue set dateUpdated = now() WHERE id = $1`)
+	if err != nil {
+		return err
+	}
 	_, err = stmt.Exec(id)
 	if err != nil {
 		return err

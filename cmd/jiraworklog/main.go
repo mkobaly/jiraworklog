@@ -25,6 +25,8 @@ import (
 
 var db *sqlx.DB
 
+var Version string
+
 // ErrUnknownRepo is error for unknown repository
 var ErrUnknownRepo = errors.New("unkown repo")
 
@@ -33,7 +35,7 @@ func main() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 
-	args := config.Args{}
+	args := config.NewArgs(Version)
 	_ = arg.MustParse(&args)
 
 	//Logger setup
@@ -90,7 +92,7 @@ func main() {
 		emailClient = email.FakeEmailClient{}
 	}
 	// Create handler
-	handler := NewHandler(repo, logger, cfg, emailClient, args.Debug)
+	handler := NewHandler(repo, jira, logger, cfg, emailClient, args.Debug)
 
 	// Static files (paths relative to where binary is run)
 	e.Static("/static", "../static")

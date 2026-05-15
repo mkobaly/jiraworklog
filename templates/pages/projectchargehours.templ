@@ -45,6 +45,19 @@ type GroupingOptions struct {
 	ByLocation bool
 }
 
+// ChargeFilterState holds active filter selections and available options
+type ChargeFilterState struct {
+	FromMonth    string
+	ToMonth      string
+	Charges      []string
+	Roles        []string
+	Locations    []string
+	EmpTypes     []string
+	AllCharges   []string
+	AllRoles     []string
+	AllLocations []string
+}
+
 func groupProjectChargeHours(data []types.ProjectChargeHours, opts GroupingOptions) []ProjectGroup {
 	projectMap := make(map[string]*ProjectGroup)
 	chargeMap := make(map[string]map[string]*ChargeGroup)
@@ -173,126 +186,168 @@ func groupProjectChargeHours(data []types.ProjectChargeHours, opts GroupingOptio
 	return result
 }
 
-templ ProjectChargeHoursPage(data []types.ProjectChargeHours, groupByDate bool, groupByEmployee bool, groupByRole bool, groupByCharge bool, groupByLocation bool) {
+templ ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilterState, groupByDate bool, groupByEmployee bool, groupByRole bool, groupByCharge bool, groupByLocation bool) {
 	@layouts.Base("Project Charge Hours") {
 		<div class="mb-6">
 			<h1 class="text-3xl font-bold text-gray-900">Project Charge Hours</h1>
 			<p class="text-gray-600 mt-2">Hours worked per project charge</p>
 		</div>
 
-		<!-- Grouping Options -->
-		<div class="mb-6 bg-white rounded-lg shadow-md p-4">
-			<div class="flex flex-wrap items-center justify-between gap-4">
+		<!-- Unified filter + grouping form -->
+		<form id="filterForm" method="GET" action="/reports/project-hours" class="mb-6 space-y-4">
+			<!-- sentinel so handler knows a form was submitted (vs. initial page load defaults) -->
+			<input type="hidden" name="_f" value="1"/>
+
+			<!-- Date range + grouping row -->
+			<div class="bg-white rounded-lg shadow-md p-4">
 				<div class="flex flex-wrap items-center gap-6">
+					<!-- Date range -->
+					<div class="flex items-center gap-2">
+						<label class="text-sm font-medium text-gray-700 whitespace-nowrap">From:</label>
+						<input
+							type="month"
+							name="from"
+							value={ filters.FromMonth }
+							class="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+						/>
+					</div>
+					<div class="flex items-center gap-2">
+						<label class="text-sm font-medium text-gray-700 whitespace-nowrap">Through:</label>
+						<input
+							type="month"
+							name="to"
+							value={ filters.ToMonth }
+							class="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+						/>
+					</div>
+
+					<div class="w-px h-6 bg-gray-200"></div>
+
+					<!-- Grouping -->
 					<span class="text-sm font-medium text-gray-700">Group by:</span>
 					<label class="flex items-center cursor-pointer">
-						<input
-							type="checkbox"
-							id="groupByDate"
-							class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-							onchange="applyGrouping()"
-							if groupByDate {
-								checked
-							}
-						/>
+						<input type="checkbox" name="groupByDate" value="true" class="h-4 w-4 text-blue-600 border-gray-300 rounded" onchange="this.form.submit()" if groupByDate { checked }/>
 						<span class="ml-2 text-sm text-gray-700">Month</span>
 					</label>
 					<label class="flex items-center cursor-pointer">
-						<input
-							type="checkbox"
-							id="groupByCharge"
-							class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-							onchange="applyGrouping()"
-							if groupByCharge {
-								checked
-							}
-						/>
+						<input type="checkbox" name="groupByCharge" value="true" class="h-4 w-4 text-blue-600 border-gray-300 rounded" onchange="this.form.submit()" if groupByCharge { checked }/>
 						<span class="ml-2 text-sm text-gray-700">Project Charge</span>
 					</label>
 					<label class="flex items-center cursor-pointer">
-						<input
-							type="checkbox"
-							id="groupByEmployee"
-							class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-							onchange="applyGrouping()"
-							if groupByEmployee {
-								checked
-							}
-						/>
+						<input type="checkbox" name="groupByEmployee" value="true" class="h-4 w-4 text-blue-600 border-gray-300 rounded" onchange="this.form.submit()" if groupByEmployee { checked }/>
 						<span class="ml-2 text-sm text-gray-700">Employee Type</span>
 					</label>
 					<label class="flex items-center cursor-pointer">
-						<input
-							type="checkbox"
-							id="groupByRole"
-							class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-							onchange="applyGrouping()"
-							if groupByRole {
-								checked
-							}
-						/>
+						<input type="checkbox" name="groupByRole" value="true" class="h-4 w-4 text-blue-600 border-gray-300 rounded" onchange="this.form.submit()" if groupByRole { checked }/>
 						<span class="ml-2 text-sm text-gray-700">Role</span>
 					</label>
 					<label class="flex items-center cursor-pointer">
-						<input
-							type="checkbox"
-							id="groupByLocation"
-							class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-							onchange="applyGrouping()"
-							if groupByLocation {
-								checked
-							}
-						/>
+						<input type="checkbox" name="groupByLocation" value="true" class="h-4 w-4 text-blue-600 border-gray-300 rounded" onchange="this.form.submit()" if groupByLocation { checked }/>
 						<span class="ml-2 text-sm text-gray-700">Location</span>
 					</label>
+
+					<div class="ml-auto flex gap-2">
+						<button type="submit" class="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
+							Apply
+						</button>
+						<button type="button" onclick="exportCSV()" class="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700">
+							<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+							</svg>
+							Export CSV
+						</button>
+					</div>
 				</div>
-				<button
-					onclick="exportCSV()"
-					class="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-				>
-					<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-					</svg>
-					Export CSV
-				</button>
 			</div>
-		</div>
+
+			<!-- Filter panel -->
+			<div class="bg-white rounded-lg shadow-md p-4">
+				<details if len(filters.Charges) > 0 || len(filters.Roles) > 0 || len(filters.Locations) > 0 || len(filters.EmpTypes) > 0 { open }>
+					<summary class="cursor-pointer text-sm font-medium text-gray-700 select-none">Filters
+						if len(filters.Charges) > 0 || len(filters.Roles) > 0 || len(filters.Locations) > 0 || len(filters.EmpTypes) > 0 {
+							<span class="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs">active</span>
+						}
+					</summary>
+					<div class="mt-4 grid grid-cols-2 md:grid-cols-6 gap-6">
+
+						<!-- Project Charge multi-select -->
+						if len(filters.AllCharges) > 0 {
+							<div class="col-span-2 md:col-span-3">
+								<p class="text-xs font-semibold text-gray-500 uppercase mb-1">Project Charge</p>
+								<p class="text-xs text-gray-400 mb-2">Hold Ctrl / ⌘ to select multiple</p>
+								<select
+									name="charge"
+									multiple
+									size="8"
+									class="w-full border border-gray-300 rounded-md py-1 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+								>
+									for _, c := range filters.AllCharges {
+										<option value={ c } if contains(filters.Charges, c) { selected }>{ c }</option>
+									}
+								</select>
+							</div>
+						}
+
+						<!-- Employee Type -->
+						<div>
+							<p class="text-xs font-semibold text-gray-500 uppercase mb-2">Employee Type</p>
+							<div class="space-y-1">
+								<label class="flex items-center gap-2 cursor-pointer">
+									<input type="checkbox" name="empType" value="employee" class="h-3.5 w-3.5 text-blue-600 border-gray-300 rounded" if contains(filters.EmpTypes, "employee") { checked }/>
+									<span class="text-xs text-gray-700">Employee</span>
+								</label>
+								<label class="flex items-center gap-2 cursor-pointer">
+									<input type="checkbox" name="empType" value="contractor" class="h-3.5 w-3.5 text-blue-600 border-gray-300 rounded" if contains(filters.EmpTypes, "contractor") { checked }/>
+									<span class="text-xs text-gray-700">Contractor</span>
+								</label>
+							</div>
+						</div>
+
+						<!-- Role -->
+						if len(filters.AllRoles) > 0 {
+							<div>
+								<p class="text-xs font-semibold text-gray-500 uppercase mb-2">Role</p>
+								<div class="space-y-1">
+									for _, r := range filters.AllRoles {
+										<label class="flex items-center gap-2 cursor-pointer">
+											<input type="checkbox" name="role" value={ r } class="h-3.5 w-3.5 text-blue-600 border-gray-300 rounded" if contains(filters.Roles, r) { checked }/>
+											<span class="text-xs text-gray-700">{ r }</span>
+										</label>
+									}
+								</div>
+							</div>
+						}
+
+						<!-- Location -->
+						if len(filters.AllLocations) > 0 {
+							<div>
+								<p class="text-xs font-semibold text-gray-500 uppercase mb-2">Location</p>
+								<div class="space-y-1">
+									for _, l := range filters.AllLocations {
+										<label class="flex items-center gap-2 cursor-pointer">
+											<input type="checkbox" name="location" value={ l } class="h-3.5 w-3.5 text-blue-600 border-gray-300 rounded" if contains(filters.Locations, l) { checked }/>
+											<span class="text-xs text-gray-700">{ l }</span>
+										</label>
+									}
+								</div>
+							</div>
+						}
+
+					</div>
+					<div class="mt-4 flex gap-3">
+						<button type="submit" class="px-4 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">Apply Filters</button>
+						<a href="/reports/project-hours" class="px-4 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200">Clear All</a>
+					</div>
+				</details>
+			</div>
+		</form>
 
 		<script>
-			function applyGrouping() {
-				const groupByDate = document.getElementById('groupByDate').checked;
-				const groupByCharge = document.getElementById('groupByCharge').checked;
-				const groupByEmployee = document.getElementById('groupByEmployee').checked;
-				const groupByRole = document.getElementById('groupByRole').checked;
-				const groupByLocation = document.getElementById('groupByLocation').checked;
-
-				const params = new URLSearchParams();
-				if (groupByDate) params.set('groupByDate', 'true');
-				if (!groupByCharge) params.set('groupByCharge', 'false');
-				if (groupByEmployee) params.set('groupByEmployee', 'true');
-				if (!groupByRole) params.set('groupByRole', 'false');
-				if (groupByLocation) params.set('groupByLocation', 'true');
-
-				const queryString = params.toString();
-				window.location.href = '/reports/project-hours' + (queryString ? '?' + queryString : '');
-			}
-
 			function exportCSV() {
-				const groupByDate = document.getElementById('groupByDate').checked;
-				const groupByCharge = document.getElementById('groupByCharge').checked;
-				const groupByEmployee = document.getElementById('groupByEmployee').checked;
-				const groupByRole = document.getElementById('groupByRole').checked;
-				const groupByLocation = document.getElementById('groupByLocation').checked;
-
-				const params = new URLSearchParams();
-				if (groupByDate) params.set('groupByDate', 'true');
-				if (!groupByCharge) params.set('groupByCharge', 'false');
-				if (groupByEmployee) params.set('groupByEmployee', 'true');
-				if (!groupByRole) params.set('groupByRole', 'false');
-				if (groupByLocation) params.set('groupByLocation', 'true');
-
-				const queryString = params.toString();
-				window.location.href = '/reports/project-hours/csv' + (queryString ? '?' + queryString : '');
+				const form = document.getElementById('filterForm');
+				const data = new FormData(form);
+				const params = new URLSearchParams(data);
+				window.location.href = '/reports/project-hours/csv?' + params.toString();
 			}
 		</script>
 
@@ -481,6 +536,15 @@ templ locationBadge(location string) {
 	} else {
 		<span class="px-2 py-1 text-xs rounded-full bg-indigo-100 text-indigo-800">{ location }</span>
 	}
+}
+
+func contains(slice []string, val string) bool {
+	for _, s := range slice {
+		if s == val {
+			return true
+		}
+	}
+	return false
 }
 
 func countUniqueProjects(data []types.ProjectChargeHours) int {

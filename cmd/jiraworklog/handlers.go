@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -23,6 +24,7 @@ import (
 
 type Handler struct {
 	repo        repository.Repo
+	jira        jiraworklog.JiraReader
 	logger      *slog.Logger
 	tz          *time.Location
 	cfg         *jiraworklog.Config
@@ -31,13 +33,14 @@ type Handler struct {
 	debug       bool
 }
 
-func NewHandler(r repository.Repo, l *slog.Logger, cfg *jiraworklog.Config, emailClient email.EmailClient, debug bool) *Handler {
+func NewHandler(r repository.Repo, j jiraworklog.JiraReader, l *slog.Logger, cfg *jiraworklog.Config, emailClient email.EmailClient, debug bool) *Handler {
 	nyc, err := time.LoadLocation("America/New_York")
 	if err != nil {
 		panic(err)
 	}
 	return &Handler{
 		repo:        r,
+		jira:        j,
 		logger:      l,
 		tz:          nyc,
 		cfg:         cfg,
@@ -133,6 +136,105 @@ func (h *Handler) LoginConfirm(c echo.Context) error {
 	return c.Redirect(http.StatusFound, "/")
 }
 
+// ── Project charge hours filter helpers ──────────────────────────────────────
+
+func distinctChargeLabels(data []types.ProjectChargeHours) []string {
+	seen := make(map[string]bool)
+	var out []string
+	for _, item := range data {
+		if !seen[item.ProjectCharge] {
+			seen[item.ProjectCharge] = true
+			out = append(out, item.ProjectCharge)
+		}
+	}
+	sort.Strings(out)
+	return out
+}
+
+func distinctChargeRoles(data []types.ProjectChargeHours) []string {
+	seen := make(map[string]bool)
+	var out []string
+	for _, item := range data {
+		r := "Unknown"
+		if item.Role.Valid && item.Role.String != "" {
+			r = item.Role.String
+		}
+		if !seen[r] {
+			seen[r] = true
+			out = append(out, r)
+		}
+	}
+	sort.Strings(out)
+	return out
+}
+
+func distinctChargeLocations(data []types.ProjectChargeHours) []string {
+	seen := make(map[string]bool)
+	var out []string
+	for _, item := range data {
+		l := "Unknown"
+		if item.Location.Valid && item.Location.String != "" {
+			l = item.Location.String
+		}
+		if !seen[l] {
+			seen[l] = true
+			out = append(out, l)
+		}
+	}
+	sort.Strings(out)
+	return out
+}
+
+func applyChargeFilters(data []types.ProjectChargeHours, charges, roles, locations, empTypes []string) []types.ProjectChargeHours {
+	if len(charges) == 0 && len(roles) == 0 && len(locations) == 0 && len(empTypes) == 0 {
+		return data
+	}
+	chargeSet := stringSet(charges)
+	roleSet := stringSet(roles)
+	locSet := stringSet(locations)
+	empSet := stringSet(empTypes)
+
+	var out []types.ProjectChargeHours
+	for _, item := range data {
+		if len(chargeSet) > 0 && !chargeSet[item.ProjectCharge] {
+			continue
+		}
+		role := "Unknown"
+		if item.Role.Valid && item.Role.String != "" {
+			role = item.Role.String
+		}
+		if len(roleSet) > 0 && !roleSet[role] {
+			continue
+		}
+		loc := "Unknown"
+		if item.Location.Valid && item.Location.String != "" {
+			loc = item.Location.String
+		}
+		if len(locSet) > 0 && !locSet[loc] {
+			continue
+		}
+		if len(empSet) > 0 {
+			et := "contractor"
+			if item.IsEmployee {
+				et = "employee"
+			}
+			if !empSet[et] {
+				continue
+			}
+		}
+		out = append(out, item)
+	}
+	return out
+}
+
+func stringSet(vals []string) map[string]bool {
+	s := make(map[string]bool, len(vals))
+	for _, v := range vals {
+		s[v] = true
+	}
+	return s
+}
+
 // wantsHTML checks if the client prefers HTML over JSON
 func wantsHTML(c echo.Context) bool {
 	accept := c.Request().Header.Get("Accept")
@@ -189,7 +291,18 @@ func (h *Handler) Dashboard(c echo.Context) error {
 		}
 	}
 
-	return pages.Dashboard(latestMaintenance, missingChargesCount, mismatchedChargesCount, peopleMissingRolesCount).Render(c.Request().Context(), c.Response().Writer)
+	// Check Jira connectivity
+	jiraConnected := false
+	jiraDisplayName := ""
+	jiraUser, err := h.jira.GetJiraUser()
+	if err != nil {
+		h.logger.Error("jira connection check failed", "error", err)
+	} else {
+		jiraConnected = true
+		jiraDisplayName = jiraUser.DisplayName
+	}
+
+	return pages.Dashboard(latestMaintenance, missingChargesCount, mismatchedChargesCount, peopleMissingRolesCount, jiraConnected, jiraDisplayName).Render(c.Request().Context(), c.Response().Writer)
 }
 
 func (h *Handler) GetIssuesGroupedBy(c echo.Context) error {
@@ -574,28 +687,61 @@ func (h *Handler) UpdateProjectCharge(c echo.Context) error {
 }
 
 func (h *Handler) GetProjectChargeHours(c echo.Context) error {
-	data, err := h.repo.ProjectChargeHours()
+	fromYearMonth := c.QueryParam("from")
+	toYearMonth := c.QueryParam("to")
+
+	data, err := h.repo.ProjectChargeHours(fromYearMonth, toYearMonth)
 	if err != nil {
 		h.logger.Error("error fetching project charge hours", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch project charge hours")
 	}
 
-	// Get grouping options from query params
+	// Derive available options from the full (date-filtered) dataset
+	allCharges := distinctChargeLabels(data)
+	allRoles := distinctChargeRoles(data)
+	allLocations := distinctChargeLocations(data)
+
+	// Parse multi-value filter params
+	selectedCharges := c.QueryParams()["charge"]
+	selectedRoles := c.QueryParams()["role"]
+	selectedLocations := c.QueryParams()["location"]
+	selectedEmpTypes := c.QueryParams()["empType"]
+
+	// Apply in-memory filters
+	filtered := applyChargeFilters(data, selectedCharges, selectedRoles, selectedLocations, selectedEmpTypes)
+
+	// Get grouping options from query params.
+	// groupByCharge and groupByRole default to true on initial load (no _f sentinel).
+	formSubmitted := c.QueryParam("_f") == "1"
 	groupByDate := c.QueryParam("groupByDate") == "true"
-	groupByCharge := c.QueryParam("groupByCharge") != "false" // Default to true
+	groupByCharge := !formSubmitted || c.QueryParam("groupByCharge") == "true"
 	groupByEmployee := c.QueryParam("groupByEmployee") == "true"
-	groupByRole := c.QueryParam("groupByRole") != "false" // Default to true
+	groupByRole := !formSubmitted || c.QueryParam("groupByRole") == "true"
 	groupByLocation := c.QueryParam("groupByLocation") == "true"
 
-	if wantsHTML(c) {
-		return pages.ProjectChargeHoursPage(data, groupByDate, groupByEmployee, groupByRole, groupByCharge, groupByLocation).Render(c.Request().Context(), c.Response().Writer)
+	filterState := pages.ChargeFilterState{
+		FromMonth:    fromYearMonth,
+		ToMonth:      toYearMonth,
+		Charges:      selectedCharges,
+		Roles:        selectedRoles,
+		Locations:    selectedLocations,
+		EmpTypes:     selectedEmpTypes,
+		AllCharges:   allCharges,
+		AllRoles:     allRoles,
+		AllLocations: allLocations,
 	}
 
-	return c.JSON(http.StatusOK, data)
+	if wantsHTML(c) {
+		return pages.ProjectChargeHoursPage(filtered, filterState, groupByDate, groupByEmployee, groupByRole, groupByCharge, groupByLocation).Render(c.Request().Context(), c.Response().Writer)
+	}
+
+	return c.JSON(http.StatusOK, filtered)
 }
 
 func (h *Handler) GetProjectChargeHoursCSV(c echo.Context) error {
-	data, err := h.repo.ProjectChargeHours()
+	fromMonth := c.QueryParam("from")
+	toMonth := c.QueryParam("to")
+	data, err := h.repo.ProjectChargeHours(fromMonth, toMonth)
 	if err != nil {
 		h.logger.Error("error fetching project charge hours", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch project charge hours")

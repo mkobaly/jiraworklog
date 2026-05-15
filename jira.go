@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -26,7 +25,7 @@ type JiraReader interface {
 
 	Changelog(id int, startAt int) (Changelog, error)
 	GetJiraUser() (JiraUser, error)
-	GetTimezone() *time.Location
+	GetTimezone() (*time.Location, error)
 }
 
 type Jira struct {
@@ -142,6 +141,9 @@ func (j *Jira) Issue(idOrKey string) (Issue, error) {
 		if resp.StatusCode == 404 {
 			return issue, ErrIssueNotFound
 		}
+		if resp.StatusCode == 410 {
+			return issue, ErrIssueNotFound
+		}
 
 		return issue, fmt.Errorf("Not 200 response %d", resp.StatusCode)
 	}
@@ -188,6 +190,8 @@ func (j *Jira) IssuesUpdated(timeStart string, timeEnd string, nextPageToken str
 	return issuesUpdated, nil
 }
 
+// BulkFetchIssues will fetch multiple jira issues at one time
+// WARNING: This fails silently when you don't have permissions. It returns a 200 result with zero records.
 func (j *Jira) BulkFetchIssues(idOrKeys []string) ([]Issue, error) {
 	issues := []Issue{}
 
@@ -281,23 +285,23 @@ func (j *Jira) GetJiraUser() (JiraUser, error) {
 	return user, nil
 }
 
-func (j *Jira) GetTimezone() *time.Location {
+func (j *Jira) GetTimezone() (*time.Location, error) {
 	j.mu.Lock()
 	defer j.mu.Unlock()
 	if j.timezone == nil {
 		user, err := j.GetJiraUser()
 		if err != nil {
-			slog.Error("error getting jira user. Needed to fetch timezone", slog.Any("error", err))
-			return time.Local
+			//slog.Error("error getting jira user. Needed to fetch timezone", slog.Any("error", err))
+			return time.Local, err
 		}
 		tz, err := time.LoadLocation(user.TimeZone)
 		if err != nil {
-			slog.Error("error loading location from jira user timezone. Needed to fetch timezone", slog.String("timezone", user.TimeZone))
-			return time.Local
+			//slog.Error("error loading location from jira user timezone. Needed to fetch timezone", slog.String("timezone", user.TimeZone))
+			return time.Local, err
 		}
 		j.timezone = tz
 	}
-	return j.timezone
+	return j.timezone, nil
 }
 
 type UpdatedWorklogs struct {
