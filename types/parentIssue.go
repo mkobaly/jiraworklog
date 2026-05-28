@@ -383,11 +383,11 @@ func projectType(name string) string {
 	case "2":
 		return "Maintenance"
 	case "3":
-		return "Research"
+		return "Customer Support / Bug Fix"
 	case "4":
-		return "Customization"
+		return "Technical Debt"
 	case "5":
-		return "Non-Recoverable"
+		return "Research / Non-Recoverable"
 	default:
 		return "UNKNOWN"
 	}
