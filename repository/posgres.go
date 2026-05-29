@@ -1163,6 +1163,11 @@ func (s *Postgres) ManagerMetrics(team string, fromMonth, toMonth string) (types
 		return data, err
 	}
 
+	data.QAvsEngHours, err = s.qaVsEngHours(team, fromMonth, toMonth)
+	if err != nil {
+		return data, err
+	}
+
 	return data, nil
 }
 
@@ -1392,6 +1397,52 @@ func (s *Postgres) statusBounce(team string, fromMonth, toMonth string) ([]types
 			total_issues
 		FROM per_month
 		ORDER BY year_month`
+
+	err := s.DB.Select(&result, query, team, from, to)
+	return result, err
+}
+
+// qaVsEngHours returns the monthly ratio of QA hours to Eng hours for the
+// team's issues (worklog.date month bucketing). Numerator = QA-role hours,
+// Denominator = Dev-role hours.
+func (s *Postgres) qaVsEngHours(team string, fromMonth, toMonth string) ([]types.HoursRatioPoint, error) {
+	result := []types.HoursRatioPoint{}
+	from, to := s.calculateDateRange(fromMonth, toMonth)
+
+	query := `
+		WITH months AS (
+			SELECT to_char(gs, 'YYYY-MM') AS year_month
+			FROM generate_series(
+				date_trunc('month', $2::timestamptz),
+				date_trunc('month', $3::timestamptz) - INTERVAL '1 day',
+				'1 month'::interval
+			) gs
+		),
+		hours AS (
+			SELECT
+				to_char(w.date, 'YYYY-MM') AS year_month,
+				SUM(CASE WHEN p.role = 'qa'  THEN w.timespenthours ELSE 0 END)::float8 AS qa_hours,
+				SUM(CASE WHEN p.role = 'dev' THEN w.timespenthours ELSE 0 END)::float8 AS dev_hours
+			FROM worklog w
+			JOIN issue i  ON i.id = w.issueid
+			LEFT JOIN people p ON p.name = w.author
+			WHERE i.project = $1
+			AND w.date >= $2::timestamptz
+			AND w.date <  $3::timestamptz
+			GROUP BY to_char(w.date, 'YYYY-MM')
+		)
+		SELECT
+			m.year_month,
+			COALESCE(h.qa_hours, 0)  AS numerator_hours,
+			COALESCE(h.dev_hours, 0) AS denominator_hours,
+			CASE
+				WHEN COALESCE(h.dev_hours, 0) > 0
+				THEN h.qa_hours / h.dev_hours
+				ELSE 0
+			END AS ratio
+		FROM months m
+		LEFT JOIN hours h ON h.year_month = m.year_month
+		ORDER BY m.year_month`
 
 	err := s.DB.Select(&result, query, team, from, to)
 	return result, err

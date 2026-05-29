@@ -369,6 +369,22 @@ func TestManagerMetricsStatusBounce(t *testing.T) {
 	}
 }
 
+func TestManagerMetricsQAvsEngHours(t *testing.T) {
+	cfg, err := GetTestConfig()
+	require.NoError(t, err)
+	repo, err := repository.NewPostgresRepo(cfg)
+	require.NoError(t, err)
+
+	data, err := repo.ManagerMetrics("SYM", "", "")
+	require.NoError(t, err)
+	require.NotNil(t, data.QAvsEngHours)
+	for _, p := range data.QAvsEngHours {
+		require.GreaterOrEqual(t, p.Numerator, 0.0)
+		require.GreaterOrEqual(t, p.Denominator, 0.0)
+		require.GreaterOrEqual(t, p.Ratio, 0.0)
+	}
+}
+
 func TestMonthlyTeamMetricsStability(t *testing.T) {
 	cfg, err := GetTestConfig()
 	require.NoError(t, err)
