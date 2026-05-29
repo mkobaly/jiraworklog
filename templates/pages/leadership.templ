@@ -1,6 +1,7 @@
 package pages
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -36,6 +37,13 @@ templ kpiRow(label string, current []types.MonthlyTeamMetrics, prior []types.Mon
 						</span>
 						@arrowCell(cur, priorOrEmpty(prior, i), metricKey, lowerIsBetter)
 					</div>
+					<canvas
+						data-spark-team={ teamFor(current, i) }
+						data-spark-metric={ metricKey }
+						class="mt-1 inline-block"
+						width="80"
+						height="20"
+					></canvas>
 					if metricKey == "cycle" {
 						<div class="text-[10px] text-gray-400">{ sparsenessNote(cur) }</div>
 					}
@@ -121,6 +129,9 @@ templ LeadershipDashboard(rows []types.MonthlyTeamMetrics, teams []string, selec
 					<h2 class="text-lg font-semibold text-gray-700 mb-3">Stability (Customer Bugs)</h2>
 					<p class="text-sm text-gray-500">Per-team stability charts go here.</p>
 				</div>
+
+				<div id="sparklineData" data-series={ sparklineSeries(rows, teams) } style="display:none;"></div>
+				@sparklineBootstrapScript()
 			}
 
 			<!-- Footer caveat -->
@@ -242,4 +253,67 @@ func priorOrEmpty(prior []types.MonthlyTeamMetrics, i int) types.MonthlyTeamMetr
 		return prior[i]
 	}
 	return types.MonthlyTeamMetrics{}
+}
+
+// sparklineSeries pivots all 13-month rows into per-(team,metric) numeric
+// series for client-side rendering. Returns a JSON blob.
+func sparklineSeries(rows []types.MonthlyTeamMetrics, teams []string) string {
+	metrics := []string{"cycle", "throughput", "flow", "failedqa", "escape"}
+	out := map[string]map[string][]float64{}
+	for _, m := range metrics {
+		out[m] = map[string][]float64{}
+		for _, t := range teams {
+			out[m][t] = []float64{}
+		}
+	}
+	// rows are ordered (team, year_month asc). Walk and append.
+	for _, r := range rows {
+		out["cycle"][r.Team]      = append(out["cycle"][r.Team], r.MedianCycleTimeSecs/86400.0)
+		out["throughput"][r.Team] = append(out["throughput"][r.Team], float64(r.ClosedIssueCount))
+		out["flow"][r.Team]       = append(out["flow"][r.Team], r.FlowEfficiencyPct)
+		out["failedqa"][r.Team]   = append(out["failedqa"][r.Team], r.FailedQARatioPct)
+		out["escape"][r.Team]     = append(out["escape"][r.Team], r.DefectEscapeRatePct)
+	}
+	b, _ := json.Marshal(out)
+	return string(b)
+}
+
+func teamFor(current []types.MonthlyTeamMetrics, i int) string {
+	if i < len(current) {
+		return current[i].Team
+	}
+	return ""
+}
+
+templ sparklineBootstrapScript() {
+	<script>
+		(function() {
+			const blob = JSON.parse(document.getElementById('sparklineData').dataset.series || '{}');
+			document.querySelectorAll('canvas[data-spark-team]').forEach(function(canvas) {
+				const team = canvas.dataset.sparkTeam;
+				const metric = canvas.dataset.sparkMetric;
+				const series = (blob[metric] || {})[team] || [];
+				new Chart(canvas, {
+					type: 'line',
+					data: {
+						labels: series.map(function(_, i) { return i; }),
+						datasets: [{
+							data: series,
+							borderColor: '#3b82f6',
+							borderWidth: 1.5,
+							pointRadius: 0,
+							tension: 0.35,
+							fill: false,
+						}],
+					},
+					options: {
+						responsive: false,
+						animation: false,
+						plugins: { legend: { display: false }, tooltip: { enabled: false } },
+						scales: { x: { display: false }, y: { display: false } },
+					},
+				});
+			});
+		})();
+	</script>
 }
