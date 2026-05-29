@@ -1148,6 +1148,11 @@ func (s *Postgres) ManagerMetrics(team string, fromMonth, toMonth string) (types
 		return data, err
 	}
 
+	data.AgingWIPItems, err = s.agingWIP(team, fromMonth, toMonth)
+	if err != nil {
+		return data, err
+	}
+
 	return data, nil
 }
 
@@ -1219,6 +1224,71 @@ func (s *Postgres) wipSeries(team string, fromMonth, toMonth string) ([]types.WI
 			AND (ss.dateended IS NULL OR ss.dateended::date > d.day)
 		GROUP BY d.day
 		ORDER BY d.day`
+
+	err := s.DB.Select(&result, query, team, from, to)
+	return result, err
+}
+
+// agingWIP returns the team's currently open issues in Dev or QA whose
+// time-in-current-status exceeds the team's 85th-percentile cycle time over
+// the last 13 months. Used by the Aging WIP list on the manager page.
+// Returns at most 20 rows, sorted by days_in_status DESC.
+func (s *Postgres) agingWIP(team string, fromMonth, toMonth string) ([]types.AgingWIPItem, error) {
+	result := []types.AgingWIPItem{}
+	from, to := s.calculateDateRange(fromMonth, toMonth)
+
+	query := `
+		WITH p85_cycle AS (
+			-- 85th-percentile cycle time for the team over the last 13 months
+			SELECT COALESCE(
+				PERCENTILE_CONT(0.85) WITHIN GROUP (ORDER BY ct.total_secs),
+				14 * 86400  -- fallback if no closed issues: 14 days
+			) AS p85_secs
+			FROM (
+				SELECT
+					ss.issueid,
+					SUM(ss.durationseconds)::float8 AS total_secs
+				FROM status_stints ss
+				JOIN issue i ON i.id = ss.issueid
+				JOIN (
+					SELECT ss2.issueid, MIN(ss2.datestarted) AS close_at
+					FROM status_stints ss2
+					JOIN issue i2 ON i2.id = ss2.issueid
+					WHERE ss2.status IN ` + doneStatuses + `
+					AND i2.project = $1
+					AND i2.type IN ` + closeableTypes + `
+					GROUP BY ss2.issueid
+				) closed ON closed.issueid = ss.issueid
+				WHERE ss.status IN ` + devQAStatuses + `
+				AND i.project = $1
+				AND i.type IN ` + closeableTypes + `
+				AND closed.close_at >= $2::timestamptz
+				AND closed.close_at <  $3::timestamptz
+				GROUP BY ss.issueid
+			) ct
+		),
+		current_stints AS (
+			-- Issues that are currently in a Dev/QA status (dateended IS NULL)
+			SELECT
+				i.key,
+				ss.status,
+				EXTRACT(EPOCH FROM (NOW() - ss.datestarted))::bigint AS current_secs
+			FROM status_stints ss
+			JOIN issue i ON i.id = ss.issueid
+			WHERE ss.dateended IS NULL
+			AND ss.status IN ` + devQAStatuses + `
+			AND i.project = $1
+			AND i.type IN ` + closeableTypes + `
+		)
+		SELECT
+			cs.key,
+			cs.status,
+			(cs.current_secs / 86400)::int AS days_in_status
+		FROM current_stints cs
+		CROSS JOIN p85_cycle p
+		WHERE cs.current_secs > p.p85_secs
+		ORDER BY cs.current_secs DESC
+		LIMIT 20`
 
 	err := s.DB.Select(&result, query, team, from, to)
 	return result, err

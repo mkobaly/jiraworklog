@@ -310,6 +310,33 @@ func TestManagerMetricsWIPSeries(t *testing.T) {
 	}
 }
 
+func TestManagerMetricsAgingWIP(t *testing.T) {
+	cfg, err := GetTestConfig()
+	require.NoError(t, err)
+	repo, err := repository.NewPostgresRepo(cfg)
+	require.NoError(t, err)
+
+	data, err := repo.ManagerMetrics("SYM", "", "")
+	require.NoError(t, err)
+	// AgingWIPItems may legitimately be empty (healthy team), but the field
+	// must be initialized (non-nil) after the query runs. Pre-implementation
+	// it will be nil.
+	require.NotNil(t, data.AgingWIPItems, "AgingWIPItems must be initialized")
+	require.LessOrEqual(t, len(data.AgingWIPItems), 20, "AgingWIP capped at top 20")
+	for _, item := range data.AgingWIPItems {
+		require.NotEmpty(t, item.Key)
+		require.NotEmpty(t, item.Status)
+		require.GreaterOrEqual(t, item.DaysInStatus, 0)
+	}
+	// Items must be sorted descending by DaysInStatus
+	for i := 1; i < len(data.AgingWIPItems); i++ {
+		require.GreaterOrEqual(t,
+			data.AgingWIPItems[i-1].DaysInStatus,
+			data.AgingWIPItems[i].DaysInStatus,
+			"AgingWIP must be sorted by DaysInStatus desc")
+	}
+}
+
 func TestMonthlyTeamMetricsStability(t *testing.T) {
 	cfg, err := GetTestConfig()
 	require.NoError(t, err)
