@@ -8,6 +8,63 @@ import (
 	"github.com/mkobaly/jiraworklog/types"
 )
 
+// kpiRow renders one metric row across all teams. metricKey controls
+// formatting (e.g. "cycle" → days, others → %/count). lowerIsBetter is
+// passed to directionArrow.
+templ kpiRow(label string, current []types.MonthlyTeamMetrics, prior []types.MonthlyTeamMetrics, metricKey string, lowerIsBetter bool) {
+	<tr>
+		<td class="py-3 pr-4 font-medium text-gray-700">{ label }</td>
+		for i, cur := range current {
+			<td class="py-3 px-4 text-center align-top">
+				if !cur.HasClosedIssues() && (metricKey == "cycle" || metricKey == "throughput" || metricKey == "flow" || metricKey == "failedqa") {
+					<span class="text-gray-300">—</span>
+				} else {
+					<div class="flex items-center justify-center gap-1.5">
+						<span class="text-lg font-semibold text-gray-800">
+							switch metricKey {
+								case "cycle":
+									{ fmtDays(cur.MedianCycleTimeSecs) }
+								case "throughput":
+									{ fmtCount(cur.ClosedIssueCount) }
+								case "flow":
+									{ fmtPct(cur.FlowEfficiencyPct) }
+								case "failedqa":
+									{ fmtPct(cur.FailedQARatioPct) }
+								case "escape":
+									{ fmtPct(cur.DefectEscapeRatePct) }
+							}
+						</span>
+						@arrowCell(cur, priorOrEmpty(prior, i), metricKey, lowerIsBetter)
+					</div>
+					if metricKey == "cycle" {
+						<div class="text-[10px] text-gray-400">{ sparsenessNote(cur) }</div>
+					}
+				}
+			</td>
+		}
+	</tr>
+}
+
+templ arrowCell(cur types.MonthlyTeamMetrics, prior types.MonthlyTeamMetrics, metricKey string, lowerIsBetter bool) {
+	{{
+		var c, p float64
+		switch metricKey {
+		case "cycle":
+			c, p = cur.MedianCycleTimeSecs, prior.MedianCycleTimeSecs
+		case "throughput":
+			c, p = float64(cur.ClosedIssueCount), float64(prior.ClosedIssueCount)
+		case "flow":
+			c, p = cur.FlowEfficiencyPct, prior.FlowEfficiencyPct
+		case "failedqa":
+			c, p = cur.FailedQARatioPct, prior.FailedQARatioPct
+		case "escape":
+			c, p = cur.DefectEscapeRatePct, prior.DefectEscapeRatePct
+		}
+		arrow, color := directionArrow(c, p, lowerIsBetter)
+	}}
+	<span class={ "text-sm font-bold", color }>{ arrow }</span>
+}
+
 // LeadershipDashboard renders the all-teams monthly KPI comparison grid.
 // `rows` is expected to contain (team × year_month) rows for a 13-month
 // window, ordered by (team, year_month). `selectedMonth` is the YYYY-MM the
@@ -36,9 +93,27 @@ templ LeadershipDashboard(rows []types.MonthlyTeamMetrics, teams []string, selec
 					No monthly data yet. Sync must have run at least once.
 				</div>
 			} else {
-				<!-- KPI grid placeholder (Task 12 replaces this) -->
-				<div class="bg-white rounded-lg shadow p-6">
-					<p class="text-sm text-gray-500">{ fmt.Sprintf("Loaded %d rows for %d teams", len(rows), len(teams)) }</p>
+				<!-- KPI grid -->
+				<div class="bg-white rounded-lg shadow p-6 overflow-x-auto">
+					<table class="min-w-full text-sm">
+						<thead>
+							<tr class="text-left text-gray-500 uppercase tracking-wide text-xs">
+								<th class="py-2 pr-4">Metric</th>
+								for _, t := range teams {
+									<th class="py-2 px-4 text-center">
+										<a href={ templ.SafeURL("/dashboard/manager?team=" + t) } class="text-blue-600 hover:underline">{ t }</a>
+									</th>
+								}
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-gray-100">
+							@kpiRow("Cycle Time (median)", pickMonthRows(rows, teams, selectedMonth), priorMonthRows(rows, teams, selectedMonth), "cycle", true)
+							@kpiRow("Throughput", pickMonthRows(rows, teams, selectedMonth), priorMonthRows(rows, teams, selectedMonth), "throughput", false)
+							@kpiRow("Flow Efficiency", pickMonthRows(rows, teams, selectedMonth), priorMonthRows(rows, teams, selectedMonth), "flow", false)
+							@kpiRow("Failed QA Ratio", pickMonthRows(rows, teams, selectedMonth), priorMonthRows(rows, teams, selectedMonth), "failedqa", true)
+							@kpiRow("Defect Escape Rate", pickMonthRows(rows, teams, selectedMonth), priorMonthRows(rows, teams, selectedMonth), "escape", true)
+						</tbody>
+					</table>
 				</div>
 
 				<!-- Stability strip placeholder (Task 14 replaces this) -->
@@ -63,4 +138,108 @@ func formatMonthOption(yyyymm string) string {
 		return yyyymm
 	}
 	return t.Format("January 2006")
+}
+
+// pickMonthRows returns the rows whose YearMonth equals selectedMonth, in the
+// same team order as `teams`.
+func pickMonthRows(rows []types.MonthlyTeamMetrics, teams []string, selectedMonth string) []types.MonthlyTeamMetrics {
+	byTeam := map[string]types.MonthlyTeamMetrics{}
+	for _, r := range rows {
+		if r.YearMonth == selectedMonth {
+			byTeam[r.Team] = r
+		}
+	}
+	out := make([]types.MonthlyTeamMetrics, 0, len(teams))
+	for _, t := range teams {
+		out = append(out, byTeam[t])
+	}
+	return out
+}
+
+// priorMonthRows returns the rows for the month immediately preceding
+// selectedMonth, ordered by `teams`. Used for direction-arrow comparison.
+func priorMonthRows(rows []types.MonthlyTeamMetrics, teams []string, selectedMonth string) []types.MonthlyTeamMetrics {
+	prior := priorYearMonth(selectedMonth)
+	byTeam := map[string]types.MonthlyTeamMetrics{}
+	for _, r := range rows {
+		if r.YearMonth == prior {
+			byTeam[r.Team] = r
+		}
+	}
+	out := make([]types.MonthlyTeamMetrics, 0, len(teams))
+	for _, t := range teams {
+		out = append(out, byTeam[t])
+	}
+	return out
+}
+
+func priorYearMonth(yyyymm string) string {
+	t, err := time.Parse("2006-01", yyyymm)
+	if err != nil {
+		return yyyymm
+	}
+	return t.AddDate(0, -1, 0).Format("2006-01")
+}
+
+// directionArrow returns (arrow_glyph, tailwind-class) comparing current vs
+// prior, where `lowerIsBetter` indicates whether a decrease is good (e.g.
+// cycle time). Threshold of 5% relative change is treated as flat.
+func directionArrow(current, prior float64, lowerIsBetter bool) (string, string) {
+	if prior == 0 && current == 0 {
+		return "▬", "text-gray-400"
+	}
+	var rel float64
+	if prior == 0 {
+		rel = 1.0
+	} else {
+		rel = (current - prior) / prior
+	}
+	if rel > -0.05 && rel < 0.05 {
+		return "▬", "text-gray-400"
+	}
+	improving := (rel < 0 && lowerIsBetter) || (rel > 0 && !lowerIsBetter)
+	if rel > 0 {
+		if improving {
+			return "▲", "text-green-600"
+		}
+		return "▲", "text-red-600"
+	}
+	if improving {
+		return "▼", "text-green-600"
+	}
+	return "▼", "text-red-600"
+}
+
+func fmtDays(secs float64) string {
+	if secs <= 0 {
+		return "—"
+	}
+	days := secs / 86400
+	return fmt.Sprintf("%.1fd", days)
+}
+
+func fmtPct(pct float64) string {
+	return fmt.Sprintf("%.0f%%", pct)
+}
+
+func fmtCount(n int) string {
+	if n == 0 {
+		return "—"
+	}
+	return fmt.Sprintf("%d", n)
+}
+
+// sparsenessNote returns a "* n=3" caveat when the closed-issue count is sparse.
+func sparsenessNote(r types.MonthlyTeamMetrics) string {
+	if r.IsSparseSample() {
+		return fmt.Sprintf("* n=%d", r.ClosedIssueCount)
+	}
+	return ""
+}
+
+func priorOrEmpty(prior []types.MonthlyTeamMetrics, i int) types.MonthlyTeamMetrics {
+	if i < len(prior) {
+		return prior[i]
+	}
+	return types.MonthlyTeamMetrics{}
 }
