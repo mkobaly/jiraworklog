@@ -9,6 +9,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/mkobaly/jiraworklog"
 	"github.com/mkobaly/jiraworklog/types"
+	"golang.org/x/sync/errgroup"
 )
 
 // SQL is the SQL Server repository
@@ -1121,53 +1122,85 @@ func (s *Postgres) MonthlyTeamMetrics(teams []string, fromMonth, toMonth string)
 }
 
 // ManagerMetrics — see repository/repo.go for contract.
+//
+// The 8 sub-queries (MonthlyTeamMetrics + 7 manager-only) are independent —
+// none reads what another writes — so we run them concurrently via
+// errgroup. Each writes to a different field of `data`, which is safe in
+// Go (no shared memory location). errgroup returns the first error if any
+// sub-query fails, and waits for all in-flight ones to finish.
 func (s *Postgres) ManagerMetrics(team string, fromMonth, toMonth string) (types.ManagerMetricsData, error) {
 	data := types.ManagerMetricsData{Team: team}
 
-	// Reuse the leadership-tier monthly query, filtered to one team.
-	rows, err := s.MonthlyTeamMetrics([]string{team}, fromMonth, toMonth)
-	if err != nil {
+	var g errgroup.Group
+
+	g.Go(func() error {
+		rows, err := s.MonthlyTeamMetrics([]string{team}, fromMonth, toMonth)
+		if err != nil {
+			return err
+		}
+		data.LeadershipMonthly = rows
+		return nil
+	})
+	g.Go(func() error {
+		v, err := s.timeInStatus(team, fromMonth, toMonth)
+		if err != nil {
+			return err
+		}
+		data.TimeInStatus = v
+		return nil
+	})
+	g.Go(func() error {
+		v, err := s.wipSeries(team, fromMonth, toMonth)
+		if err != nil {
+			return err
+		}
+		data.WIPSeries = v
+		return nil
+	})
+	g.Go(func() error {
+		v, err := s.agingWIP(team, fromMonth, toMonth)
+		if err != nil {
+			return err
+		}
+		data.AgingWIPItems = v
+		return nil
+	})
+	g.Go(func() error {
+		v, err := s.reworkCycles(team, fromMonth, toMonth)
+		if err != nil {
+			return err
+		}
+		data.ReworkCycles = v
+		return nil
+	})
+	g.Go(func() error {
+		v, err := s.statusBounce(team, fromMonth, toMonth)
+		if err != nil {
+			return err
+		}
+		data.StatusBounce = v
+		return nil
+	})
+	g.Go(func() error {
+		v, err := s.qaVsEngHours(team, fromMonth, toMonth)
+		if err != nil {
+			return err
+		}
+		data.QAvsEngHours = v
+		return nil
+	})
+	g.Go(func() error {
+		v, err := s.bugVsForwardHours(team, fromMonth, toMonth)
+		if err != nil {
+			return err
+		}
+		data.BugvsForwardHours = v
+		return nil
+	})
+
+	if err := g.Wait(); err != nil {
 		return data, err
 	}
-	data.LeadershipMonthly = rows
-
-	// Subsequent tasks populate the manager-only sub-fields here.
-
-	data.TimeInStatus, err = s.timeInStatus(team, fromMonth, toMonth)
-	if err != nil {
-		return data, err
-	}
-
-	data.WIPSeries, err = s.wipSeries(team, fromMonth, toMonth)
-	if err != nil {
-		return data, err
-	}
-
-	data.AgingWIPItems, err = s.agingWIP(team, fromMonth, toMonth)
-	if err != nil {
-		return data, err
-	}
-
-	data.ReworkCycles, err = s.reworkCycles(team, fromMonth, toMonth)
-	if err != nil {
-		return data, err
-	}
-
-	data.StatusBounce, err = s.statusBounce(team, fromMonth, toMonth)
-	if err != nil {
-		return data, err
-	}
-
-	data.QAvsEngHours, err = s.qaVsEngHours(team, fromMonth, toMonth)
-	if err != nil {
-		return data, err
-	}
-
-	data.BugvsForwardHours, err = s.bugVsForwardHours(team, fromMonth, toMonth)
-	if err != nil {
-		return data, err
-	}
-
 	return data, nil
 }
 
