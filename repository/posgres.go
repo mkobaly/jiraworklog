@@ -987,6 +987,35 @@ func (s *Postgres) MonthlyTeamMetrics(teams []string, fromMonth, toMonth string)
 			FROM status_stints ss
 			JOIN issue_close_month icm ON icm.issueid = ss.issueid
 			GROUP BY icm.project, icm.year_month
+		),
+		closed_stories AS (
+			SELECT
+				icm.project   AS team,
+				icm.year_month,
+				icm.issueid
+			FROM issue_close_month icm
+			JOIN issue i ON i.id = icm.issueid
+			WHERE i.type = 'Story'
+		),
+		failed_qa_stories AS (
+			SELECT DISTINCT cs.team, cs.year_month, cs.issueid
+			FROM closed_stories cs
+			JOIN issue_transition it ON it.issueid = cs.issueid
+			WHERE it.tostatus = 'Failed QA'
+		),
+		failed_qa_ratio AS (
+			SELECT
+				cs.team,
+				cs.year_month,
+				CASE
+					WHEN COUNT(DISTINCT cs.issueid) > 0
+					THEN 100.0 * COUNT(DISTINCT fqs.issueid)::float8 / COUNT(DISTINCT cs.issueid)::float8
+					ELSE 0
+				END AS failed_qa_ratio_pct
+			FROM closed_stories cs
+			LEFT JOIN failed_qa_stories fqs
+			  ON fqs.team = cs.team AND fqs.year_month = cs.year_month AND fqs.issueid = cs.issueid
+			GROUP BY cs.team, cs.year_month
 		)
 		SELECT
 			tl.team,
@@ -994,7 +1023,7 @@ func (s *Postgres) MonthlyTeamMetrics(teams []string, fromMonth, toMonth string)
 			COALESCE(ct.median_cycle_time_secs, 0)::float8 AS median_cycle_time_secs,
 			COALESCE(th.closed_issue_count, 0)   AS closed_issue_count,
 			COALESCE(fe.flow_efficiency_pct, 0)::float8 AS flow_efficiency_pct,
-			0::float8                            AS failed_qa_ratio_pct,
+			COALESCE(fqr.failed_qa_ratio_pct, 0)::float8 AS failed_qa_ratio_pct,
 			0::float8                            AS defect_escape_rate_pct,
 			0                                    AS stability_new_count,
 			0                                    AS stability_closed_count,
@@ -1007,6 +1036,8 @@ func (s *Postgres) MonthlyTeamMetrics(teams []string, fromMonth, toMonth string)
 		  ON ct.team = tl.team AND ct.year_month = m.year_month
 		LEFT JOIN flow_efficiency fe
 		  ON fe.team = tl.team AND fe.year_month = m.year_month
+		LEFT JOIN failed_qa_ratio fqr
+		  ON fqr.team = tl.team AND fqr.year_month = m.year_month
 		ORDER BY tl.team, m.year_month`
 
 	err := s.DB.Select(&result, query, teams, from, to)

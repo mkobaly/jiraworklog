@@ -218,3 +218,18 @@ func TestMonthlyTeamMetricsFlowEfficiency(t *testing.T) {
 		}
 	}
 }
+
+func TestMonthlyTeamMetricsFailedQARatio(t *testing.T) {
+	cfg, err := GetTestConfig()
+	require.NoError(t, err)
+	repo, err := repository.NewPostgresRepo(cfg)
+	require.NoError(t, err)
+
+	rows, err := repo.MonthlyTeamMetrics([]string{"IDM", "SYM", "ESG"}, "", "")
+	require.NoError(t, err)
+
+	for _, r := range rows {
+		require.GreaterOrEqual(t, r.FailedQARatioPct, 0.0)
+		require.LessOrEqual(t, r.FailedQARatioPct, 100.0)
+	}
+}
