@@ -214,32 +214,7 @@ func (j *JiraSyncIssuesJob) syncUpdatedIssues(startDate, endDate int64, tz *time
 }
 
 func (j *JiraSyncIssuesJob) fetchIssueChangelog(issueId int) ([]types.ChangelogStatus, error) {
-	changelog := []types.ChangelogStatus{}
-	startAt := 0
-	for {
-		cl, err := j.jira.Changelog(issueId, startAt)
-		if err != nil {
-			return nil, err
-		}
-		changelog = append(changelog, types.ToChangelogStatus(cl, issueId)...)
-		if cl.IsLast {
-			break
-		}
-		// Advance by however many items this page returned. The previous
-		// implementation set startAt = cl.Total + startAt - 1, which on a
-		// 106-entry changelog jumped from 0 to 105 after the first call,
-		// silently skipping items 100–104. If any of those skipped items
-		// were status transitions, status_stints never sees them and the
-		// issue's "current" status in our DB lags reality.
-		advance := len(cl.Values)
-		if advance == 0 {
-			// Defensive: avoid infinite loop if Jira returns no items but
-			// somehow also isLast=false. Bail out.
-			break
-		}
-		startAt += advance
-	}
-	return changelog, nil
+	return fetchIssueChangelogPaged(j.jira, issueId)
 }
 
 func (j *JiraSyncIssuesJob) processDeletes(threshold time.Duration) error {

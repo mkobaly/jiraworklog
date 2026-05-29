@@ -64,6 +64,14 @@ type Repo interface {
 
 	BulkInsertChangelogs(transitions []types.ChangelogStatus) error
 	RefreshStatusStints(issueID int) error
+
+	// IssuesWithStaleStints returns the IDs of issues whose `issue.status`
+	// disagrees with the status of their most recent `status_stints` row.
+	// Excludes issues updated within `notUpdatedSince` (to avoid racing
+	// with the regular sync job, which would also be trying to reconcile
+	// recently-touched issues). Capped at `limit` to keep each backfill
+	// pass bounded.
+	IssuesWithStaleStints(notUpdatedSince time.Duration, limit int) ([]int, error)
 	ProjectKPIs(epicOrVersion string) (types.ProjectKPIData, error)
 
 	// MonthlyTeamMetrics returns one row per (team, year_month) for the leadership

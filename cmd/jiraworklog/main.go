@@ -76,7 +76,8 @@ func main() {
 	//List out all jobs we need here to run
 	j1 := job.NewJiraSyncWorklogsJob(cfg, jira, repo)
 	j2 := job.NewJJiraSyncIssuesJob(cfg, jira, repo)
-	worker := jiraworklog.NewWorker(logger, j1, j2)
+	j3 := job.NewStatusStintsBackfillJob(cfg, jira, repo)
+	worker := jiraworklog.NewWorker(logger, j1, j2, j3)
 	go worker.Start()
 
 	// Initialize Echo

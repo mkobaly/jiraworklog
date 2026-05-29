@@ -372,6 +372,33 @@ func (s *Postgres) ProjectTimeTracking(fixedVersion string) ([]types.ProjectTime
 	return result, err
 }
 
+// IssuesWithStaleStints — see repository/repo.go for contract.
+func (s *Postgres) IssuesWithStaleStints(notUpdatedSince time.Duration, limit int) ([]int, error) {
+	cutoff := time.Now().Add(-notUpdatedSince)
+	result := []int{}
+	// Compare each issue.status against the status of its most recent
+	// status_stints row. DISTINCT ON (issueid) ORDER BY datestarted DESC
+	// gives us the latest stint per issue. Issues with no stints don't
+	// appear (inner join) — those are an absent-stints problem, separate
+	// from drift, and outside the backfill job's scope.
+	err := s.DB.Select(&result, `
+		WITH latest_stint AS (
+			SELECT DISTINCT ON (issueid)
+				issueid,
+				status
+			FROM status_stints
+			ORDER BY issueid, datestarted DESC
+		)
+		SELECT i.id
+		FROM issue i
+		JOIN latest_stint ls ON ls.issueid = i.id
+		WHERE i.status <> ls.status
+		AND i.updatedate < $1
+		ORDER BY i.updatedate ASC
+		LIMIT $2`, cutoff, limit)
+	return result, err
+}
+
 func (s *Postgres) MissingIssues() ([]int, error) {
 	result := []int{}
 	err := s.DB.Select(&result, `	
