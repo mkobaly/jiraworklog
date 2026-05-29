@@ -98,9 +98,11 @@ templ ManagerDashboard(data types.ManagerMetricsData, teams []string) {
 			<!-- Quality section (Rework, Bounce, QA/Eng, Bug/Fwd cards) -->
 			<section>
 				<h2 class="text-lg font-bold text-gray-800 mb-3">Quality</h2>
-				<div class="bg-white rounded-lg shadow p-6 text-sm text-gray-500">
-					{ fmt.Sprintf("Quality section — %d rework points, %d bounce points, %d QA/Eng points, %d Bug/Fwd points",
-						len(data.ReworkCycles), len(data.StatusBounce), len(data.QAvsEngHours), len(data.BugvsForwardHours)) }
+				<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+					@mgrKpiCard("Rework Cycles", mgrFmtRatio(currentMgrRework(data)), "mgr-rework")
+					@mgrKpiCard("Status Bounce", mgrFmtPct(currentMgrBounce(data)), "mgr-bounce")
+					@mgrKpiCard("QA hrs / Eng hrs", mgrFmtRatio(currentMgrQAvsEng(data)), "mgr-qaeng")
+					@mgrKpiCard("Bug hrs / Fwd-work hrs", mgrFmtRatio(currentMgrBugFwd(data)), "mgr-bugfwd")
 				</div>
 			</section>
 
@@ -123,6 +125,7 @@ templ ManagerDashboard(data types.ManagerMetricsData, teams []string) {
 			@mgrLeadershipChartsScript()
 			@mgrTimeInStatusScript()
 			@mgrWIPScript()
+			@mgrQualityChartsScript()
 		</div>
 	}
 }
@@ -325,6 +328,88 @@ templ mgrWIPScript() {
 						y: { beginAtZero: true, ticks: { font: { size: 10 } } },
 					},
 				},
+			});
+		})();
+	</script>
+}
+
+func currentMgrRework(data types.ManagerMetricsData) float64 {
+	if len(data.ReworkCycles) == 0 {
+		return 0
+	}
+	return data.ReworkCycles[len(data.ReworkCycles)-1].AvgCycles
+}
+
+func currentMgrBounce(data types.ManagerMetricsData) float64 {
+	if len(data.StatusBounce) == 0 {
+		return 0
+	}
+	return data.StatusBounce[len(data.StatusBounce)-1].BouncePct
+}
+
+func currentMgrQAvsEng(data types.ManagerMetricsData) float64 {
+	if len(data.QAvsEngHours) == 0 {
+		return 0
+	}
+	return data.QAvsEngHours[len(data.QAvsEngHours)-1].Ratio
+}
+
+func currentMgrBugFwd(data types.ManagerMetricsData) float64 {
+	if len(data.BugvsForwardHours) == 0 {
+		return 0
+	}
+	return data.BugvsForwardHours[len(data.BugvsForwardHours)-1].Ratio
+}
+
+templ mgrQualityChartsScript() {
+	<script>
+		(function() {
+			const data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');
+			const series = {
+				'mgr-rework': {
+					labels: (data.ReworkCycles || []).map(function(p) { return p.YearMonth; }),
+					values: (data.ReworkCycles || []).map(function(p) { return p.AvgCycles; }),
+				},
+				'mgr-bounce': {
+					labels: (data.StatusBounce || []).map(function(p) { return p.YearMonth; }),
+					values: (data.StatusBounce || []).map(function(p) { return p.BouncePct; }),
+				},
+				'mgr-qaeng': {
+					labels: (data.QAvsEngHours || []).map(function(p) { return p.YearMonth; }),
+					values: (data.QAvsEngHours || []).map(function(p) { return p.Ratio; }),
+				},
+				'mgr-bugfwd': {
+					labels: (data.BugvsForwardHours || []).map(function(p) { return p.YearMonth; }),
+					values: (data.BugvsForwardHours || []).map(function(p) { return p.Ratio; }),
+				},
+			};
+			Object.keys(series).forEach(function(id) {
+				const canvas = document.getElementById(id);
+				if (!canvas) return;
+				new Chart(canvas, {
+					type: 'line',
+					data: {
+						labels: series[id].labels,
+						datasets: [{
+							data: series[id].values,
+							borderColor: '#8b5cf6',
+							backgroundColor: 'rgba(139,92,246,0.1)',
+							fill: true,
+							pointRadius: 0,
+							tension: 0.3,
+							borderWidth: 1.5,
+						}],
+					},
+					options: {
+						responsive: true,
+						maintainAspectRatio: false,
+						plugins: { legend: { display: false }, tooltip: { enabled: true } },
+						scales: {
+							x: { ticks: { font: { size: 8 }, maxRotation: 45, minRotation: 45 } },
+							y: { beginAtZero: true, ticks: { font: { size: 9 } } },
+						},
+					},
+				});
 			});
 		})();
 	</script>

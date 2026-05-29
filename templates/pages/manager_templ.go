@@ -265,17 +265,23 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</div></div></section><!-- Quality section (Rework, Bounce, QA/Eng, Bug/Fwd cards) --><section><h2 class=\"text-lg font-bold text-gray-800 mb-3\">Quality</h2><div class=\"bg-white rounded-lg shadow p-6 text-sm text-gray-500\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</div></div></section><!-- Quality section (Rework, Bounce, QA/Eng, Bug/Fwd cards) --><section><h2 class=\"text-lg font-bold text-gray-800 mb-3\">Quality</h2><div class=\"grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var13 string
-			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Quality section — %d rework points, %d bounce points, %d QA/Eng points, %d Bug/Fwd points",
-				len(data.ReworkCycles), len(data.StatusBounce), len(data.QAvsEngHours), len(data.BugvsForwardHours)))
+			templ_7745c5c3_Err = mgrKpiCard("Rework Cycles", mgrFmtRatio(currentMgrRework(data)), "mgr-rework").Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 103, Col: 106}
+				return templ_7745c5c3_Err
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
+			templ_7745c5c3_Err = mgrKpiCard("Status Bounce", mgrFmtPct(currentMgrBounce(data)), "mgr-bounce").Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = mgrKpiCard("QA hrs / Eng hrs", mgrFmtRatio(currentMgrQAvsEng(data)), "mgr-qaeng").Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = mgrKpiCard("Bug hrs / Fwd-work hrs", mgrFmtRatio(currentMgrBugFwd(data)), "mgr-bugfwd").Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -291,12 +297,12 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var14 string
-			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(mgrSerialize(data))
+			var templ_7745c5c3_Var13 string
+			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(mgrSerialize(data))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 122, Col: 54}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 124, Col: 54}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -313,6 +319,10 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 				return templ_7745c5c3_Err
 			}
 			templ_7745c5c3_Err = mgrWIPScript().Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = mgrQualityChartsScript().Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -349,9 +359,9 @@ func mgrHelpModal() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var15 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var15 == nil {
-			templ_7745c5c3_Var15 = templ.NopComponent
+		templ_7745c5c3_Var14 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var14 == nil {
+			templ_7745c5c3_Var14 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<div id=\"mgrHelpModal\" class=\"hidden fixed inset-0 z-50 flex items-center justify-center p-4\" onclick=\"if (event.target === this) this.classList.add('hidden')\"><div class=\"fixed inset-0 bg-black bg-opacity-50\"></div><div class=\"relative bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto\"><div class=\"sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between\"><h2 class=\"text-xl font-bold text-gray-800\">What these metrics mean</h2><button type=\"button\" onclick=\"document.getElementById('mgrHelpModal').classList.add('hidden')\" class=\"text-gray-400 hover:text-gray-700 text-2xl leading-none px-2\" aria-label=\"Close\">&times;</button></div><div class=\"px-6 py-5 space-y-6 text-sm text-gray-700\">Help content goes here (Task 18).</div></div></div>")
@@ -440,9 +450,9 @@ func mgrLeadershipChartsScript() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var16 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var16 == nil {
-			templ_7745c5c3_Var16 = templ.NopComponent
+		templ_7745c5c3_Var15 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var15 == nil {
+			templ_7745c5c3_Var15 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<script>\n\t\t(function() {\n\t\t\tconst data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');\n\t\t\tconst lm = data.LeadershipMonthly || [];\n\t\t\tconst labels = lm.map(function(r) { return r.YearMonth; });\n\t\t\tconst series = {\n\t\t\t\t'mgr-cycle':      lm.map(function(r) { return r.MedianCycleTimeSecs / 86400; }),\n\t\t\t\t'mgr-throughput': lm.map(function(r) { return r.ClosedIssueCount; }),\n\t\t\t\t'mgr-flow':       lm.map(function(r) { return r.FlowEfficiencyPct; }),\n\t\t\t\t'mgr-failedqa':   lm.map(function(r) { return r.FailedQARatioPct; }),\n\t\t\t};\n\t\t\tObject.keys(series).forEach(function(id) {\n\t\t\t\tconst canvas = document.getElementById(id);\n\t\t\t\tif (!canvas) return;\n\t\t\t\tnew Chart(canvas, {\n\t\t\t\t\ttype: 'bar',\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tlabels: labels,\n\t\t\t\t\t\tdatasets: [{\n\t\t\t\t\t\t\tdata: series[id],\n\t\t\t\t\t\t\tbackgroundColor: '#3b82f6',\n\t\t\t\t\t\t\tborderColor: '#1d4ed8',\n\t\t\t\t\t\t\tborderWidth: 1,\n\t\t\t\t\t\t}],\n\t\t\t\t\t},\n\t\t\t\t\toptions: {\n\t\t\t\t\t\tresponsive: true,\n\t\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\t\tplugins: { legend: { display: false }, tooltip: { enabled: true } },\n\t\t\t\t\t\tscales: {\n\t\t\t\t\t\t\tx: { ticks: { font: { size: 8 }, maxRotation: 45, minRotation: 45 } },\n\t\t\t\t\t\t\ty: { beginAtZero: true, ticks: { font: { size: 9 } } },\n\t\t\t\t\t\t},\n\t\t\t\t\t},\n\t\t\t\t});\n\t\t\t});\n\t\t})();\n\t</script>")
@@ -469,9 +479,9 @@ func mgrTimeInStatusScript() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var17 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var17 == nil {
-			templ_7745c5c3_Var17 = templ.NopComponent
+		templ_7745c5c3_Var16 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var16 == nil {
+			templ_7745c5c3_Var16 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<script>\n\t\t(function() {\n\t\t\tconst data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');\n\t\t\tconst tis = data.TimeInStatus || [];\n\t\t\t// Pivot tis into { months: [...], Dev: [...], QA: [...], Waiting: [...] }\n\t\t\tconst monthSet = new Set();\n\t\t\ttis.forEach(function(p) { monthSet.add(p.YearMonth); });\n\t\t\tconst months = Array.from(monthSet).sort();\n\t\t\tconst buckets = { Dev: {}, QA: {}, Waiting: {} };\n\t\t\ttis.forEach(function(p) { (buckets[p.Bucket] || {})[p.YearMonth] = p.AvgSecs / 86400; });\n\t\t\tconst dataFor = function(bucket) {\n\t\t\t\treturn months.map(function(m) { return buckets[bucket][m] || 0; });\n\t\t\t};\n\t\t\tconst canvas = document.getElementById('mgr-tis');\n\t\t\tif (!canvas) return;\n\t\t\tnew Chart(canvas, {\n\t\t\t\ttype: 'bar',\n\t\t\t\tdata: {\n\t\t\t\t\tlabels: months,\n\t\t\t\t\tdatasets: [\n\t\t\t\t\t\t{ label: 'Dev',     data: dataFor('Dev'),     backgroundColor: '#3b82f6' },\n\t\t\t\t\t\t{ label: 'QA',      data: dataFor('QA'),      backgroundColor: '#10b981' },\n\t\t\t\t\t\t{ label: 'Waiting', data: dataFor('Waiting'), backgroundColor: '#f59e0b' },\n\t\t\t\t\t],\n\t\t\t\t},\n\t\t\t\toptions: {\n\t\t\t\t\tresponsive: true,\n\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\tplugins: {\n\t\t\t\t\t\tlegend: { position: 'bottom', labels: { font: { size: 11 } } },\n\t\t\t\t\t\ttooltip: { callbacks: { label: function(ctx) { return ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + 'd'; } } },\n\t\t\t\t\t},\n\t\t\t\t\tscales: {\n\t\t\t\t\t\tx: { stacked: true, ticks: { font: { size: 10 } } },\n\t\t\t\t\t\ty: { stacked: true, beginAtZero: true, ticks: { font: { size: 10 }, callback: function(v) { return v + 'd'; } } },\n\t\t\t\t\t},\n\t\t\t\t},\n\t\t\t});\n\t\t})();\n\t</script>")
@@ -498,12 +508,69 @@ func mgrWIPScript() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var17 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var17 == nil {
+			templ_7745c5c3_Var17 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<script>\n\t\t(function() {\n\t\t\tconst data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');\n\t\t\tconst wip = data.WIPSeries || [];\n\t\t\tconst canvas = document.getElementById('mgr-wip');\n\t\t\tif (!canvas) return;\n\t\t\tnew Chart(canvas, {\n\t\t\t\ttype: 'line',\n\t\t\t\tdata: {\n\t\t\t\t\tlabels: wip.map(function(p) { return p.Day; }),\n\t\t\t\t\tdatasets: [{\n\t\t\t\t\t\tdata: wip.map(function(p) { return p.WIPCount; }),\n\t\t\t\t\t\tborderColor: '#6366f1',\n\t\t\t\t\t\tbackgroundColor: 'rgba(99,102,241,0.1)',\n\t\t\t\t\t\tfill: true,\n\t\t\t\t\t\tpointRadius: 0,\n\t\t\t\t\t\ttension: 0.25,\n\t\t\t\t\t\tborderWidth: 1.5,\n\t\t\t\t\t}],\n\t\t\t\t},\n\t\t\t\toptions: {\n\t\t\t\t\tresponsive: true,\n\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\tplugins: { legend: { display: false }, tooltip: { enabled: true } },\n\t\t\t\t\tscales: {\n\t\t\t\t\t\tx: { ticks: { font: { size: 9 }, maxTicksLimit: 13 } },\n\t\t\t\t\t\ty: { beginAtZero: true, ticks: { font: { size: 10 } } },\n\t\t\t\t\t},\n\t\t\t\t},\n\t\t\t});\n\t\t})();\n\t</script>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func currentMgrRework(data types.ManagerMetricsData) float64 {
+	if len(data.ReworkCycles) == 0 {
+		return 0
+	}
+	return data.ReworkCycles[len(data.ReworkCycles)-1].AvgCycles
+}
+
+func currentMgrBounce(data types.ManagerMetricsData) float64 {
+	if len(data.StatusBounce) == 0 {
+		return 0
+	}
+	return data.StatusBounce[len(data.StatusBounce)-1].BouncePct
+}
+
+func currentMgrQAvsEng(data types.ManagerMetricsData) float64 {
+	if len(data.QAvsEngHours) == 0 {
+		return 0
+	}
+	return data.QAvsEngHours[len(data.QAvsEngHours)-1].Ratio
+}
+
+func currentMgrBugFwd(data types.ManagerMetricsData) float64 {
+	if len(data.BugvsForwardHours) == 0 {
+		return 0
+	}
+	return data.BugvsForwardHours[len(data.BugvsForwardHours)-1].Ratio
+}
+
+func mgrQualityChartsScript() templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
 		templ_7745c5c3_Var18 := templ.GetChildren(ctx)
 		if templ_7745c5c3_Var18 == nil {
 			templ_7745c5c3_Var18 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<script>\n\t\t(function() {\n\t\t\tconst data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');\n\t\t\tconst wip = data.WIPSeries || [];\n\t\t\tconst canvas = document.getElementById('mgr-wip');\n\t\t\tif (!canvas) return;\n\t\t\tnew Chart(canvas, {\n\t\t\t\ttype: 'line',\n\t\t\t\tdata: {\n\t\t\t\t\tlabels: wip.map(function(p) { return p.Day; }),\n\t\t\t\t\tdatasets: [{\n\t\t\t\t\t\tdata: wip.map(function(p) { return p.WIPCount; }),\n\t\t\t\t\t\tborderColor: '#6366f1',\n\t\t\t\t\t\tbackgroundColor: 'rgba(99,102,241,0.1)',\n\t\t\t\t\t\tfill: true,\n\t\t\t\t\t\tpointRadius: 0,\n\t\t\t\t\t\ttension: 0.25,\n\t\t\t\t\t\tborderWidth: 1.5,\n\t\t\t\t\t}],\n\t\t\t\t},\n\t\t\t\toptions: {\n\t\t\t\t\tresponsive: true,\n\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\tplugins: { legend: { display: false }, tooltip: { enabled: true } },\n\t\t\t\t\tscales: {\n\t\t\t\t\t\tx: { ticks: { font: { size: 9 }, maxTicksLimit: 13 } },\n\t\t\t\t\t\ty: { beginAtZero: true, ticks: { font: { size: 10 } } },\n\t\t\t\t\t},\n\t\t\t\t},\n\t\t\t});\n\t\t})();\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "<script>\n\t\t(function() {\n\t\t\tconst data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');\n\t\t\tconst series = {\n\t\t\t\t'mgr-rework': {\n\t\t\t\t\tlabels: (data.ReworkCycles || []).map(function(p) { return p.YearMonth; }),\n\t\t\t\t\tvalues: (data.ReworkCycles || []).map(function(p) { return p.AvgCycles; }),\n\t\t\t\t},\n\t\t\t\t'mgr-bounce': {\n\t\t\t\t\tlabels: (data.StatusBounce || []).map(function(p) { return p.YearMonth; }),\n\t\t\t\t\tvalues: (data.StatusBounce || []).map(function(p) { return p.BouncePct; }),\n\t\t\t\t},\n\t\t\t\t'mgr-qaeng': {\n\t\t\t\t\tlabels: (data.QAvsEngHours || []).map(function(p) { return p.YearMonth; }),\n\t\t\t\t\tvalues: (data.QAvsEngHours || []).map(function(p) { return p.Ratio; }),\n\t\t\t\t},\n\t\t\t\t'mgr-bugfwd': {\n\t\t\t\t\tlabels: (data.BugvsForwardHours || []).map(function(p) { return p.YearMonth; }),\n\t\t\t\t\tvalues: (data.BugvsForwardHours || []).map(function(p) { return p.Ratio; }),\n\t\t\t\t},\n\t\t\t};\n\t\t\tObject.keys(series).forEach(function(id) {\n\t\t\t\tconst canvas = document.getElementById(id);\n\t\t\t\tif (!canvas) return;\n\t\t\t\tnew Chart(canvas, {\n\t\t\t\t\ttype: 'line',\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tlabels: series[id].labels,\n\t\t\t\t\t\tdatasets: [{\n\t\t\t\t\t\t\tdata: series[id].values,\n\t\t\t\t\t\t\tborderColor: '#8b5cf6',\n\t\t\t\t\t\t\tbackgroundColor: 'rgba(139,92,246,0.1)',\n\t\t\t\t\t\t\tfill: true,\n\t\t\t\t\t\t\tpointRadius: 0,\n\t\t\t\t\t\t\ttension: 0.3,\n\t\t\t\t\t\t\tborderWidth: 1.5,\n\t\t\t\t\t\t}],\n\t\t\t\t\t},\n\t\t\t\t\toptions: {\n\t\t\t\t\t\tresponsive: true,\n\t\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\t\tplugins: { legend: { display: false }, tooltip: { enabled: true } },\n\t\t\t\t\t\tscales: {\n\t\t\t\t\t\t\tx: { ticks: { font: { size: 8 }, maxRotation: 45, minRotation: 45 } },\n\t\t\t\t\t\t\ty: { beginAtZero: true, ticks: { font: { size: 9 } } },\n\t\t\t\t\t\t},\n\t\t\t\t\t},\n\t\t\t\t});\n\t\t\t});\n\t\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
