@@ -675,13 +675,7 @@ func (s *Postgres) ProjectKPIs(epicOrVersion string) (types.ProjectKPIData, erro
 	err = s.DB.Select(&data.CycleTimeByStatus, projectIssuesCTE+`
 		SELECT
 			status,
-			CASE
-				WHEN status IN ('In Development','In Progress','Code Complete','Code Merged', 'In Review') THEN 'Dev'
-				WHEN status IN ('In QA','Failed QA') THEN 'QA'
-				WHEN status IN ('On Hold','QA Backlog') THEN 'Waiting'
-				--WHEN status IN ('Done','Closed','Cancelled', 'Awaiting Release to Customer') THEN 'Done'
-				ELSE 'Other'
-			END AS bucket,
+			`+bucketCase+` AS bucket,
 			AVG(EXTRACT(EPOCH FROM (COALESCE(dateended, now()) - datestarted))) AS avg_seconds,
 			COUNT(DISTINCT issueid) AS issue_count
 		FROM status_stints
@@ -713,16 +707,10 @@ func (s *Postgres) ProjectKPIs(epicOrVersion string) (types.ProjectKPIData, erro
 			SELECT
 				issueid,
 				EXTRACT(EPOCH FROM (COALESCE(dateended, now()) - datestarted)) AS elapsed,
-				CASE
-					WHEN status IN ('In Development','In Progress','Code Complete','Code Merged', 'In Review') THEN 'Dev'
-					WHEN status IN ('In QA','Failed QA') THEN 'QA'
-					WHEN status IN ('On Hold', 'QA Backlog') THEN 'Waiting'
-					--WHEN status IN ('Done','Closed','Cancelled', 'Awaiting Release to Customer') THEN 'Done'
-					ELSE 'Other'
-				END AS bucket
+				`+bucketCase+` AS bucket
 			FROM status_stints
 			WHERE issueid IN (SELECT id FROM project_issues)
-			AND status NOT IN ('Development Backlog', 'To Do', 'Bug Draft', 'Done','Closed','Cancelled', 'Awaiting Release to Customer') 
+			AND status NOT IN ('Development Backlog', 'To Do', 'Bug Draft', 'Done','Closed','Cancelled', 'Awaiting Release to Customer')
 		) s
 		GROUP BY bucket
 		ORDER BY CASE bucket WHEN 'Dev' THEN 1 WHEN 'QA' THEN 2 WHEN 'Waiting' THEN 3 ELSE 4 END`,
@@ -785,10 +773,10 @@ func (s *Postgres) ProjectKPIs(epicOrVersion string) (types.ProjectKPIData, erro
 			SUM(EXTRACT(EPOCH FROM (COALESCE(dateended, now()) - datestarted))) FILTER (
 				WHERE status IN `+devQAStatuses+`
 			) AS active_secs,
-			-- Intentionally wider than devQAStatuses: includes Waiting + Done so this
-			-- counts total elapsed time (active + waiting + done).
+			-- Wider than devQAStatuses: active + waiting + done. Uses the same
+			-- constants as MonthlyTeamMetrics.flow_efficiency to prevent drift.
 			SUM(EXTRACT(EPOCH FROM (COALESCE(dateended, now()) - datestarted))) FILTER (
-				WHERE status IN ('In Development','In Progress','Code Complete', 'Code Merged', 'In Review', 'In QA', 'Failed QA', 'On Hold', 'QA Backlog', 'Done')
+				WHERE status IN `+devQAStatuses+` OR status IN `+waitingStatuses+` OR status IN `+doneStatuses+`
 			) AS total_secs
 		FROM status_stints
 		WHERE issueid IN (SELECT id FROM project_issues)`, epicOrVersion)
@@ -940,7 +928,10 @@ func (s *Postgres) MonthlyTeamMetrics(teams []string, fromMonth, toMonth string)
 			SELECT unnest($1::text[]) AS team
 		),
 		issue_close_month AS (
-			-- First time each closeable-type issue entered a done status.
+			-- First time within the reporting window each closeable-type issue
+			-- entered a done status. Date filter excludes historical closes so a
+			-- reopened-and-reclosed issue is attributed to its in-window close
+			-- month, not a years-old MIN that would fall outside the months CTE.
 			SELECT
 				ss.issueid,
 				i.project,
@@ -950,6 +941,8 @@ func (s *Postgres) MonthlyTeamMetrics(teams []string, fromMonth, toMonth string)
 			WHERE ss.status IN ` + doneStatuses + `
 			AND i.type IN ` + closeableTypes + `
 			AND i.project = ANY($1::text[])
+			AND ss.datestarted >= $2::timestamptz
+			AND ss.datestarted <  date_trunc('month', $3::timestamptz)
 			GROUP BY ss.issueid, i.project
 		),
 		throughput AS (
@@ -982,10 +975,10 @@ func (s *Postgres) MonthlyTeamMetrics(teams []string, fromMonth, toMonth string)
 				icm.project   AS team,
 				icm.year_month,
 				CASE
-					WHEN SUM(CASE WHEN ss.status IN ` + devQAStatuses + ` OR ss.status IN ('On Hold','QA Backlog') OR ss.status IN ` + doneStatuses + ` THEN ss.durationseconds ELSE 0 END) > 0
+					WHEN SUM(CASE WHEN ss.status IN ` + devQAStatuses + ` OR ss.status IN ` + waitingStatuses + ` OR ss.status IN ` + doneStatuses + ` THEN ss.durationseconds ELSE 0 END) > 0
 					THEN
 						100.0 * SUM(CASE WHEN ss.status IN ` + devQAStatuses + ` THEN ss.durationseconds ELSE 0 END)::float8
-						/ SUM(CASE WHEN ss.status IN ` + devQAStatuses + ` OR ss.status IN ('On Hold','QA Backlog') OR ss.status IN ` + doneStatuses + ` THEN ss.durationseconds ELSE 0 END)::float8
+						/ SUM(CASE WHEN ss.status IN ` + devQAStatuses + ` OR ss.status IN ` + waitingStatuses + ` OR ss.status IN ` + doneStatuses + ` THEN ss.durationseconds ELSE 0 END)::float8
 					ELSE 0
 				END AS flow_efficiency_pct
 			FROM status_stints ss
@@ -1025,11 +1018,12 @@ func (s *Postgres) MonthlyTeamMetrics(teams []string, fromMonth, toMonth string)
 			SELECT
 				project AS team,
 				to_char(createdate, 'YYYY-MM') AS year_month,
+				COUNT(*)::int AS total_bugs_count,
 				CASE
-					WHEN COUNT(*) FILTER (WHERE type IN ('Customer Bug','HW / FW Customer Bug','Bug','Hardware Bug')) > 0
+					WHEN COUNT(*) > 0
 					THEN 100.0 *
 						COUNT(*) FILTER (WHERE type IN ('Customer Bug','HW / FW Customer Bug'))::float8
-						/ COUNT(*) FILTER (WHERE type IN ('Customer Bug','HW / FW Customer Bug','Bug','Hardware Bug'))::float8
+						/ COUNT(*)::float8
 					ELSE 0
 				END AS defect_escape_rate_pct
 			FROM issue
@@ -1102,6 +1096,7 @@ func (s *Postgres) MonthlyTeamMetrics(teams []string, fromMonth, toMonth string)
 			COALESCE(fe.flow_efficiency_pct, 0)::float8 AS flow_efficiency_pct,
 			COALESCE(fqr.failed_qa_ratio_pct, 0)::float8 AS failed_qa_ratio_pct,
 			COALESCE(de.defect_escape_rate_pct, 0)::float8 AS defect_escape_rate_pct,
+			COALESCE(de.total_bugs_count, 0)               AS total_bugs_count,
 			COALESCE(st.stability_new_count, 0)    AS stability_new_count,
 			COALESCE(st.stability_closed_count, 0) AS stability_closed_count,
 			COALESCE(st.stability_open_count, 0)   AS stability_open_count
@@ -1182,31 +1177,33 @@ func (s *Postgres) timeInStatus(team string, fromMonth, toMonth string) ([]types
 	result := []types.TimeInStatusPoint{}
 	from, to := s.calculateDateRange(fromMonth, toMonth)
 
+	// Inline CASE mirrors bucketCase but uses the ss.status qualifier — the
+	// issue table also has a `status` column, so bucketCase's unqualified
+	// reference would be ambiguous here. The WHERE clause restricts to the
+	// Dev/QA/Waiting statuses so an 'Other' bucket is impossible. Upper
+	// bound is clamped to the start of the current month so the partial
+	// in-progress month is excluded (matches MonthlyTeamMetrics' months CTE).
 	query := `
-		SELECT year_month, bucket, avg_seconds
-		FROM (
-			SELECT
-				to_char(COALESCE(ss.dateended, NOW()), 'YYYY-MM') AS year_month,
-				CASE
-					WHEN ss.status IN ('In Development','In Progress','Code Complete','Code Merged','In Review') THEN 'Dev'
-					WHEN ss.status IN ('In QA','Failed QA') THEN 'QA'
-					WHEN ss.status IN ` + waitingStatuses + ` THEN 'Waiting'
-					ELSE NULL
-				END AS bucket,
-				AVG(ss.durationseconds)::float8 AS avg_seconds
-			FROM status_stints ss
-			JOIN issue i ON i.id = ss.issueid
-			WHERE i.project = $1
-			AND i.type IN ` + closeableTypes + `
-			AND COALESCE(ss.dateended, NOW()) >= $2::timestamptz
-			AND COALESCE(ss.dateended, NOW()) <  $3::timestamptz
-			AND (
-				ss.status IN ` + devQAStatuses + `
-				OR ss.status IN ` + waitingStatuses + `
-			)
-			GROUP BY year_month, bucket
-		) sub
-		WHERE bucket IS NOT NULL
+		SELECT
+			to_char(COALESCE(ss.dateended, NOW()), 'YYYY-MM') AS year_month,
+			CASE
+				WHEN ss.status IN ('In Development','In Progress','Code Complete','Code Merged','In Review') THEN 'Dev'
+				WHEN ss.status IN ('In QA','Failed QA') THEN 'QA'
+				WHEN ss.status IN ` + waitingStatuses + ` THEN 'Waiting'
+				ELSE 'Other'
+			END AS bucket,
+			AVG(ss.durationseconds)::float8 AS avg_seconds
+		FROM status_stints ss
+		JOIN issue i ON i.id = ss.issueid
+		WHERE i.project = $1
+		AND i.type IN ` + closeableTypes + `
+		AND COALESCE(ss.dateended, NOW()) >= $2::timestamptz
+		AND COALESCE(ss.dateended, NOW()) <  date_trunc('month', $3::timestamptz)
+		AND (
+			ss.status IN ` + devQAStatuses + `
+			OR ss.status IN ` + waitingStatuses + `
+		)
+		GROUP BY year_month, bucket
 		ORDER BY year_month, bucket`
 
 	err := s.DB.Select(&result, query, team, from, to)
@@ -1250,42 +1247,41 @@ func (s *Postgres) wipSeries(team string, fromMonth, toMonth string) ([]types.WI
 }
 
 // agingWIP returns the team's currently open issues in Dev or QA whose
-// time-in-current-status exceeds the team's 85th-percentile cycle time over
-// the last 13 months. Used by the Aging WIP list on the manager page.
-// Returns at most 20 rows, sorted by days_in_status DESC.
+// time-in-current-status exceeds the team's 85th-percentile single-status
+// duration (i.e., longer than a typical residence in one bucket). Compared
+// to a total-cycle p85, this is the right unit-of-comparison: time spent in
+// the current status vs. typical time spent in any one status. Returns at
+// most 20 rows, sorted by current_secs DESC.
 func (s *Postgres) agingWIP(team string, fromMonth, toMonth string) ([]types.AgingWIPItem, error) {
 	result := []types.AgingWIPItem{}
 	from, to := s.calculateDateRange(fromMonth, toMonth)
 
 	query := `
-		WITH p85_cycle AS (
-			-- 85th-percentile cycle time for the team over the last 13 months
+		WITH p85_status AS (
+			-- 85th-percentile single-status duration across the team's
+			-- closed-issue stints in the window. Closed stints (dateended
+			-- IS NOT NULL) have a meaningful durationseconds.
 			SELECT COALESCE(
-				PERCENTILE_CONT(0.85) WITHIN GROUP (ORDER BY ct.total_secs),
-				14 * 86400  -- fallback if no closed issues: 14 days
+				PERCENTILE_CONT(0.85) WITHIN GROUP (ORDER BY ss.durationseconds::float8),
+				7 * 86400  -- fallback if no historical stints: 7 days
 			) AS p85_secs
-			FROM (
-				SELECT
-					ss.issueid,
-					SUM(ss.durationseconds)::float8 AS total_secs
-				FROM status_stints ss
-				JOIN issue i ON i.id = ss.issueid
-				JOIN (
-					SELECT ss2.issueid, MIN(ss2.datestarted) AS close_at
-					FROM status_stints ss2
-					JOIN issue i2 ON i2.id = ss2.issueid
-					WHERE ss2.status IN ` + doneStatuses + `
-					AND i2.project = $1
-					AND i2.type IN ` + closeableTypes + `
-					GROUP BY ss2.issueid
-				) closed ON closed.issueid = ss.issueid
-				WHERE ss.status IN ` + devQAStatuses + `
-				AND i.project = $1
-				AND i.type IN ` + closeableTypes + `
-				AND closed.close_at >= $2::timestamptz
-				AND closed.close_at <  $3::timestamptz
-				GROUP BY ss.issueid
-			) ct
+			FROM status_stints ss
+			JOIN issue i ON i.id = ss.issueid
+			JOIN (
+				SELECT ss2.issueid, MIN(ss2.datestarted) AS close_at
+				FROM status_stints ss2
+				JOIN issue i2 ON i2.id = ss2.issueid
+				WHERE ss2.status IN ` + doneStatuses + `
+				AND i2.project = $1
+				AND i2.type IN ` + closeableTypes + `
+				AND ss2.datestarted >= $2::timestamptz
+				AND ss2.datestarted <  date_trunc('month', $3::timestamptz)
+				GROUP BY ss2.issueid
+			) closed ON closed.issueid = ss.issueid
+			WHERE ss.status IN ` + devQAStatuses + `
+			AND i.project = $1
+			AND i.type IN ` + closeableTypes + `
+			AND ss.durationseconds IS NOT NULL
 		),
 		current_stints AS (
 			-- Issues that are currently in a Dev/QA status (dateended IS NULL)
@@ -1305,7 +1301,7 @@ func (s *Postgres) agingWIP(team string, fromMonth, toMonth string) ([]types.Agi
 			cs.status,
 			(cs.current_secs / 86400)::int AS days_in_status
 		FROM current_stints cs
-		CROSS JOIN p85_cycle p
+		CROSS JOIN p85_status p
 		WHERE cs.current_secs > p.p85_secs
 		ORDER BY cs.current_secs DESC
 		LIMIT 20`
@@ -1320,6 +1316,15 @@ func (s *Postgres) reworkCycles(team string, fromMonth, toMonth string) ([]types
 	result := []types.ReworkCyclesPoint{}
 	from, to := s.calculateDateRange(fromMonth, toMonth)
 
+	// avg_cycles is per closed issue (denominator = COUNT(*) of all closed
+	// issues in the month, NOT only the ones that had rework). Using SQL AVG
+	// on the LEFT JOIN result would skip NULLs and inflate the metric.
+	// reworked_issue_count is the count of issues with at least one rework
+	// cycle — separate from total closed.
+	// Both the close month and the rework transitions themselves are clamped
+	// to the reporting window; otherwise pre-window thrash would be credited
+	// to the close month, and the current partial month would leak into the
+	// trailing slice element (which currentMgrRework reads as "current").
 	query := `
 		WITH issue_close_month AS (
 			SELECT
@@ -1331,7 +1336,7 @@ func (s *Postgres) reworkCycles(team string, fromMonth, toMonth string) ([]types
 			AND i.project = $1
 			AND i.type IN ` + closeableTypes + `
 			AND ss.datestarted >= $2::timestamptz
-			AND ss.datestarted <  $3::timestamptz
+			AND ss.datestarted <  date_trunc('month', $3::timestamptz)
 			GROUP BY ss.issueid
 		),
 		qa_to_dev AS (
@@ -1343,12 +1348,14 @@ func (s *Postgres) reworkCycles(team string, fromMonth, toMonth string) ([]types
 			JOIN issue_transition it ON it.issueid = icm.issueid
 			WHERE (it.fromstatus ILIKE '%qa%' OR it.fromstatus ILIKE '%test%')
 			AND (it.tostatus ILIKE '%dev%' OR it.tostatus = 'In Progress' OR it.tostatus = 'In Development')
+			AND it.datetransitioned >= $2::timestamptz
+			AND it.datetransitioned <  date_trunc('month', $3::timestamptz)
 			GROUP BY icm.year_month, icm.issueid
 		)
 		SELECT
 			icm.year_month,
-			COALESCE(AVG(qtd.cycles), 0)::float8 AS avg_cycles,
-			COUNT(DISTINCT qtd.issueid) AS issue_count
+			COALESCE(SUM(COALESCE(qtd.cycles, 0))::float8 / NULLIF(COUNT(*)::float8, 0), 0) AS avg_cycles,
+			COUNT(DISTINCT qtd.issueid) AS reworked_issue_count
 		FROM issue_close_month icm
 		LEFT JOIN qa_to_dev qtd ON qtd.issueid = icm.issueid
 		GROUP BY icm.year_month
@@ -1364,6 +1371,13 @@ func (s *Postgres) statusBounce(team string, fromMonth, toMonth string) ([]types
 	result := []types.BouncePoint{}
 	from, to := s.calculateDateRange(fromMonth, toMonth)
 
+	// total_entries is the sum of status_count across (issue, tostatus)
+	// pairs — i.e., the total number of transitions for the closed issues
+	// in the month. Earlier this used COUNT(*) of the grouped rows, which
+	// counts (issue, status) pairs and overstates bounce rate ~2x.
+	// Close month and transitions are both clamped to the reporting window
+	// so a long-lived issue doesn't carry pre-window thrash into its close
+	// month, and the current partial month doesn't leak.
 	query := `
 		WITH issue_close_month AS (
 			SELECT
@@ -1375,19 +1389,21 @@ func (s *Postgres) statusBounce(team string, fromMonth, toMonth string) ([]types
 			AND i.project = $1
 			AND i.type IN ` + closeableTypes + `
 			AND ss.datestarted >= $2::timestamptz
-			AND ss.datestarted <  $3::timestamptz
+			AND ss.datestarted <  date_trunc('month', $3::timestamptz)
 			GROUP BY ss.issueid
 		),
 		per_month AS (
 			SELECT
 				icm.year_month,
-				COUNT(*) AS total_entries,
-				SUM(CASE WHEN status_count > 1 THEN status_count - 1 ELSE 0 END) AS re_entries,
+				SUM(tx.status_count) AS total_entries,
+				SUM(CASE WHEN tx.status_count > 1 THEN tx.status_count - 1 ELSE 0 END) AS re_entries,
 				COUNT(DISTINCT icm.issueid) AS total_issues
 			FROM issue_close_month icm
 			JOIN (
 				SELECT issueid, tostatus, COUNT(*) AS status_count
 				FROM issue_transition
+				WHERE datetransitioned >= $2::timestamptz
+				AND datetransitioned <  date_trunc('month', $3::timestamptz)
 				GROUP BY issueid, tostatus
 			) tx ON tx.issueid = icm.issueid
 			GROUP BY icm.year_month

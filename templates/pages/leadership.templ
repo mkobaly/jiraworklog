@@ -19,6 +19,8 @@ templ kpiRow(label string, current []types.MonthlyTeamMetrics, prior []types.Mon
 			<td class="py-3 px-4 text-center align-top">
 				if !cur.HasClosedIssues() && (metricKey == "cycle" || metricKey == "throughput" || metricKey == "flow" || metricKey == "failedqa") {
 					<span class="text-gray-300">—</span>
+				} else if metricKey == "escape" && !cur.HasDefectData() {
+					<span class="text-gray-300">—</span>
 				} else {
 					<div class="flex items-center justify-center gap-1.5">
 						<span class="text-lg font-semibold text-gray-800">
@@ -68,7 +70,12 @@ templ arrowCell(cur types.MonthlyTeamMetrics, prior types.MonthlyTeamMetrics, me
 		case "escape":
 			c, p = cur.DefectEscapeRatePct, prior.DefectEscapeRatePct
 		}
-		arrow, color := directionArrow(c, p, lowerIsBetter)
+		// priorOrEmpty returns a zero-value struct (Team == "") when no row
+		// exists for the prior month (e.g., user selected the oldest month
+		// in the window). Pass that signal through so the arrow renders as
+		// flat (▬) instead of a misleading green/red direction off zero.
+		hasPrior := prior.Team != ""
+		arrow, color := directionArrow(c, p, lowerIsBetter, hasPrior)
 	}}
 	<span class={ "text-sm font-bold", color }>{ arrow }</span>
 }
@@ -307,8 +314,14 @@ func priorYearMonth(yyyymm string) string {
 
 // directionArrow returns (arrow_glyph, tailwind-class) comparing current vs
 // prior, where `lowerIsBetter` indicates whether a decrease is good (e.g.
-// cycle time). Threshold of 5% relative change is treated as flat.
-func directionArrow(current, prior float64, lowerIsBetter bool) (string, string) {
+// cycle time). Threshold of 5% relative change is treated as flat. When
+// `hasPrior` is false (no prior-month row exists for this team), the arrow
+// is flat regardless of the current value — avoids implying improvement or
+// regression off a phantom zero.
+func directionArrow(current, prior float64, lowerIsBetter, hasPrior bool) (string, string) {
+	if !hasPrior {
+		return "▬", "text-gray-400"
+	}
 	if prior == 0 && current == 0 {
 		return "▬", "text-gray-400"
 	}

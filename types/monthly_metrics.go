@@ -20,6 +20,10 @@ type MonthlyTeamMetrics struct {
 
 	// Createdate-month bucketed
 	DefectEscapeRatePct float64 `db:"defect_escape_rate_pct"`
+	// TotalBugsCount = customer + internal bugs created in this month.
+	// Drives HasDefectData(): a month with zero bugs at all should render
+	// "—" instead of "0%" with a misleading direction arrow.
+	TotalBugsCount int `db:"total_bugs_count"`
 
 	// Stability — populated from CustomerBugTrends, joined in MonthlyTeamMetrics
 	StabilityNewCount    int `db:"stability_new_count"`
@@ -37,4 +41,11 @@ func (m MonthlyTeamMetrics) HasClosedIssues() bool {
 // reliable median (n < 5). Drives the "* n=3" caveat in the template.
 func (m MonthlyTeamMetrics) IsSparseSample() bool {
 	return m.ClosedIssueCount > 0 && m.ClosedIssueCount < 5
+}
+
+// HasDefectData reports whether any bugs (customer + internal) were created
+// in this month. Used by the leadership-page Defect Escape Rate cell so it
+// renders "—" instead of "0% ▼" when there is simply no bug data.
+func (m MonthlyTeamMetrics) HasDefectData() bool {
+	return m.TotalBugsCount > 0
 }

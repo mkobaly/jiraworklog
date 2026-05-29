@@ -318,7 +318,10 @@ func currentMgrFailedQA(data types.ManagerMetricsData) float64 {
 templ mgrLeadershipChartsScript() {
 	<script>
 		(function() {
-			const data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');
+			// Cache the parsed payload on window so the 5 chart scripts share
+			// one JSON.parse call instead of each parsing the full ~25-40 KB
+			// blob independently.
+			const data = window.__mgrData || (window.__mgrData = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}'));
 			const lm = data.LeadershipMonthly || [];
 			const labels = lm.map(function(r) { return r.YearMonth; });
 			const series = {
@@ -359,7 +362,10 @@ templ mgrLeadershipChartsScript() {
 templ mgrTimeInStatusScript() {
 	<script>
 		(function() {
-			const data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');
+			// Cache the parsed payload on window so the 5 chart scripts share
+			// one JSON.parse call instead of each parsing the full ~25-40 KB
+			// blob independently.
+			const data = window.__mgrData || (window.__mgrData = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}'));
 			const tis = data.TimeInStatus || [];
 			// Pivot tis into { months: [...], Dev: [...], QA: [...], Waiting: [...] }
 			const monthSet = new Set();
@@ -402,7 +408,10 @@ templ mgrTimeInStatusScript() {
 templ mgrWIPScript() {
 	<script>
 		(function() {
-			const data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');
+			// Cache the parsed payload on window so the 5 chart scripts share
+			// one JSON.parse call instead of each parsing the full ~25-40 KB
+			// blob independently.
+			const data = window.__mgrData || (window.__mgrData = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}'));
 			const wip = data.WIPSeries || [];
 			const canvas = document.getElementById('mgr-wip');
 			if (!canvas) return;
@@ -465,7 +474,10 @@ func currentMgrBugFwd(data types.ManagerMetricsData) float64 {
 templ mgrQualityChartsScript() {
 	<script>
 		(function() {
-			const data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');
+			// Cache the parsed payload on window so the 5 chart scripts share
+			// one JSON.parse call instead of each parsing the full ~25-40 KB
+			// blob independently.
+			const data = window.__mgrData || (window.__mgrData = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}'));
 			const series = {
 				'mgr-rework': {
 					labels: (data.ReworkCycles || []).map(function(p) { return p.YearMonth; }),
@@ -519,7 +531,10 @@ templ mgrQualityChartsScript() {
 templ mgrStabilityChartsScript() {
 	<script>
 		(function() {
-			const data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');
+			// Cache the parsed payload on window so the 5 chart scripts share
+			// one JSON.parse call instead of each parsing the full ~25-40 KB
+			// blob independently.
+			const data = window.__mgrData || (window.__mgrData = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}'));
 			const lm = data.LeadershipMonthly || [];
 			const labels = lm.map(function(r) { return r.YearMonth; });
 

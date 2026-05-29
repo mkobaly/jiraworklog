@@ -349,7 +349,7 @@ func TestManagerMetricsReworkCycles(t *testing.T) {
 	for _, p := range data.ReworkCycles {
 		require.Regexp(t, `^\d{4}-\d{2}$`, p.YearMonth)
 		require.GreaterOrEqual(t, p.AvgCycles, 0.0)
-		require.GreaterOrEqual(t, p.IssueCount, 0)
+		require.GreaterOrEqual(t, p.ReworkedIssueCount, 0)
 	}
 }
 

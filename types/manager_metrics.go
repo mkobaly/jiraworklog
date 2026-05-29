@@ -38,11 +38,13 @@ type AgingWIPItem struct {
 }
 
 // ReworkCyclesPoint is the average QA→Dev rework cycle count per closed
-// issue in a given (team, month).
+// issue in a given (team, month). AvgCycles uses all closed issues as the
+// denominator; ReworkedIssueCount is the count of issues that had >=1
+// rework cycle (separate from total closed throughput).
 type ReworkCyclesPoint struct {
-	YearMonth  string  `db:"year_month"`
-	AvgCycles  float64 `db:"avg_cycles"`
-	IssueCount int     `db:"issue_count"`
+	YearMonth          string  `db:"year_month"`
+	AvgCycles          float64 `db:"avg_cycles"`
+	ReworkedIssueCount int     `db:"reworked_issue_count"`
 }
 
 // BouncePoint is monthly status-bounce rate (status re-entries / total

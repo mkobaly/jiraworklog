@@ -1042,6 +1042,20 @@ func (h *Handler) GetManagerDashboard(c echo.Context) error {
 	team := c.QueryParam("team")
 	if team == "" {
 		team = teams[0] // default to first team alphabetically
+	} else {
+		// Validate against the allowlist so an unknown team can't trigger 8
+		// expensive empty-result queries and silently render a normal-looking
+		// page of zeros.
+		valid := false
+		for _, t := range teams {
+			if t == team {
+				valid = true
+				break
+			}
+		}
+		if !valid {
+			return echo.NewHTTPError(http.StatusBadRequest, "unknown team")
+		}
 	}
 
 	data, err := h.repo.ManagerMetrics(team, "", "")
