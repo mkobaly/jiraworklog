@@ -918,6 +918,44 @@ func (s *Postgres) ProjectKPIs(epicOrVersion string) (types.ProjectKPIData, erro
 	return data, nil
 }
 
+// MonthlyTeamMetrics — see repository/repo.go for contract.
+func (s *Postgres) MonthlyTeamMetrics(teams []string, fromMonth, toMonth string) ([]types.MonthlyTeamMetrics, error) {
+	result := []types.MonthlyTeamMetrics{}
+	from, to := s.calculateDateRange(fromMonth, toMonth)
+
+	// Skeleton query: cross-join teams × months, all metrics zero.
+	// Subsequent tasks add LEFT JOIN sub-queries to populate each metric.
+	query := `
+		WITH months AS (
+			SELECT to_char(gs, 'YYYY-MM') AS year_month
+			FROM generate_series(
+				date_trunc('month', $2::timestamptz),
+				date_trunc('month', $3::timestamptz) - INTERVAL '1 day',
+				'1 month'::interval
+			) gs
+		),
+		team_list AS (
+			SELECT unnest($1::text[]) AS team
+		)
+		SELECT
+			tl.team,
+			m.year_month,
+			0::float8 AS median_cycle_time_secs,
+			0         AS closed_issue_count,
+			0::float8 AS flow_efficiency_pct,
+			0::float8 AS failed_qa_ratio_pct,
+			0::float8 AS defect_escape_rate_pct,
+			0         AS stability_new_count,
+			0         AS stability_closed_count,
+			0         AS stability_open_count
+		FROM team_list tl
+		CROSS JOIN months m
+		ORDER BY tl.team, m.year_month`
+
+	err := s.DB.Select(&result, query, teams, from, to)
+	return result, err
+}
+
 // Close will close the database connection
 func (s *Postgres) Close() {
 	s.DB.Close()

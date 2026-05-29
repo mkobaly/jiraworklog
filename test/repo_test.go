@@ -131,3 +131,25 @@ func TestProjectKPIsSmoke(t *testing.T) {
 	require.NoError(t, err)
 	require.GreaterOrEqual(t, data.IssueCount, 0)
 }
+
+func TestMonthlyTeamMetricsSkeleton(t *testing.T) {
+	cfg, err := GetTestConfig()
+	require.NoError(t, err)
+	repo, err := repository.NewPostgresRepo(cfg)
+	require.NoError(t, err)
+
+	rows, err := repo.MonthlyTeamMetrics([]string{"IDM", "SYM", "ESG"}, "", "")
+	require.NoError(t, err)
+	// 3 teams * 13 months = 39 rows
+	require.Equal(t, 39, len(rows))
+
+	// Each team should appear with 13 distinct year_months
+	teamCounts := map[string]int{}
+	for _, r := range rows {
+		teamCounts[r.Team]++
+		require.Regexp(t, `^\d{4}-\d{2}$`, r.YearMonth)
+	}
+	require.Equal(t, 13, teamCounts["IDM"])
+	require.Equal(t, 13, teamCounts["SYM"])
+	require.Equal(t, 13, teamCounts["ESG"])
+}

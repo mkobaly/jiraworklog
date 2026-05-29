@@ -65,6 +65,12 @@ type Repo interface {
 	RefreshStatusStints(issueID int) error
 	ProjectKPIs(epicOrVersion string) (types.ProjectKPIData, error)
 
+	// MonthlyTeamMetrics returns one row per (team, year_month) for the leadership
+	// dashboard's all-teams comparison grid. `teams` is the list of Jira project
+	// prefixes to include (e.g. ["IDM","SYM","ESG"]); `fromMonth` and `toMonth`
+	// are YYYY-MM strings; empty strings default to last-13-months trailing.
+	MonthlyTeamMetrics(teams []string, fromMonth, toMonth string) ([]types.MonthlyTeamMetrics, error)
+
 	//WorklogsPerDay() ([]types.WorklogsPerDay, error)
 	//WorklogsPerDevDay() ([]types.WorklogsPerDevDay, error)
 
