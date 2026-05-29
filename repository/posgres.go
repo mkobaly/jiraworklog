@@ -1138,7 +1138,49 @@ func (s *Postgres) ManagerMetrics(team string, fromMonth, toMonth string) (types
 
 	// Subsequent tasks populate the manager-only sub-fields here.
 
+	data.TimeInStatus, err = s.timeInStatus(team, fromMonth, toMonth)
+	if err != nil {
+		return data, err
+	}
+
 	return data, nil
+}
+
+// timeInStatus returns one row per (month status was exited, bucket) for the
+// team's closeable-type issues. Used by the Time-in-Status stacked-bar chart.
+func (s *Postgres) timeInStatus(team string, fromMonth, toMonth string) ([]types.TimeInStatusPoint, error) {
+	result := []types.TimeInStatusPoint{}
+	from, to := s.calculateDateRange(fromMonth, toMonth)
+
+	query := `
+		SELECT year_month, bucket, avg_seconds
+		FROM (
+			SELECT
+				to_char(COALESCE(ss.dateended, NOW()), 'YYYY-MM') AS year_month,
+				CASE
+					WHEN ss.status IN ('In Development','In Progress','Code Complete','Code Merged','In Review') THEN 'Dev'
+					WHEN ss.status IN ('In QA','Failed QA') THEN 'QA'
+					WHEN ss.status IN ` + waitingStatuses + ` THEN 'Waiting'
+					ELSE NULL
+				END AS bucket,
+				AVG(ss.durationseconds)::float8 AS avg_seconds
+			FROM status_stints ss
+			JOIN issue i ON i.id = ss.issueid
+			WHERE i.project = $1
+			AND i.type IN ` + closeableTypes + `
+			AND COALESCE(ss.dateended, NOW()) >= $2::timestamptz
+			AND COALESCE(ss.dateended, NOW()) <  $3::timestamptz
+			AND (
+				ss.status IN ` + devQAStatuses + `
+				OR ss.status IN ` + waitingStatuses + `
+			)
+			GROUP BY year_month, bucket
+		) sub
+		WHERE bucket IS NOT NULL
+		ORDER BY year_month, bucket`
+
+	err := s.DB.Select(&result, query, team, from, to)
+	return result, err
 }
 
 // Close will close the database connection

@@ -277,6 +277,23 @@ func TestManagerMetricsSkeleton(t *testing.T) {
 	}
 }
 
+func TestManagerMetricsTimeInStatus(t *testing.T) {
+	cfg, err := GetTestConfig()
+	require.NoError(t, err)
+	repo, err := repository.NewPostgresRepo(cfg)
+	require.NoError(t, err)
+
+	data, err := repo.ManagerMetrics("SYM", "", "")
+	require.NoError(t, err)
+	require.Greater(t, len(data.TimeInStatus), 0,
+		"expected at least one TimeInStatus row across 13 months × 3 buckets")
+	for _, p := range data.TimeInStatus {
+		require.Regexp(t, `^\d{4}-\d{2}$`, p.YearMonth)
+		require.Contains(t, []string{"Dev", "QA", "Waiting"}, p.Bucket)
+		require.GreaterOrEqual(t, p.AvgSecs, 0.0)
+	}
+}
+
 func TestMonthlyTeamMetricsStability(t *testing.T) {
 	cfg, err := GetTestConfig()
 	require.NoError(t, err)
