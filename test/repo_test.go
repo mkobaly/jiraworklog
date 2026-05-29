@@ -259,3 +259,27 @@ func TestMonthlyTeamMetricsDefectEscapeRate(t *testing.T) {
 	}
 	require.True(t, foundNonZero, "expected defect escape rate > 0 somewhere on the grid")
 }
+
+func TestMonthlyTeamMetricsStability(t *testing.T) {
+	cfg, err := GetTestConfig()
+	require.NoError(t, err)
+	repo, err := repository.NewPostgresRepo(cfg)
+	require.NoError(t, err)
+
+	rows, err := repo.MonthlyTeamMetrics([]string{"IDM", "SYM", "ESG"}, "", "")
+	require.NoError(t, err)
+
+	// All counts must be non-negative
+	for _, r := range rows {
+		require.GreaterOrEqual(t, r.StabilityNewCount, 0)
+		require.GreaterOrEqual(t, r.StabilityClosedCount, 0)
+		require.GreaterOrEqual(t, r.StabilityOpenCount, 0)
+	}
+	// At least one positive open count across the grid (customer bugs always
+	// have nonzero open backlog).
+	totalOpen := 0
+	for _, r := range rows {
+		totalOpen += r.StabilityOpenCount
+	}
+	require.Greater(t, totalOpen, 0, "expected non-zero customer bug open count somewhere")
+}

@@ -1034,6 +1034,61 @@ func (s *Postgres) MonthlyTeamMetrics(teams []string, fromMonth, toMonth string)
 			AND createdate <  $3::timestamptz
 			AND type IN ('Customer Bug','HW / FW Customer Bug','Bug','Hardware Bug')
 			GROUP BY project, to_char(createdate, 'YYYY-MM')
+		),
+		stability_new AS (
+			SELECT
+				project AS team,
+				to_char(createdate, 'YYYY-MM') AS year_month,
+				COUNT(*) AS new_count
+			FROM issue
+			WHERE type IN ('Customer Bug','HW / FW Customer Bug')
+			AND project = ANY($1::text[])
+			AND createdate >= $2::timestamptz
+			AND createdate <  $3::timestamptz
+			GROUP BY project, to_char(createdate, 'YYYY-MM')
+		),
+		stability_closed AS (
+			SELECT
+				project AS team,
+				to_char(COALESCE(resolveddate, updatedate), 'YYYY-MM') AS year_month,
+				COUNT(*) AS closed_count
+			FROM issue
+			WHERE type IN ('Customer Bug','HW / FW Customer Bug')
+			AND project = ANY($1::text[])
+			AND (
+				(resolveddate >= $2::timestamptz AND resolveddate < $3::timestamptz)
+				OR (status LIKE 'Awaiting Release%' AND updatedate >= $2::timestamptz AND updatedate < $3::timestamptz)
+			)
+			GROUP BY project, to_char(COALESCE(resolveddate, updatedate), 'YYYY-MM')
+		),
+		stability_baseline AS (
+			-- Open customer bugs at the start of the window, per team.
+			SELECT
+				project AS team,
+				COUNT(*) AS open_count
+			FROM issue
+			WHERE type IN ('Customer Bug','HW / FW Customer Bug')
+			AND project = ANY($1::text[])
+			AND createdate < $2::timestamptz
+			AND (resolveddate IS NULL OR resolveddate >= $2::timestamptz)
+			GROUP BY project
+		),
+		stability AS (
+			SELECT
+				tl.team,
+				m.year_month,
+				COALESCE(sn.new_count, 0)    AS stability_new_count,
+				COALESCE(sc.closed_count, 0) AS stability_closed_count,
+				SUM(COALESCE(sn.new_count, 0) - COALESCE(sc.closed_count, 0)) OVER (
+					PARTITION BY tl.team
+					ORDER BY m.year_month
+					ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+				) + COALESCE(sb.open_count, 0) AS stability_open_count
+			FROM team_list tl
+			CROSS JOIN months m
+			LEFT JOIN stability_new    sn ON sn.team = tl.team AND sn.year_month = m.year_month
+			LEFT JOIN stability_closed sc ON sc.team = tl.team AND sc.year_month = m.year_month
+			LEFT JOIN stability_baseline sb ON sb.team = tl.team
 		)
 		SELECT
 			tl.team,
@@ -1043,9 +1098,9 @@ func (s *Postgres) MonthlyTeamMetrics(teams []string, fromMonth, toMonth string)
 			COALESCE(fe.flow_efficiency_pct, 0)::float8 AS flow_efficiency_pct,
 			COALESCE(fqr.failed_qa_ratio_pct, 0)::float8 AS failed_qa_ratio_pct,
 			COALESCE(de.defect_escape_rate_pct, 0)::float8 AS defect_escape_rate_pct,
-			0                                    AS stability_new_count,
-			0                                    AS stability_closed_count,
-			0                                    AS stability_open_count
+			COALESCE(st.stability_new_count, 0)    AS stability_new_count,
+			COALESCE(st.stability_closed_count, 0) AS stability_closed_count,
+			COALESCE(st.stability_open_count, 0)   AS stability_open_count
 		FROM team_list tl
 		CROSS JOIN months m
 		LEFT JOIN throughput th
@@ -1058,6 +1113,8 @@ func (s *Postgres) MonthlyTeamMetrics(teams []string, fromMonth, toMonth string)
 		  ON fqr.team = tl.team AND fqr.year_month = m.year_month
 		LEFT JOIN defect_escape de
 		  ON de.team = tl.team AND de.year_month = m.year_month
+		LEFT JOIN stability st
+		  ON st.team = tl.team AND st.year_month = m.year_month
 		ORDER BY tl.team, m.year_month`
 
 	err := s.DB.Select(&result, query, teams, from, to)
