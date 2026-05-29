@@ -125,7 +125,7 @@ templ LeadershipDashboard(rows []types.MonthlyTeamMetrics, teams []string, selec
 								<th class="py-2 pr-4">Metric</th>
 								for _, t := range teams {
 									<th class="py-2 px-4 text-center">
-										<a href={ templ.SafeURL("/dashboard/manager?team=" + t) } class="text-blue-600 hover:underline">{ t }</a>
+										<a href={ templ.SafeURL("/dashboard/manager?team=" + t) } class="text-blue-600 hover:underline" title={ t }>{ teamFriendlyName(t) }</a>
 									</th>
 								}
 							</tr>
@@ -146,7 +146,7 @@ templ LeadershipDashboard(rows []types.MonthlyTeamMetrics, teams []string, selec
 					<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 						for _, t := range teams {
 							<div>
-								<p class="text-sm font-medium text-gray-700 text-center mb-2">{ t }</p>
+								<p class="text-sm font-medium text-gray-700 text-center mb-2" title={ t }>{ teamFriendlyName(t) }</p>
 								<div class="h-48">
 									<canvas data-stability-team={ t }></canvas>
 								</div>
@@ -260,6 +260,25 @@ templ helpCard(name, what, how, soWhat string) {
 			</div>
 		</dl>
 	</div>
+}
+
+// teamFriendlyName maps a Jira project key to the friendly label shown on
+// the leadership dashboard. The underlying data (sparkline lookup keys,
+// stability canvas data attributes, manager-page URLs) still uses the raw
+// project key; only what humans see is translated. Unknown keys fall
+// through to themselves so adding a new team without updating this map
+// degrades gracefully.
+func teamFriendlyName(projectKey string) string {
+	switch projectKey {
+	case "IDM":
+		return "Cloud"
+	case "SYM":
+		return "Symmetry"
+	case "ESG":
+		return "Hardware / Firmware"
+	default:
+		return projectKey
+	}
 }
 
 // formatMonthOption turns "2026-04" into "April 2026" for the dropdown.
