@@ -13,21 +13,21 @@ import (
 	"github.com/pkg/errors"
 )
 
-// JiraSyncIssuesJob will sync all jira issues that have worklogs or have been updated so we have the supporting data
+// JiraSyncIssuesJob syncs all Jira issues that have worklogs or have been
+// updated since the last successful run, so the local DB has supporting data
+// for every worklog and dashboard query.
 type JiraSyncIssuesJob struct {
-	cfg        *jiraworklog.Config
-	jira       jiraworklog.JiraReader
-	repo       repository.Repo
-	logger     *slog.Logger
-	todaysHour int
+	cfg    *jiraworklog.Config
+	jira   jiraworklog.JiraReader
+	repo   repository.Repo
+	logger *slog.Logger
 }
 
 func NewJJiraSyncIssuesJob(cfg *jiraworklog.Config, jira jiraworklog.JiraReader, repo repository.Repo) *JiraSyncIssuesJob {
 	return &JiraSyncIssuesJob{
-		cfg:        cfg,
-		jira:       jira,
-		repo:       repo,
-		todaysHour: 99,
+		cfg:  cfg,
+		jira: jira,
+		repo: repo,
 	}
 }
 
@@ -36,100 +36,98 @@ func (j *JiraSyncIssuesJob) GetName() string {
 }
 
 func (j *JiraSyncIssuesJob) GetInterval() time.Duration {
-	return time.Second * 31
+	return time.Minute * 5
 }
 
-func (j *JiraSyncIssuesJob) Run() error {
+// Maximum amount of Jira-update history fetched in a single Run. After a long
+// outage we walk forward this much per run (one window per 5-minute tick)
+// until the catch-up reaches `now`. Prevents a multi-week JQL response.
+const syncMaxQueryWindow = 24 * time.Hour
 
-	//Run this first since bulk fetching jira issues fails silently (returns 200 and empty resultset) even when you don't have correct permissions
+// Backstop overlap on every query — clock skew between this host and Jira,
+// and the minute-precision JQL filter, can leave sub-minute updates straddling
+// the boundary. BulkInsertChangelogs uses ON CONFLICT DO NOTHING and
+// UpdateIssue is an upsert, so re-fetching is harmless.
+const syncQueryOverlap = 1 * time.Minute
+
+// First-run / cold-start cap. If the on-disk lastTimestamp is missing or
+// absurdly old (treat anything older than this as suspect), we sync only
+// the trailing 30 days rather than asking Jira for years of history.
+const syncMaxCatchup = 30 * 24 * time.Hour
+
+func (j *JiraSyncIssuesJob) Run() error {
+	// Get tz first — bulk fetch fails silently (200 + empty) on bad creds,
+	// so this call doubles as a permission probe.
 	tz, err := j.jira.GetTimezone()
 	if err != nil {
 		return errors.Wrap(err, "error getting jira timezone")
 	}
 
-	//Grab all missing issues that have worklog ids
+	// Step 1: backfill issues referenced by worklogs but missing from the
+	// issue table.
+	if err := j.processMissingIssues(); err != nil {
+		return err
+	}
+
+	// Step 2: pull the next chunk of updated issues from Jira. One simple
+	// time window — no date-only juggling, no clock-time gating. Job
+	// interval is the throttle.
+	startTs := time.Unix(j.cfg.IssueLastTimestamp, 0)
+	if j.cfg.IssueLastTimestamp == 0 || time.Since(startTs) > syncMaxCatchup {
+		startTs = time.Now().Add(-syncMaxCatchup)
+	}
+	endTs := time.Now()
+	if endTs.Sub(startTs) > syncMaxQueryWindow {
+		endTs = startTs.Add(syncMaxQueryWindow)
+	}
+	startStr := internal.JiraDateString(startTs.Add(-syncQueryOverlap).Unix(), tz)
+	endStr := internal.JiraDateString(endTs.Unix(), tz)
+	slog.Info("syncing updated jira issues", "start", startStr, "end", endStr)
+	if err := j.syncUpdatedIssuesByString(startStr, endStr); err != nil {
+		return err
+	}
+	j.cfg.IssueLastTimestamp = endTs.Unix()
+	if err := j.cfg.Save(); err != nil {
+		return errors.Wrap(err, "error saving config")
+	}
+
+	// Step 3: keep project_charge table populated with any new charges
+	// seen on the issues we just synced.
+	if err := j.repo.SyncProjectCharges(); err != nil {
+		return errors.Wrap(err, "error syncing project charges")
+	}
+
+	// Step 4: detect issues deleted in Jira (touched older than 60 days).
+	return j.processDeletes(time.Hour * 1440)
+}
+
+// processMissingIssues fetches issues whose ID appears in worklog rows but
+// has no corresponding row in the issue table. Batches of 50 so we don't
+// send absurdly large bulk-fetch payloads.
+func (j *JiraSyncIssuesJob) processMissingIssues() error {
 	missingIssues, err := j.repo.MissingIssues()
 	if err != nil {
 		return errors.Wrap(err, "error fetching missing jira issues")
 	}
-	slog.Info("fetching missing jira issues")
+	if len(missingIssues) == 0 {
+		return nil
+	}
+	slog.Info("fetching missing jira issues", "count", len(missingIssues))
 
-	jiraIds := []string{}
-	cnt := 0
+	jiraIds := make([]string, 0, 50)
 	for _, id := range missingIssues {
-
 		jiraIds = append(jiraIds, strconv.Itoa(id))
-		cnt++
-		if cnt%50 == 0 {
-
-			err = j.fetchAndSaveIssues(jiraIds)
-			if err != nil {
+		if len(jiraIds) == 50 {
+			if err := j.fetchAndSaveIssues(jiraIds); err != nil {
 				return err
 			}
-			cnt = 0
 			jiraIds = jiraIds[:0]
 		}
 	}
 	if len(jiraIds) > 0 {
-		err = j.fetchAndSaveIssues(jiraIds)
-		if err != nil {
+		if err := j.fetchAndSaveIssues(jiraIds); err != nil {
 			return err
 		}
-	}
-
-	lastUpdated := j.cfg.IssueLastTimestamp
-	// Both date-only values must be extracted in the SAME timezone. DateOnly
-	// uses the input time's location to extract y/m/d, so we have to convert
-	// the UTC-anchored last-timestamp into tz BEFORE calling DateOnly. The
-	// previous form `DateOnly(time.Unix(...)).In(tz)` extracted the date in
-	// UTC and then re-displayed it in tz — a no-op on the underlying instant.
-	// During the window each evening where UTC date differs from local date
-	// (roughly 8 PM to midnight EDT), that mismatch made lastUpdatedDateOnly
-	// one day greater than today, so neither `< today` nor `== today` fired
-	// and the sync silently skipped for hours.
-	lastUpdatedDateOnly := internal.DateOnly(time.Unix(lastUpdated, 0).In(tz)).Unix()
-
-	today := internal.DateOnly(time.Now().In(tz)).Unix()
-	if lastUpdatedDateOnly < today {
-		ts, te := internal.GetDateRange(lastUpdated, time.Now().UTC().Unix(), tz)
-		//fmt.Println("callinng syncUpdatedIssues less than today")
-		err = j.syncUpdatedIssues(ts, te, tz)
-		if err != nil {
-			return err
-		}
-		//fmt.Println("saving lasttimestamp")
-		j.cfg.IssueLastTimestamp = te
-		if err := j.cfg.Save(); err != nil {
-			return errors.Wrap(err, "error saving config")
-		}
-		//lastUpdated = lastUpdated + 86400 //add day
-	}
-
-	//if caught up, for today sync once every 10 mins
-	if lastUpdatedDateOnly == today {
-		hour := time.Now().Hour()
-		minute := time.Now().Minute()
-		if j.todaysHour != hour || minute%10 == 0 {
-			ts, te := internal.GetDateRange(lastUpdated, time.Now().UTC().Unix(), tz)
-			err = j.syncUpdatedIssues(ts, te, tz)
-			if err != nil {
-				return err
-			}
-			j.todaysHour = hour
-			err = j.repo.SyncProjectCharges()
-			if err != nil {
-				return err
-			}
-			j.cfg.IssueLastTimestamp = te
-			if err := j.cfg.Save(); err != nil {
-				return errors.Wrap(err, "error saving config")
-			}
-		}
-	}
-	//older than 60 days
-	err = j.processDeletes(time.Hour * 1440)
-	if err != nil {
-		return err
 	}
 	return nil
 }
@@ -193,11 +191,13 @@ func (j *JiraSyncIssuesJob) fetchAndSaveIssues(jiraIds []string) error {
 	return nil
 }
 
-func (j *JiraSyncIssuesJob) syncUpdatedIssues(startDate, endDate int64, tz *time.Location) error {
+// syncUpdatedIssuesByString queries Jira for every issue whose `updated`
+// timestamp lies in [start, end) — both strings already formatted in Jira's
+// tz by the caller — and refreshes the local DB for each. Paginates via
+// nextPageToken.
+func (j *JiraSyncIssuesJob) syncUpdatedIssuesByString(start, end string) error {
 	jiraIds := []string{}
 	nextPageToken := ""
-	start := internal.JiraDateString(startDate, tz)
-	end := internal.JiraDateString(endDate, tz)
 	for {
 		updatedIssues, err := j.jira.IssuesUpdated(start, end, nextPageToken)
 		if err != nil {
@@ -211,15 +211,11 @@ func (j *JiraSyncIssuesJob) syncUpdatedIssues(startDate, endDate int64, tz *time
 			break
 		}
 	}
-
-	slog.Warn("fetching updated jira issues", slog.String("start", start), slog.Int("count", len(jiraIds)), slog.String("end", end))
-	if len(jiraIds) > 0 {
-		err := j.fetchAndSaveIssues(jiraIds)
-		if err != nil {
-			return err
-		}
+	if len(jiraIds) == 0 {
+		return nil
 	}
-	return nil
+	slog.Info("found updated jira issues", "start", start, "end", end, "count", len(jiraIds))
+	return j.fetchAndSaveIssues(jiraIds)
 }
 
 func (j *JiraSyncIssuesJob) fetchIssueChangelog(issueId int) ([]types.ChangelogStatus, error) {
