@@ -201,7 +201,7 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</div></section><!-- Quality section (Rework, Bounce, QA/Eng, Bug/Fwd cards) --><section><h2 class=\"text-lg font-bold text-gray-800 mb-3\">Quality</h2><div class=\"bg-white rounded-lg shadow p-6 text-sm text-gray-500\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</div><div class=\"bg-white rounded-lg shadow p-6 mt-4\"><h3 class=\"text-base font-semibold text-gray-700 mb-1\">Time in Status</h3><p class=\"text-xs text-gray-400 mb-3\">Average time issues spent in each bucket per month (Dev / QA / Waiting).</p><div class=\"h-72\"><canvas id=\"mgr-tis\"></canvas></div></div></section><!-- Quality section (Rework, Bounce, QA/Eng, Bug/Fwd cards) --><section><h2 class=\"text-lg font-bold text-gray-800 mb-3\">Quality</h2><div class=\"bg-white rounded-lg shadow p-6 text-sm text-gray-500\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -209,7 +209,7 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Quality section — %d rework points, %d bounce points, %d QA/Eng points, %d Bug/Fwd points",
 				len(data.ReworkCycles), len(data.StatusBounce), len(data.QAvsEngHours), len(data.BugvsForwardHours)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 70, Col: 106}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 77, Col: 106}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -230,7 +230,7 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 			var templ_7745c5c3_Var11 string
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(mgrSerialize(data))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 89, Col: 54}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 96, Col: 54}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
@@ -241,6 +241,10 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 				return templ_7745c5c3_Err
 			}
 			templ_7745c5c3_Err = mgrLeadershipChartsScript().Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = mgrTimeInStatusScript().Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -374,6 +378,35 @@ func mgrLeadershipChartsScript() templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<script>\n\t\t(function() {\n\t\t\tconst data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');\n\t\t\tconst lm = data.LeadershipMonthly || [];\n\t\t\tconst labels = lm.map(function(r) { return r.YearMonth; });\n\t\t\tconst series = {\n\t\t\t\t'mgr-cycle':      lm.map(function(r) { return r.MedianCycleTimeSecs / 86400; }),\n\t\t\t\t'mgr-throughput': lm.map(function(r) { return r.ClosedIssueCount; }),\n\t\t\t\t'mgr-flow':       lm.map(function(r) { return r.FlowEfficiencyPct; }),\n\t\t\t\t'mgr-failedqa':   lm.map(function(r) { return r.FailedQARatioPct; }),\n\t\t\t};\n\t\t\tObject.keys(series).forEach(function(id) {\n\t\t\t\tconst canvas = document.getElementById(id);\n\t\t\t\tif (!canvas) return;\n\t\t\t\tnew Chart(canvas, {\n\t\t\t\t\ttype: 'bar',\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tlabels: labels,\n\t\t\t\t\t\tdatasets: [{\n\t\t\t\t\t\t\tdata: series[id],\n\t\t\t\t\t\t\tbackgroundColor: '#3b82f6',\n\t\t\t\t\t\t\tborderColor: '#1d4ed8',\n\t\t\t\t\t\t\tborderWidth: 1,\n\t\t\t\t\t\t}],\n\t\t\t\t\t},\n\t\t\t\t\toptions: {\n\t\t\t\t\t\tresponsive: true,\n\t\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\t\tplugins: { legend: { display: false }, tooltip: { enabled: true } },\n\t\t\t\t\t\tscales: {\n\t\t\t\t\t\t\tx: { ticks: { font: { size: 8 }, maxRotation: 45, minRotation: 45 } },\n\t\t\t\t\t\t\ty: { beginAtZero: true, ticks: { font: { size: 9 } } },\n\t\t\t\t\t\t},\n\t\t\t\t\t},\n\t\t\t\t});\n\t\t\t});\n\t\t})();\n\t</script>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func mgrTimeInStatusScript() templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var14 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var14 == nil {
+			templ_7745c5c3_Var14 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<script>\n\t\t(function() {\n\t\t\tconst data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');\n\t\t\tconst tis = data.TimeInStatus || [];\n\t\t\t// Pivot tis into { months: [...], Dev: [...], QA: [...], Waiting: [...] }\n\t\t\tconst monthSet = new Set();\n\t\t\ttis.forEach(function(p) { monthSet.add(p.YearMonth); });\n\t\t\tconst months = Array.from(monthSet).sort();\n\t\t\tconst buckets = { Dev: {}, QA: {}, Waiting: {} };\n\t\t\ttis.forEach(function(p) { (buckets[p.Bucket] || {})[p.YearMonth] = p.AvgSecs / 86400; });\n\t\t\tconst dataFor = function(bucket) {\n\t\t\t\treturn months.map(function(m) { return buckets[bucket][m] || 0; });\n\t\t\t};\n\t\t\tconst canvas = document.getElementById('mgr-tis');\n\t\t\tif (!canvas) return;\n\t\t\tnew Chart(canvas, {\n\t\t\t\ttype: 'bar',\n\t\t\t\tdata: {\n\t\t\t\t\tlabels: months,\n\t\t\t\t\tdatasets: [\n\t\t\t\t\t\t{ label: 'Dev',     data: dataFor('Dev'),     backgroundColor: '#3b82f6' },\n\t\t\t\t\t\t{ label: 'QA',      data: dataFor('QA'),      backgroundColor: '#10b981' },\n\t\t\t\t\t\t{ label: 'Waiting', data: dataFor('Waiting'), backgroundColor: '#f59e0b' },\n\t\t\t\t\t],\n\t\t\t\t},\n\t\t\t\toptions: {\n\t\t\t\t\tresponsive: true,\n\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\tplugins: {\n\t\t\t\t\t\tlegend: { position: 'bottom', labels: { font: { size: 11 } } },\n\t\t\t\t\t\ttooltip: { callbacks: { label: function(ctx) { return ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + 'd'; } } },\n\t\t\t\t\t},\n\t\t\t\t\tscales: {\n\t\t\t\t\t\tx: { stacked: true, ticks: { font: { size: 10 } } },\n\t\t\t\t\t\ty: { stacked: true, beginAtZero: true, ticks: { font: { size: 10 }, callback: function(v) { return v + 'd'; } } },\n\t\t\t\t\t},\n\t\t\t\t},\n\t\t\t});\n\t\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

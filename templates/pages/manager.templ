@@ -60,6 +60,13 @@ templ ManagerDashboard(data types.ManagerMetricsData, teams []string) {
 					@mgrKpiCard("Flow Efficiency", mgrFmtPct(currentMgrFlow(data)), "mgr-flow")
 					@mgrKpiCard("Failed QA Ratio", mgrFmtPct(currentMgrFailedQA(data)), "mgr-failedqa")
 				</div>
+				<div class="bg-white rounded-lg shadow p-6 mt-4">
+					<h3 class="text-base font-semibold text-gray-700 mb-1">Time in Status</h3>
+					<p class="text-xs text-gray-400 mb-3">Average time issues spent in each bucket per month (Dev / QA / Waiting).</p>
+					<div class="h-72">
+						<canvas id="mgr-tis"></canvas>
+					</div>
+				</div>
 			</section>
 
 			<!-- Quality section (Rework, Bounce, QA/Eng, Bug/Fwd cards) -->
@@ -88,6 +95,7 @@ templ ManagerDashboard(data types.ManagerMetricsData, teams []string) {
 
 			<div id="mgrData" data-payload={ mgrSerialize(data) } style="display:none;"></div>
 			@mgrLeadershipChartsScript()
+			@mgrTimeInStatusScript()
 		</div>
 	}
 }
@@ -212,6 +220,49 @@ templ mgrLeadershipChartsScript() {
 						},
 					},
 				});
+			});
+		})();
+	</script>
+}
+
+templ mgrTimeInStatusScript() {
+	<script>
+		(function() {
+			const data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');
+			const tis = data.TimeInStatus || [];
+			// Pivot tis into { months: [...], Dev: [...], QA: [...], Waiting: [...] }
+			const monthSet = new Set();
+			tis.forEach(function(p) { monthSet.add(p.YearMonth); });
+			const months = Array.from(monthSet).sort();
+			const buckets = { Dev: {}, QA: {}, Waiting: {} };
+			tis.forEach(function(p) { (buckets[p.Bucket] || {})[p.YearMonth] = p.AvgSecs / 86400; });
+			const dataFor = function(bucket) {
+				return months.map(function(m) { return buckets[bucket][m] || 0; });
+			};
+			const canvas = document.getElementById('mgr-tis');
+			if (!canvas) return;
+			new Chart(canvas, {
+				type: 'bar',
+				data: {
+					labels: months,
+					datasets: [
+						{ label: 'Dev',     data: dataFor('Dev'),     backgroundColor: '#3b82f6' },
+						{ label: 'QA',      data: dataFor('QA'),      backgroundColor: '#10b981' },
+						{ label: 'Waiting', data: dataFor('Waiting'), backgroundColor: '#f59e0b' },
+					],
+				},
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					plugins: {
+						legend: { position: 'bottom', labels: { font: { size: 11 } } },
+						tooltip: { callbacks: { label: function(ctx) { return ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + 'd'; } } },
+					},
+					scales: {
+						x: { stacked: true, ticks: { font: { size: 10 } } },
+						y: { stacked: true, beginAtZero: true, ticks: { font: { size: 10 }, callback: function(v) { return v + 'd'; } } },
+					},
+				},
 			});
 		})();
 	</script>
