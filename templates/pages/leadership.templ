@@ -124,14 +124,25 @@ templ LeadershipDashboard(rows []types.MonthlyTeamMetrics, teams []string, selec
 					</table>
 				</div>
 
-				<!-- Stability strip placeholder (Task 14 replaces this) -->
 				<div class="bg-white rounded-lg shadow p-6">
-					<h2 class="text-lg font-semibold text-gray-700 mb-3">Stability (Customer Bugs)</h2>
-					<p class="text-sm text-gray-500">Per-team stability charts go here.</p>
+					<h2 class="text-lg font-semibold text-gray-700 mb-1">Stability (Customer Bugs)</h2>
+					<p class="text-xs text-gray-400 mb-4">New bugs opened, bugs closed, total open bugs per month.</p>
+					<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+						for _, t := range teams {
+							<div>
+								<p class="text-sm font-medium text-gray-700 text-center mb-2">{ t }</p>
+								<div class="h-48">
+									<canvas data-stability-team={ t }></canvas>
+								</div>
+							</div>
+						}
+					</div>
+					<div id="stabilityData" data-series={ stabilitySeries(rows, teams) } style="display:none;"></div>
 				</div>
 
 				<div id="sparklineData" data-series={ sparklineSeries(rows, teams) } style="display:none;"></div>
 				@sparklineBootstrapScript()
+				@stabilityBootstrapScript()
 			}
 
 			<!-- Footer caveat -->
@@ -283,6 +294,65 @@ func teamFor(current []types.MonthlyTeamMetrics, i int) string {
 		return current[i].Team
 	}
 	return ""
+}
+
+// stabilitySeries returns a JSON blob keyed by team → {labels, new, closed, open}
+// for client-side stability chart rendering.
+func stabilitySeries(rows []types.MonthlyTeamMetrics, teams []string) string {
+	type teamSeries struct {
+		Labels []string `json:"labels"`
+		New    []int    `json:"new"`
+		Closed []int    `json:"closed"`
+		Open   []int    `json:"open"`
+	}
+	out := map[string]*teamSeries{}
+	for _, t := range teams {
+		out[t] = &teamSeries{}
+	}
+	for _, r := range rows {
+		s := out[r.Team]
+		if s == nil {
+			continue
+		}
+		s.Labels = append(s.Labels, r.YearMonth)
+		s.New    = append(s.New, r.StabilityNewCount)
+		s.Closed = append(s.Closed, r.StabilityClosedCount)
+		s.Open   = append(s.Open, r.StabilityOpenCount)
+	}
+	b, _ := json.Marshal(out)
+	return string(b)
+}
+
+templ stabilityBootstrapScript() {
+	<script>
+		(function() {
+			const blob = JSON.parse(document.getElementById('stabilityData').dataset.series || '{}');
+			document.querySelectorAll('canvas[data-stability-team]').forEach(function(canvas) {
+				const team = canvas.dataset.stabilityTeam;
+				const s = blob[team] || { labels: [], new: [], closed: [], open: [] };
+				new Chart(canvas, {
+					type: 'line',
+					data: {
+						labels: s.labels,
+						datasets: [
+							{ label: 'New',    data: s.new,    borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', tension: 0.3 },
+							{ label: 'Closed', data: s.closed, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', tension: 0.3 },
+							{ label: 'Open',   data: s.open,   borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', tension: 0.3 },
+						],
+					},
+					options: {
+						responsive: true,
+						maintainAspectRatio: false,
+						plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } },
+						scales: {
+							x: { ticks: { font: { size: 9 }, maxRotation: 45, minRotation: 45 } },
+							y: { beginAtZero: true, ticks: { font: { size: 10 } } },
+						},
+					},
+				});
+			});
+		})();
+	</script>
 }
 
 templ sparklineBootstrapScript() {

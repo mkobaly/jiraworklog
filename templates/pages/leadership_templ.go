@@ -424,20 +424,69 @@ func LeadershipDashboard(rows []types.MonthlyTeamMetrics, teams []string, select
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</tbody></table></div><!-- Stability strip placeholder (Task 14 replaces this) --> <div class=\"bg-white rounded-lg shadow p-6\"><h2 class=\"text-lg font-semibold text-gray-700 mb-3\">Stability (Customer Bugs)</h2><p class=\"text-sm text-gray-500\">Per-team stability charts go here.</p></div><div id=\"sparklineData\" data-series=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</tbody></table></div><div class=\"bg-white rounded-lg shadow p-6\"><h2 class=\"text-lg font-semibold text-gray-700 mb-1\">Stability (Customer Bugs)</h2><p class=\"text-xs text-gray-400 mb-4\">New bugs opened, bugs closed, total open bugs per month.</p><div class=\"grid grid-cols-1 md:grid-cols-3 gap-4\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var21 string
-				templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(sparklineSeries(rows, teams))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 133, Col: 70}
+				for _, t := range teams {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<div><p class=\"text-sm font-medium text-gray-700 text-center mb-2\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var21 string
+					templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(t)
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 133, Col: 73}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "</p><div class=\"h-48\"><canvas data-stability-team=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var22 string
+					templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(t)
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 135, Col: 40}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\"></canvas></div></div>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</div><div id=\"stabilityData\" data-series=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "\" style=\"display:none;\"></div>")
+				var templ_7745c5c3_Var23 string
+				templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(stabilitySeries(rows, teams))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 140, Col: 71}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "\" style=\"display:none;\"></div></div><div id=\"sparklineData\" data-series=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var24 string
+				templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(sparklineSeries(rows, teams))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 143, Col: 70}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "\" style=\"display:none;\"></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -445,8 +494,16 @@ func LeadershipDashboard(rows []types.MonthlyTeamMetrics, teams []string, select
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, " ")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = stabilityBootstrapScript().Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<!-- Footer caveat --><p class=\"text-xs text-gray-400 italic text-center\">Each project includes both project-team and stability-team work; v2 will split these.</p></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<!-- Footer caveat --><p class=\"text-xs text-gray-400 italic text-center\">Each project includes both project-team and stability-team work; v2 will split these.</p></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -603,6 +660,62 @@ func teamFor(current []types.MonthlyTeamMetrics, i int) string {
 	return ""
 }
 
+// stabilitySeries returns a JSON blob keyed by team → {labels, new, closed, open}
+// for client-side stability chart rendering.
+func stabilitySeries(rows []types.MonthlyTeamMetrics, teams []string) string {
+	type teamSeries struct {
+		Labels []string `json:"labels"`
+		New    []int    `json:"new"`
+		Closed []int    `json:"closed"`
+		Open   []int    `json:"open"`
+	}
+	out := map[string]*teamSeries{}
+	for _, t := range teams {
+		out[t] = &teamSeries{}
+	}
+	for _, r := range rows {
+		s := out[r.Team]
+		if s == nil {
+			continue
+		}
+		s.Labels = append(s.Labels, r.YearMonth)
+		s.New = append(s.New, r.StabilityNewCount)
+		s.Closed = append(s.Closed, r.StabilityClosedCount)
+		s.Open = append(s.Open, r.StabilityOpenCount)
+	}
+	b, _ := json.Marshal(out)
+	return string(b)
+}
+
+func stabilityBootstrapScript() templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var25 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var25 == nil {
+			templ_7745c5c3_Var25 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<script>\n\t\t(function() {\n\t\t\tconst blob = JSON.parse(document.getElementById('stabilityData').dataset.series || '{}');\n\t\t\tdocument.querySelectorAll('canvas[data-stability-team]').forEach(function(canvas) {\n\t\t\t\tconst team = canvas.dataset.stabilityTeam;\n\t\t\t\tconst s = blob[team] || { labels: [], new: [], closed: [], open: [] };\n\t\t\t\tnew Chart(canvas, {\n\t\t\t\t\ttype: 'line',\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tlabels: s.labels,\n\t\t\t\t\t\tdatasets: [\n\t\t\t\t\t\t\t{ label: 'New',    data: s.new,    borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', tension: 0.3 },\n\t\t\t\t\t\t\t{ label: 'Closed', data: s.closed, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', tension: 0.3 },\n\t\t\t\t\t\t\t{ label: 'Open',   data: s.open,   borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', tension: 0.3 },\n\t\t\t\t\t\t],\n\t\t\t\t\t},\n\t\t\t\t\toptions: {\n\t\t\t\t\t\tresponsive: true,\n\t\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\t\tplugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } },\n\t\t\t\t\t\tscales: {\n\t\t\t\t\t\t\tx: { ticks: { font: { size: 9 }, maxRotation: 45, minRotation: 45 } },\n\t\t\t\t\t\t\ty: { beginAtZero: true, ticks: { font: { size: 10 } } },\n\t\t\t\t\t\t},\n\t\t\t\t\t},\n\t\t\t\t});\n\t\t\t});\n\t\t})();\n\t</script>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
 func sparklineBootstrapScript() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -619,12 +732,12 @@ func sparklineBootstrapScript() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var22 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var22 == nil {
-			templ_7745c5c3_Var22 = templ.NopComponent
+		templ_7745c5c3_Var26 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var26 == nil {
+			templ_7745c5c3_Var26 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<script>\n\t\t(function() {\n\t\t\tconst blob = JSON.parse(document.getElementById('sparklineData').dataset.series || '{}');\n\t\t\tdocument.querySelectorAll('canvas[data-spark-team]').forEach(function(canvas) {\n\t\t\t\tconst team = canvas.dataset.sparkTeam;\n\t\t\t\tconst metric = canvas.dataset.sparkMetric;\n\t\t\t\tconst series = (blob[metric] || {})[team] || [];\n\t\t\t\tnew Chart(canvas, {\n\t\t\t\t\ttype: 'line',\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tlabels: series.map(function(_, i) { return i; }),\n\t\t\t\t\t\tdatasets: [{\n\t\t\t\t\t\t\tdata: series,\n\t\t\t\t\t\t\tborderColor: '#3b82f6',\n\t\t\t\t\t\t\tborderWidth: 1.5,\n\t\t\t\t\t\t\tpointRadius: 0,\n\t\t\t\t\t\t\ttension: 0.35,\n\t\t\t\t\t\t\tfill: false,\n\t\t\t\t\t\t}],\n\t\t\t\t\t},\n\t\t\t\t\toptions: {\n\t\t\t\t\t\tresponsive: false,\n\t\t\t\t\t\tanimation: false,\n\t\t\t\t\t\tplugins: { legend: { display: false }, tooltip: { enabled: false } },\n\t\t\t\t\t\tscales: { x: { display: false }, y: { display: false } },\n\t\t\t\t\t},\n\t\t\t\t});\n\t\t\t});\n\t\t})();\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "<script>\n\t\t(function() {\n\t\t\tconst blob = JSON.parse(document.getElementById('sparklineData').dataset.series || '{}');\n\t\t\tdocument.querySelectorAll('canvas[data-spark-team]').forEach(function(canvas) {\n\t\t\t\tconst team = canvas.dataset.sparkTeam;\n\t\t\t\tconst metric = canvas.dataset.sparkMetric;\n\t\t\t\tconst series = (blob[metric] || {})[team] || [];\n\t\t\t\tnew Chart(canvas, {\n\t\t\t\t\ttype: 'line',\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tlabels: series.map(function(_, i) { return i; }),\n\t\t\t\t\t\tdatasets: [{\n\t\t\t\t\t\t\tdata: series,\n\t\t\t\t\t\t\tborderColor: '#3b82f6',\n\t\t\t\t\t\t\tborderWidth: 1.5,\n\t\t\t\t\t\t\tpointRadius: 0,\n\t\t\t\t\t\t\ttension: 0.35,\n\t\t\t\t\t\t\tfill: false,\n\t\t\t\t\t\t}],\n\t\t\t\t\t},\n\t\t\t\t\toptions: {\n\t\t\t\t\t\tresponsive: false,\n\t\t\t\t\t\tanimation: false,\n\t\t\t\t\t\tplugins: { legend: { display: false }, tooltip: { enabled: false } },\n\t\t\t\t\t\tscales: { x: { display: false }, y: { display: false } },\n\t\t\t\t\t},\n\t\t\t\t});\n\t\t\t});\n\t\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
