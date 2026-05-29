@@ -998,6 +998,42 @@ func (h *Handler) GetProjectKPIs(c echo.Context) error {
 	return c.JSON(http.StatusOK, data)
 }
 
+// GET /dashboard/leadership
+func (h *Handler) GetLeadershipDashboard(c echo.Context) error {
+	// v1: hard-coded team list. v2 will pull from a teams table or projectCharge.
+	teams := []string{"IDM", "SYM", "ESG"}
+
+	rows, err := h.repo.MonthlyTeamMetrics(teams, "", "")
+	if err != nil {
+		h.logger.Error("error fetching monthly team metrics", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch monthly team metrics")
+	}
+
+	// Build month-options dropdown from the rows we received (sorted unique
+	// year_month values, descending so the most recent is on top).
+	monthSet := map[string]struct{}{}
+	for _, r := range rows {
+		monthSet[r.YearMonth] = struct{}{}
+	}
+	monthOptions := make([]string, 0, len(monthSet))
+	for m := range monthSet {
+		monthOptions = append(monthOptions, m)
+	}
+	sort.Sort(sort.Reverse(sort.StringSlice(monthOptions)))
+
+	// Default to last complete month (highest year_month in the result).
+	selectedMonth := c.QueryParam("month")
+	if selectedMonth == "" && len(monthOptions) > 0 {
+		selectedMonth = monthOptions[0]
+	}
+
+	if wantsHTML(c) {
+		return pages.LeadershipDashboard(rows, teams, selectedMonth, monthOptions).
+			Render(c.Request().Context(), c.Response().Writer)
+	}
+	return c.JSON(http.StatusOK, rows)
+}
+
 func (h *Handler) validEmail(email string) bool {
 	for _, v := range h.cfg.AuthorizedUsers {
 		parts := strings.Split(v, "@")
