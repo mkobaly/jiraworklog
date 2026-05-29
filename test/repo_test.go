@@ -196,3 +196,25 @@ func TestMonthlyTeamMetricsCycleTime(t *testing.T) {
 	}
 	require.True(t, foundPositive, "no closed-issue rows found; can't validate cycle time")
 }
+
+func TestMonthlyTeamMetricsFlowEfficiency(t *testing.T) {
+	cfg, err := GetTestConfig()
+	require.NoError(t, err)
+	repo, err := repository.NewPostgresRepo(cfg)
+	require.NoError(t, err)
+
+	rows, err := repo.MonthlyTeamMetrics([]string{"IDM", "SYM", "ESG"}, "", "")
+	require.NoError(t, err)
+
+	for _, r := range rows {
+		// Flow efficiency must be in [0, 100]
+		require.GreaterOrEqual(t, r.FlowEfficiencyPct, 0.0)
+		require.LessOrEqual(t, r.FlowEfficiencyPct, 100.0)
+		// If issues closed this month, flow efficiency must be > 0
+		if r.ClosedIssueCount > 0 {
+			require.Greaterf(t, r.FlowEfficiencyPct, 0.0,
+				"team=%s month=%s has %d closed issues but flow efficiency is 0",
+				r.Team, r.YearMonth, r.ClosedIssueCount)
+		}
+	}
+}

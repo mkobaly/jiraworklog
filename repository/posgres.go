@@ -972,13 +972,28 @@ func (s *Postgres) MonthlyTeamMetrics(teams []string, fromMonth, toMonth string)
 				PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY total_secs) AS median_cycle_time_secs
 			FROM issue_cycle_secs
 			GROUP BY team, year_month
+		),
+		flow_efficiency AS (
+			SELECT
+				icm.project   AS team,
+				icm.year_month,
+				CASE
+					WHEN SUM(CASE WHEN ss.status IN ` + devQAStatuses + ` OR ss.status IN ('On Hold','QA Backlog') OR ss.status IN ` + doneStatuses + ` THEN ss.durationseconds ELSE 0 END) > 0
+					THEN
+						100.0 * SUM(CASE WHEN ss.status IN ` + devQAStatuses + ` THEN ss.durationseconds ELSE 0 END)::float8
+						/ SUM(CASE WHEN ss.status IN ` + devQAStatuses + ` OR ss.status IN ('On Hold','QA Backlog') OR ss.status IN ` + doneStatuses + ` THEN ss.durationseconds ELSE 0 END)::float8
+					ELSE 0
+				END AS flow_efficiency_pct
+			FROM status_stints ss
+			JOIN issue_close_month icm ON icm.issueid = ss.issueid
+			GROUP BY icm.project, icm.year_month
 		)
 		SELECT
 			tl.team,
 			m.year_month,
 			COALESCE(ct.median_cycle_time_secs, 0)::float8 AS median_cycle_time_secs,
 			COALESCE(th.closed_issue_count, 0)   AS closed_issue_count,
-			0::float8                            AS flow_efficiency_pct,
+			COALESCE(fe.flow_efficiency_pct, 0)::float8 AS flow_efficiency_pct,
 			0::float8                            AS failed_qa_ratio_pct,
 			0::float8                            AS defect_escape_rate_pct,
 			0                                    AS stability_new_count,
@@ -990,6 +1005,8 @@ func (s *Postgres) MonthlyTeamMetrics(teams []string, fromMonth, toMonth string)
 		  ON th.team = tl.team AND th.year_month = m.year_month
 		LEFT JOIN cycle_time ct
 		  ON ct.team = tl.team AND ct.year_month = m.year_month
+		LEFT JOIN flow_efficiency fe
+		  ON fe.team = tl.team AND fe.year_month = m.year_month
 		ORDER BY tl.team, m.year_month`
 
 	err := s.DB.Select(&result, query, teams, from, to)
