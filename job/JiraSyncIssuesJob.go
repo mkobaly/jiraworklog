@@ -78,7 +78,16 @@ func (j *JiraSyncIssuesJob) Run() error {
 	}
 
 	lastUpdated := j.cfg.IssueLastTimestamp
-	lastUpdatedDateOnly := internal.DateOnly(time.Unix(lastUpdated, 0)).In(tz).Unix()
+	// Both date-only values must be extracted in the SAME timezone. DateOnly
+	// uses the input time's location to extract y/m/d, so we have to convert
+	// the UTC-anchored last-timestamp into tz BEFORE calling DateOnly. The
+	// previous form `DateOnly(time.Unix(...)).In(tz)` extracted the date in
+	// UTC and then re-displayed it in tz — a no-op on the underlying instant.
+	// During the window each evening where UTC date differs from local date
+	// (roughly 8 PM to midnight EDT), that mismatch made lastUpdatedDateOnly
+	// one day greater than today, so neither `< today` nor `== today` fired
+	// and the sync silently skipped for hours.
+	lastUpdatedDateOnly := internal.DateOnly(time.Unix(lastUpdated, 0).In(tz)).Unix()
 
 	today := internal.DateOnly(time.Now().In(tz)).Unix()
 	if lastUpdatedDateOnly < today {
