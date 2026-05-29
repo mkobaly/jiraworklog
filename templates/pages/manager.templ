@@ -1,0 +1,130 @@
+package pages
+
+import (
+	"encoding/json"
+	"fmt"
+
+	"github.com/mkobaly/jiraworklog/templates/layouts"
+	"github.com/mkobaly/jiraworklog/types"
+)
+
+// ManagerDashboard renders the single-team detail page. `data.Team` is the
+// currently selected team; `teams` is the list of all teams for the
+// dropdown selector.
+templ ManagerDashboard(data types.ManagerMetricsData, teams []string) {
+	@layouts.Base("Manager Dashboard") {
+		<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+		<div class="space-y-6">
+			<!-- Header -->
+			<div class="bg-white rounded-lg shadow p-6 flex items-center justify-between flex-wrap gap-3">
+				<div class="flex items-center gap-3">
+					<h1 class="text-2xl font-bold text-gray-800">Manager Dashboard</h1>
+					<span class="text-lg text-gray-500">— { data.Team }</span>
+					<button
+						type="button"
+						onclick="document.getElementById('mgrHelpModal').classList.remove('hidden')"
+						class="w-7 h-7 rounded-full border border-gray-300 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition flex items-center justify-center text-sm font-semibold"
+						aria-label="Help: what these metrics mean"
+						title="What do these metrics mean?"
+					>?</button>
+				</div>
+				<form method="GET" action="/dashboard/manager" class="flex items-center gap-2">
+					<label for="team" class="text-sm font-medium text-gray-700">Team</label>
+					<select id="team" name="team" onchange="this.form.submit()" class="border border-gray-300 rounded-md px-3 py-1.5 text-sm">
+						for _, t := range teams {
+							<option value={ t } if t == data.Team { selected }>{ t }</option>
+						}
+					</select>
+				</form>
+			</div>
+
+			<!-- Delivery Predictability section (KPI cards + Time-in-Status + WIP + Aging WIP) -->
+			<section>
+				<h2 class="text-lg font-bold text-gray-800 mb-3">Delivery Predictability</h2>
+				<div class="bg-white rounded-lg shadow p-6 text-sm text-gray-500">
+					{ fmt.Sprintf("Predictability section — %d months of leadership data, %d time-in-status points, %d WIP points, %d aging WIP items",
+						len(data.LeadershipMonthly), len(data.TimeInStatus), len(data.WIPSeries), len(data.AgingWIPItems)) }
+				</div>
+			</section>
+
+			<!-- Quality section (Rework, Bounce, QA/Eng, Bug/Fwd cards) -->
+			<section>
+				<h2 class="text-lg font-bold text-gray-800 mb-3">Quality</h2>
+				<div class="bg-white rounded-lg shadow p-6 text-sm text-gray-500">
+					{ fmt.Sprintf("Quality section — %d rework points, %d bounce points, %d QA/Eng points, %d Bug/Fwd points",
+						len(data.ReworkCycles), len(data.StatusBounce), len(data.QAvsEngHours), len(data.BugvsForwardHours)) }
+				</div>
+			</section>
+
+			<!-- Stability section -->
+			<section>
+				<h2 class="text-lg font-bold text-gray-800 mb-3">Stability</h2>
+				<div class="bg-white rounded-lg shadow p-6 text-sm text-gray-500">
+					Stability section placeholder (Task 17 replaces this).
+				</div>
+			</section>
+
+			<!-- Back link -->
+			<div>
+				<a href="/dashboard/leadership" class="text-sm text-blue-600 hover:underline">← Back to Leadership Dashboard</a>
+			</div>
+
+			@mgrHelpModal()
+		</div>
+	}
+}
+
+// mgrHelpModal is the manager-page help glossary. Phase 2 Task 18 adds the
+// metric cards. For now this is a hidden placeholder so the button has
+// somewhere to open.
+templ mgrHelpModal() {
+	<div
+		id="mgrHelpModal"
+		class="hidden fixed inset-0 z-50 flex items-center justify-center p-4"
+		onclick="if (event.target === this) this.classList.add('hidden')"
+	>
+		<div class="fixed inset-0 bg-black bg-opacity-50"></div>
+		<div class="relative bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto">
+			<div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+				<h2 class="text-xl font-bold text-gray-800">What these metrics mean</h2>
+				<button type="button" onclick="document.getElementById('mgrHelpModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-700 text-2xl leading-none px-2" aria-label="Close">&times;</button>
+			</div>
+			<div class="px-6 py-5 space-y-6 text-sm text-gray-700">
+				Help content goes here (Task 18).
+			</div>
+		</div>
+	</div>
+}
+
+// mgrFmtDays / mgrFmtPct / mgrFmtCount are local formatters mirroring the
+// leadership-page helpers but renamed to avoid collisions across .templ files
+// in the same package.
+func mgrFmtDays(secs float64) string {
+	if secs <= 0 {
+		return "—"
+	}
+	return fmt.Sprintf("%.1fd", secs/86400)
+}
+
+func mgrFmtPct(pct float64) string {
+	return fmt.Sprintf("%.0f%%", pct)
+}
+
+func mgrFmtCount(n int) string {
+	if n == 0 {
+		return "—"
+	}
+	return fmt.Sprintf("%d", n)
+}
+
+func mgrFmtRatio(r float64) string {
+	return fmt.Sprintf("%.2f", r)
+}
+
+// mgrSerialize returns a JSON blob of the full ManagerMetricsData for client-
+// side chart bootstrapping. Charts pick out the slices they need.
+func mgrSerialize(data types.ManagerMetricsData) string {
+	b, _ := json.Marshal(data)
+	return string(b)
+}
