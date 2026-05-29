@@ -601,15 +601,17 @@ const projectIssuesCTE = `
 		AND i.type NOT IN ('Sub-task', 'Dev Sub-Task', 'QA Needed Sub-Task', 'Authoring Task')
 	)`
 
-// closeableTypes is the set of issue types that flow through Dev → QA and so
-// participate in cycle-time/throughput/flow-efficiency/defect-escape metrics.
-// Excludes Task (skips QA), Epic/Release Candidate (containers), and sub-tasks.
-const closeableTypes = `('Story','Bug','Hardware Bug','Customer Bug','HW / FW Customer Bug')`
+const (
+	// closeableTypes is the set of issue types that flow through Dev → QA and so
+	// participate in cycle-time/throughput/flow-efficiency/defect-escape metrics.
+	// Excludes Task (skips QA), Epic/Release Candidate (containers), and sub-tasks.
+	closeableTypes = `('Story','Bug','Hardware Bug','Customer Bug','HW / FW Customer Bug')`
 
-// bucketCase maps a status-stints `status` column to its flow bucket.
-// Identical to the inline CASE used in ProjectKPIs — both code paths reference
-// this constant so they cannot drift.
-const bucketCase = `
+	// bucketCase maps a status-stints `status` column to its flow bucket
+	// ('Dev'/'QA'/'Waiting'/'Other'). Mirrors the inline CASE expressions in
+	// ProjectKPIs (lines ~672-677, ~686-691); future tasks may consolidate
+	// those onto this constant.
+	bucketCase = `
     CASE
       WHEN status IN ('In Development','In Progress','Code Complete','Code Merged','In Review') THEN 'Dev'
       WHEN status IN ('In QA','Failed QA') THEN 'QA'
@@ -617,12 +619,13 @@ const bucketCase = `
       ELSE 'Other'
     END`
 
-// devQAStatuses lists the statuses that count toward "active" cycle time —
-// Dev bucket + QA bucket. Used by cycle-time and flow-efficiency queries.
-const devQAStatuses = `('In Development','In Progress','Code Complete','Code Merged','In Review','In QA','Failed QA')`
+	// devQAStatuses lists the statuses that count toward "active" cycle time —
+	// Dev bucket + QA bucket. Used by cycle-time and flow-efficiency queries.
+	devQAStatuses = `('In Development','In Progress','Code Complete','Code Merged','In Review','In QA','Failed QA')`
 
-// doneStatuses lists the statuses that mark an issue as closed.
-const doneStatuses = `('Done','Closed','Cancelled','Awaiting Release to Customer')`
+	// doneStatuses lists the statuses that mark an issue as closed.
+	doneStatuses = `('Done','Closed','Cancelled','Awaiting Release to Customer')`
+)
 
 // ProjectKPIs runs all KPI queries for the given epic key or fixed version and
 // returns the aggregated results in a single ProjectKPIData struct.
@@ -778,6 +781,8 @@ func (s *Postgres) ProjectKPIs(epicOrVersion string) (types.ProjectKPIData, erro
 			SUM(EXTRACT(EPOCH FROM (COALESCE(dateended, now()) - datestarted))) FILTER (
 				WHERE status IN `+devQAStatuses+`
 			) AS active_secs,
+			-- Intentionally wider than devQAStatuses: includes Waiting + Done so this
+			-- counts total elapsed time (active + waiting + done).
 			SUM(EXTRACT(EPOCH FROM (COALESCE(dateended, now()) - datestarted))) FILTER (
 				WHERE status IN ('In Development','In Progress','Code Complete', 'Code Merged', 'In Review', 'In QA', 'Failed QA', 'On Hold', 'QA Backlog', 'Done')
 			) AS total_secs
