@@ -16,10 +16,9 @@ import (
 	"github.com/mkobaly/jiraworklog/types"
 )
 
-// ManagerDashboard renders the single-team detail page. `data.Team` is the
-// currently selected team; `teams` is the list of all teams for the
-// dropdown selector.
-func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Component {
+// mgrKpiCard renders a single KPI card with a current value and a 13-month
+// chart canvas. chartID is the DOM id the bootstrap script looks for.
+func mgrKpiCard(label, value, chartID string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -40,7 +39,78 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Var2 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"bg-white rounded-lg shadow p-5\"><p class=\"text-xs text-gray-500 uppercase tracking-wide\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var2 string
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(label)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 15, Col: 66}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</p><p class=\"text-2xl font-bold text-gray-800 mt-1\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var3 string
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(value)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 16, Col: 58}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</p><div class=\"h-20 mt-3\"><canvas id=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var4 string
+		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(chartID)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 18, Col: 23}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\"></canvas></div></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+// ManagerDashboard renders the single-team detail page. `data.Team` is the
+// currently selected team; `teams` is the list of all teams for the
+// dropdown selector.
+func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var5 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var5 == nil {
+			templ_7745c5c3_Var5 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Var6 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
 			if !templ_7745c5c3_IsBuffer {
@@ -52,94 +122,100 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<script src=\"https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js\"></script> <div class=\"space-y-6\"><!-- Header --><div class=\"bg-white rounded-lg shadow p-6 flex items-center justify-between flex-wrap gap-3\"><div class=\"flex items-center gap-3\"><h1 class=\"text-2xl font-bold text-gray-800\">Manager Dashboard</h1><span class=\"text-lg text-gray-500\">— ")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var3 string
-			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(data.Team)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 23, Col: 56}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</span> <button type=\"button\" onclick=\"document.getElementById('mgrHelpModal').classList.remove('hidden')\" class=\"w-7 h-7 rounded-full border border-gray-300 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition flex items-center justify-center text-sm font-semibold\" aria-label=\"Help: what these metrics mean\" title=\"What do these metrics mean?\">?</button></div><form method=\"GET\" action=\"/dashboard/manager\" class=\"flex items-center gap-2\"><label for=\"team\" class=\"text-sm font-medium text-gray-700\">Team</label> <select id=\"team\" name=\"team\" onchange=\"this.form.submit()\" class=\"border border-gray-300 rounded-md px-3 py-1.5 text-sm\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			for _, t := range teams {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<option value=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var4 string
-				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(t)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 36, Col: 24}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				if t == data.Team {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, " selected")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, ">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var5 string
-				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(t)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 36, Col: 61}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</option>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</select></form></div><!-- Delivery Predictability section (KPI cards + Time-in-Status + WIP + Aging WIP) --><section><h2 class=\"text-lg font-bold text-gray-800 mb-3\">Delivery Predictability</h2><div class=\"bg-white rounded-lg shadow p-6 text-sm text-gray-500\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var6 string
-			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Predictability section — %d months of leadership data, %d time-in-status points, %d WIP points, %d aging WIP items",
-				len(data.LeadershipMonthly), len(data.TimeInStatus), len(data.WIPSeries), len(data.AgingWIPItems)))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 47, Col: 104}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</div></section><!-- Quality section (Rework, Bounce, QA/Eng, Bug/Fwd cards) --><section><h2 class=\"text-lg font-bold text-gray-800 mb-3\">Quality</h2><div class=\"bg-white rounded-lg shadow p-6 text-sm text-gray-500\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<script src=\"https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js\"></script> <div class=\"space-y-6\"><!-- Header --><div class=\"bg-white rounded-lg shadow p-6 flex items-center justify-between flex-wrap gap-3\"><div class=\"flex items-center gap-3\"><h1 class=\"text-2xl font-bold text-gray-800\">Manager Dashboard</h1><span class=\"text-lg text-gray-500\">— ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var7 string
-			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Quality section — %d rework points, %d bounce points, %d QA/Eng points, %d Bug/Fwd points",
-				len(data.ReworkCycles), len(data.StatusBounce), len(data.QAvsEngHours), len(data.BugvsForwardHours)))
+			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(data.Team)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 56, Col: 106}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 35, Col: 56}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</div></section><!-- Stability section --><section><h2 class=\"text-lg font-bold text-gray-800 mb-3\">Stability</h2><div class=\"bg-white rounded-lg shadow p-6 text-sm text-gray-500\">Stability section placeholder (Task 17 replaces this).</div></section><!-- Back link --><div><a href=\"/dashboard/leadership\" class=\"text-sm text-blue-600 hover:underline\">← Back to Leadership Dashboard</a></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</span> <button type=\"button\" onclick=\"document.getElementById('mgrHelpModal').classList.remove('hidden')\" class=\"w-7 h-7 rounded-full border border-gray-300 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition flex items-center justify-center text-sm font-semibold\" aria-label=\"Help: what these metrics mean\" title=\"What do these metrics mean?\">?</button></div><form method=\"GET\" action=\"/dashboard/manager\" class=\"flex items-center gap-2\"><label for=\"team\" class=\"text-sm font-medium text-gray-700\">Team</label> <select id=\"team\" name=\"team\" onchange=\"this.form.submit()\" class=\"border border-gray-300 rounded-md px-3 py-1.5 text-sm\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			for _, t := range teams {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<option value=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var8 string
+				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(t)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 48, Col: 24}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				if t == data.Team {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, " selected")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, ">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var9 string
+				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(t)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 48, Col: 61}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</option>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</select></form></div><!-- Delivery Predictability section (KPI cards + Time-in-Status + WIP + Aging WIP) --><section><h2 class=\"text-lg font-bold text-gray-800 mb-3\">Delivery Predictability</h2><div class=\"grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = mgrKpiCard("Cycle Time (median)", mgrFmtDays(currentMgrCycle(data)), "mgr-cycle").Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = mgrKpiCard("Throughput", mgrFmtCount(currentMgrThroughput(data)), "mgr-throughput").Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = mgrKpiCard("Flow Efficiency", mgrFmtPct(currentMgrFlow(data)), "mgr-flow").Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = mgrKpiCard("Failed QA Ratio", mgrFmtPct(currentMgrFailedQA(data)), "mgr-failedqa").Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</div></section><!-- Quality section (Rework, Bounce, QA/Eng, Bug/Fwd cards) --><section><h2 class=\"text-lg font-bold text-gray-800 mb-3\">Quality</h2><div class=\"bg-white rounded-lg shadow p-6 text-sm text-gray-500\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var10 string
+			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Quality section — %d rework points, %d bounce points, %d QA/Eng points, %d Bug/Fwd points",
+				len(data.ReworkCycles), len(data.StatusBounce), len(data.QAvsEngHours), len(data.BugvsForwardHours)))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 70, Col: 106}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</div></section><!-- Stability section --><section><h2 class=\"text-lg font-bold text-gray-800 mb-3\">Stability</h2><div class=\"bg-white rounded-lg shadow p-6 text-sm text-gray-500\">Stability section placeholder (Task 17 replaces this).</div></section><!-- Back link --><div><a href=\"/dashboard/leadership\" class=\"text-sm text-blue-600 hover:underline\">← Back to Leadership Dashboard</a></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -147,13 +223,34 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<div id=\"mgrData\" data-payload=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var11 string
+			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(mgrSerialize(data))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 89, Col: 54}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\" style=\"display:none;\"></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = mgrLeadershipChartsScript().Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = layouts.Base("Manager Dashboard").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = layouts.Base("Manager Dashboard").Render(templ.WithChildren(ctx, templ_7745c5c3_Var6), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -180,12 +277,12 @@ func mgrHelpModal() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var8 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var8 == nil {
-			templ_7745c5c3_Var8 = templ.NopComponent
+		templ_7745c5c3_Var12 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var12 == nil {
+			templ_7745c5c3_Var12 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<div id=\"mgrHelpModal\" class=\"hidden fixed inset-0 z-50 flex items-center justify-center p-4\" onclick=\"if (event.target === this) this.classList.add('hidden')\"><div class=\"fixed inset-0 bg-black bg-opacity-50\"></div><div class=\"relative bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto\"><div class=\"sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between\"><h2 class=\"text-xl font-bold text-gray-800\">What these metrics mean</h2><button type=\"button\" onclick=\"document.getElementById('mgrHelpModal').classList.add('hidden')\" class=\"text-gray-400 hover:text-gray-700 text-2xl leading-none px-2\" aria-label=\"Close\">&times;</button></div><div class=\"px-6 py-5 space-y-6 text-sm text-gray-700\">Help content goes here (Task 18).</div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<div id=\"mgrHelpModal\" class=\"hidden fixed inset-0 z-50 flex items-center justify-center p-4\" onclick=\"if (event.target === this) this.classList.add('hidden')\"><div class=\"fixed inset-0 bg-black bg-opacity-50\"></div><div class=\"relative bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto\"><div class=\"sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between\"><h2 class=\"text-xl font-bold text-gray-800\">What these metrics mean</h2><button type=\"button\" onclick=\"document.getElementById('mgrHelpModal').classList.add('hidden')\" class=\"text-gray-400 hover:text-gray-700 text-2xl leading-none px-2\" aria-label=\"Close\">&times;</button></div><div class=\"px-6 py-5 space-y-6 text-sm text-gray-700\">Help content goes here (Task 18).</div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -223,6 +320,65 @@ func mgrFmtRatio(r float64) string {
 func mgrSerialize(data types.ManagerMetricsData) string {
 	b, _ := json.Marshal(data)
 	return string(b)
+}
+
+// currentMgrCycle returns the median cycle time (seconds) for the most
+// recent month in the LeadershipMonthly slice.
+func currentMgrCycle(data types.ManagerMetricsData) float64 {
+	if len(data.LeadershipMonthly) == 0 {
+		return 0
+	}
+	return data.LeadershipMonthly[len(data.LeadershipMonthly)-1].MedianCycleTimeSecs
+}
+
+func currentMgrThroughput(data types.ManagerMetricsData) int {
+	if len(data.LeadershipMonthly) == 0 {
+		return 0
+	}
+	return data.LeadershipMonthly[len(data.LeadershipMonthly)-1].ClosedIssueCount
+}
+
+func currentMgrFlow(data types.ManagerMetricsData) float64 {
+	if len(data.LeadershipMonthly) == 0 {
+		return 0
+	}
+	return data.LeadershipMonthly[len(data.LeadershipMonthly)-1].FlowEfficiencyPct
+}
+
+func currentMgrFailedQA(data types.ManagerMetricsData) float64 {
+	if len(data.LeadershipMonthly) == 0 {
+		return 0
+	}
+	return data.LeadershipMonthly[len(data.LeadershipMonthly)-1].FailedQARatioPct
+}
+
+func mgrLeadershipChartsScript() templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var13 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var13 == nil {
+			templ_7745c5c3_Var13 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<script>\n\t\t(function() {\n\t\t\tconst data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');\n\t\t\tconst lm = data.LeadershipMonthly || [];\n\t\t\tconst labels = lm.map(function(r) { return r.YearMonth; });\n\t\t\tconst series = {\n\t\t\t\t'mgr-cycle':      lm.map(function(r) { return r.MedianCycleTimeSecs / 86400; }),\n\t\t\t\t'mgr-throughput': lm.map(function(r) { return r.ClosedIssueCount; }),\n\t\t\t\t'mgr-flow':       lm.map(function(r) { return r.FlowEfficiencyPct; }),\n\t\t\t\t'mgr-failedqa':   lm.map(function(r) { return r.FailedQARatioPct; }),\n\t\t\t};\n\t\t\tObject.keys(series).forEach(function(id) {\n\t\t\t\tconst canvas = document.getElementById(id);\n\t\t\t\tif (!canvas) return;\n\t\t\t\tnew Chart(canvas, {\n\t\t\t\t\ttype: 'bar',\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tlabels: labels,\n\t\t\t\t\t\tdatasets: [{\n\t\t\t\t\t\t\tdata: series[id],\n\t\t\t\t\t\t\tbackgroundColor: '#3b82f6',\n\t\t\t\t\t\t\tborderColor: '#1d4ed8',\n\t\t\t\t\t\t\tborderWidth: 1,\n\t\t\t\t\t\t}],\n\t\t\t\t\t},\n\t\t\t\t\toptions: {\n\t\t\t\t\t\tresponsive: true,\n\t\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\t\tplugins: { legend: { display: false }, tooltip: { enabled: true } },\n\t\t\t\t\t\tscales: {\n\t\t\t\t\t\t\tx: { ticks: { font: { size: 8 }, maxRotation: 45, minRotation: 45 } },\n\t\t\t\t\t\t\ty: { beginAtZero: true, ticks: { font: { size: 9 } } },\n\t\t\t\t\t\t},\n\t\t\t\t\t},\n\t\t\t\t});\n\t\t\t});\n\t\t})();\n\t</script>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
 }
 
 var _ = templruntime.GeneratedTemplate

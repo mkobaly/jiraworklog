@@ -8,6 +8,18 @@ import (
 	"github.com/mkobaly/jiraworklog/types"
 )
 
+// mgrKpiCard renders a single KPI card with a current value and a 13-month
+// chart canvas. chartID is the DOM id the bootstrap script looks for.
+templ mgrKpiCard(label, value, chartID string) {
+	<div class="bg-white rounded-lg shadow p-5">
+		<p class="text-xs text-gray-500 uppercase tracking-wide">{ label }</p>
+		<p class="text-2xl font-bold text-gray-800 mt-1">{ value }</p>
+		<div class="h-20 mt-3">
+			<canvas id={ chartID }></canvas>
+		</div>
+	</div>
+}
+
 // ManagerDashboard renders the single-team detail page. `data.Team` is the
 // currently selected team; `teams` is the list of all teams for the
 // dropdown selector.
@@ -42,9 +54,11 @@ templ ManagerDashboard(data types.ManagerMetricsData, teams []string) {
 			<!-- Delivery Predictability section (KPI cards + Time-in-Status + WIP + Aging WIP) -->
 			<section>
 				<h2 class="text-lg font-bold text-gray-800 mb-3">Delivery Predictability</h2>
-				<div class="bg-white rounded-lg shadow p-6 text-sm text-gray-500">
-					{ fmt.Sprintf("Predictability section — %d months of leadership data, %d time-in-status points, %d WIP points, %d aging WIP items",
-						len(data.LeadershipMonthly), len(data.TimeInStatus), len(data.WIPSeries), len(data.AgingWIPItems)) }
+				<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+					@mgrKpiCard("Cycle Time (median)", mgrFmtDays(currentMgrCycle(data)), "mgr-cycle")
+					@mgrKpiCard("Throughput", mgrFmtCount(currentMgrThroughput(data)), "mgr-throughput")
+					@mgrKpiCard("Flow Efficiency", mgrFmtPct(currentMgrFlow(data)), "mgr-flow")
+					@mgrKpiCard("Failed QA Ratio", mgrFmtPct(currentMgrFailedQA(data)), "mgr-failedqa")
 				</div>
 			</section>
 
@@ -71,6 +85,9 @@ templ ManagerDashboard(data types.ManagerMetricsData, teams []string) {
 			</div>
 
 			@mgrHelpModal()
+
+			<div id="mgrData" data-payload={ mgrSerialize(data) } style="display:none;"></div>
+			@mgrLeadershipChartsScript()
 		</div>
 	}
 }
@@ -127,4 +144,75 @@ func mgrFmtRatio(r float64) string {
 func mgrSerialize(data types.ManagerMetricsData) string {
 	b, _ := json.Marshal(data)
 	return string(b)
+}
+
+// currentMgrCycle returns the median cycle time (seconds) for the most
+// recent month in the LeadershipMonthly slice.
+func currentMgrCycle(data types.ManagerMetricsData) float64 {
+	if len(data.LeadershipMonthly) == 0 {
+		return 0
+	}
+	return data.LeadershipMonthly[len(data.LeadershipMonthly)-1].MedianCycleTimeSecs
+}
+
+func currentMgrThroughput(data types.ManagerMetricsData) int {
+	if len(data.LeadershipMonthly) == 0 {
+		return 0
+	}
+	return data.LeadershipMonthly[len(data.LeadershipMonthly)-1].ClosedIssueCount
+}
+
+func currentMgrFlow(data types.ManagerMetricsData) float64 {
+	if len(data.LeadershipMonthly) == 0 {
+		return 0
+	}
+	return data.LeadershipMonthly[len(data.LeadershipMonthly)-1].FlowEfficiencyPct
+}
+
+func currentMgrFailedQA(data types.ManagerMetricsData) float64 {
+	if len(data.LeadershipMonthly) == 0 {
+		return 0
+	}
+	return data.LeadershipMonthly[len(data.LeadershipMonthly)-1].FailedQARatioPct
+}
+
+templ mgrLeadershipChartsScript() {
+	<script>
+		(function() {
+			const data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');
+			const lm = data.LeadershipMonthly || [];
+			const labels = lm.map(function(r) { return r.YearMonth; });
+			const series = {
+				'mgr-cycle':      lm.map(function(r) { return r.MedianCycleTimeSecs / 86400; }),
+				'mgr-throughput': lm.map(function(r) { return r.ClosedIssueCount; }),
+				'mgr-flow':       lm.map(function(r) { return r.FlowEfficiencyPct; }),
+				'mgr-failedqa':   lm.map(function(r) { return r.FailedQARatioPct; }),
+			};
+			Object.keys(series).forEach(function(id) {
+				const canvas = document.getElementById(id);
+				if (!canvas) return;
+				new Chart(canvas, {
+					type: 'bar',
+					data: {
+						labels: labels,
+						datasets: [{
+							data: series[id],
+							backgroundColor: '#3b82f6',
+							borderColor: '#1d4ed8',
+							borderWidth: 1,
+						}],
+					},
+					options: {
+						responsive: true,
+						maintainAspectRatio: false,
+						plugins: { legend: { display: false }, tooltip: { enabled: true } },
+						scales: {
+							x: { ticks: { font: { size: 8 }, maxRotation: 45, minRotation: 45 } },
+							y: { beginAtZero: true, ticks: { font: { size: 9 } } },
+						},
+					},
+				});
+			});
+		})();
+	</script>
 }
