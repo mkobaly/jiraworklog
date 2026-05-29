@@ -159,7 +159,7 @@ func kpiRow(label string, current []types.MonthlyTeamMetrics, prior []types.Mont
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" class=\"mt-1 inline-block\" width=\"80\" height=\"20\"></canvas>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" class=\"mt-1 block mx-auto\" width=\"80\" height=\"20\"></canvas>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
