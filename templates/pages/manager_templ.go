@@ -285,7 +285,7 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "</div></section><!-- Stability section --><section><h2 class=\"text-lg font-bold text-gray-800 mb-3\">Stability</h2><div class=\"bg-white rounded-lg shadow p-6 text-sm text-gray-500\">Stability section placeholder (Task 17 replaces this).</div></section><!-- Back link --><div><a href=\"/dashboard/leadership\" class=\"text-sm text-blue-600 hover:underline\">← Back to Leadership Dashboard</a></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "</div></section><!-- Stability section --><section><h2 class=\"text-lg font-bold text-gray-800 mb-3\">Stability</h2><div class=\"grid grid-cols-1 lg:grid-cols-2 gap-4\"><div class=\"bg-white rounded-lg shadow p-6\"><h3 class=\"text-base font-semibold text-gray-700 mb-1\">Customer Bugs</h3><p class=\"text-xs text-gray-400 mb-3\">New bugs opened, bugs closed, total open bugs per month.</p><div class=\"h-72\"><canvas id=\"mgr-stability\"></canvas></div></div><div class=\"bg-white rounded-lg shadow p-6\"><h3 class=\"text-base font-semibold text-gray-700 mb-1\">Defect Escape Rate</h3><p class=\"text-xs text-gray-400 mb-3\">% of bugs found this month that came from customers vs were found internally.</p><div class=\"h-72\"><canvas id=\"mgr-escape\"></canvas></div></div></div></section><!-- Back link --><div><a href=\"/dashboard/leadership\" class=\"text-sm text-blue-600 hover:underline\">← Back to Leadership Dashboard</a></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -300,7 +300,7 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 			var templ_7745c5c3_Var13 string
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(mgrSerialize(data))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 124, Col: 54}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 137, Col: 54}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {
@@ -323,6 +323,10 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 				return templ_7745c5c3_Err
 			}
 			templ_7745c5c3_Err = mgrQualityChartsScript().Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = mgrStabilityChartsScript().Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -571,6 +575,35 @@ func mgrQualityChartsScript() templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "<script>\n\t\t(function() {\n\t\t\tconst data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');\n\t\t\tconst series = {\n\t\t\t\t'mgr-rework': {\n\t\t\t\t\tlabels: (data.ReworkCycles || []).map(function(p) { return p.YearMonth; }),\n\t\t\t\t\tvalues: (data.ReworkCycles || []).map(function(p) { return p.AvgCycles; }),\n\t\t\t\t},\n\t\t\t\t'mgr-bounce': {\n\t\t\t\t\tlabels: (data.StatusBounce || []).map(function(p) { return p.YearMonth; }),\n\t\t\t\t\tvalues: (data.StatusBounce || []).map(function(p) { return p.BouncePct; }),\n\t\t\t\t},\n\t\t\t\t'mgr-qaeng': {\n\t\t\t\t\tlabels: (data.QAvsEngHours || []).map(function(p) { return p.YearMonth; }),\n\t\t\t\t\tvalues: (data.QAvsEngHours || []).map(function(p) { return p.Ratio; }),\n\t\t\t\t},\n\t\t\t\t'mgr-bugfwd': {\n\t\t\t\t\tlabels: (data.BugvsForwardHours || []).map(function(p) { return p.YearMonth; }),\n\t\t\t\t\tvalues: (data.BugvsForwardHours || []).map(function(p) { return p.Ratio; }),\n\t\t\t\t},\n\t\t\t};\n\t\t\tObject.keys(series).forEach(function(id) {\n\t\t\t\tconst canvas = document.getElementById(id);\n\t\t\t\tif (!canvas) return;\n\t\t\t\tnew Chart(canvas, {\n\t\t\t\t\ttype: 'line',\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tlabels: series[id].labels,\n\t\t\t\t\t\tdatasets: [{\n\t\t\t\t\t\t\tdata: series[id].values,\n\t\t\t\t\t\t\tborderColor: '#8b5cf6',\n\t\t\t\t\t\t\tbackgroundColor: 'rgba(139,92,246,0.1)',\n\t\t\t\t\t\t\tfill: true,\n\t\t\t\t\t\t\tpointRadius: 0,\n\t\t\t\t\t\t\ttension: 0.3,\n\t\t\t\t\t\t\tborderWidth: 1.5,\n\t\t\t\t\t\t}],\n\t\t\t\t\t},\n\t\t\t\t\toptions: {\n\t\t\t\t\t\tresponsive: true,\n\t\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\t\tplugins: { legend: { display: false }, tooltip: { enabled: true } },\n\t\t\t\t\t\tscales: {\n\t\t\t\t\t\t\tx: { ticks: { font: { size: 8 }, maxRotation: 45, minRotation: 45 } },\n\t\t\t\t\t\t\ty: { beginAtZero: true, ticks: { font: { size: 9 } } },\n\t\t\t\t\t\t},\n\t\t\t\t\t},\n\t\t\t\t});\n\t\t\t});\n\t\t})();\n\t</script>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func mgrStabilityChartsScript() templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var19 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var19 == nil {
+			templ_7745c5c3_Var19 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<script>\n\t\t(function() {\n\t\t\tconst data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');\n\t\t\tconst lm = data.LeadershipMonthly || [];\n\t\t\tconst labels = lm.map(function(r) { return r.YearMonth; });\n\n\t\t\t// Customer bug trend\n\t\t\tconst stab = document.getElementById('mgr-stability');\n\t\t\tif (stab) {\n\t\t\t\tnew Chart(stab, {\n\t\t\t\t\ttype: 'line',\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tlabels: labels,\n\t\t\t\t\t\tdatasets: [\n\t\t\t\t\t\t\t{ label: 'New',    data: lm.map(function(r) { return r.StabilityNewCount; }),    borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', tension: 0.3 },\n\t\t\t\t\t\t\t{ label: 'Closed', data: lm.map(function(r) { return r.StabilityClosedCount; }), borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', tension: 0.3 },\n\t\t\t\t\t\t\t{ label: 'Open',   data: lm.map(function(r) { return r.StabilityOpenCount; }),   borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', tension: 0.3 },\n\t\t\t\t\t\t],\n\t\t\t\t\t},\n\t\t\t\t\toptions: {\n\t\t\t\t\t\tresponsive: true,\n\t\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\t\tplugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },\n\t\t\t\t\t\tscales: {\n\t\t\t\t\t\t\tx: { ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 45 } },\n\t\t\t\t\t\t\ty: { beginAtZero: true, ticks: { font: { size: 10 } } },\n\t\t\t\t\t\t},\n\t\t\t\t\t},\n\t\t\t\t});\n\t\t\t}\n\n\t\t\t// Defect Escape Rate trend\n\t\t\tconst esc = document.getElementById('mgr-escape');\n\t\t\tif (esc) {\n\t\t\t\tnew Chart(esc, {\n\t\t\t\t\ttype: 'bar',\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tlabels: labels,\n\t\t\t\t\t\tdatasets: [{\n\t\t\t\t\t\t\tdata: lm.map(function(r) { return r.DefectEscapeRatePct; }),\n\t\t\t\t\t\t\tbackgroundColor: '#ef4444',\n\t\t\t\t\t\t\tborderColor: '#b91c1c',\n\t\t\t\t\t\t\tborderWidth: 1,\n\t\t\t\t\t\t}],\n\t\t\t\t\t},\n\t\t\t\t\toptions: {\n\t\t\t\t\t\tresponsive: true,\n\t\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\t\tplugins: { legend: { display: false }, tooltip: { enabled: true } },\n\t\t\t\t\t\tscales: {\n\t\t\t\t\t\t\tx: { ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 45 } },\n\t\t\t\t\t\t\ty: { beginAtZero: true, max: 100, ticks: { font: { size: 10 }, callback: function(v) { return v + '%'; } } },\n\t\t\t\t\t\t},\n\t\t\t\t\t},\n\t\t\t\t});\n\t\t\t}\n\t\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

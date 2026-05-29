@@ -109,8 +109,21 @@ templ ManagerDashboard(data types.ManagerMetricsData, teams []string) {
 			<!-- Stability section -->
 			<section>
 				<h2 class="text-lg font-bold text-gray-800 mb-3">Stability</h2>
-				<div class="bg-white rounded-lg shadow p-6 text-sm text-gray-500">
-					Stability section placeholder (Task 17 replaces this).
+				<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+					<div class="bg-white rounded-lg shadow p-6">
+						<h3 class="text-base font-semibold text-gray-700 mb-1">Customer Bugs</h3>
+						<p class="text-xs text-gray-400 mb-3">New bugs opened, bugs closed, total open bugs per month.</p>
+						<div class="h-72">
+							<canvas id="mgr-stability"></canvas>
+						</div>
+					</div>
+					<div class="bg-white rounded-lg shadow p-6">
+						<h3 class="text-base font-semibold text-gray-700 mb-1">Defect Escape Rate</h3>
+						<p class="text-xs text-gray-400 mb-3">% of bugs found this month that came from customers vs were found internally.</p>
+						<div class="h-72">
+							<canvas id="mgr-escape"></canvas>
+						</div>
+					</div>
 				</div>
 			</section>
 
@@ -126,6 +139,7 @@ templ ManagerDashboard(data types.ManagerMetricsData, teams []string) {
 			@mgrTimeInStatusScript()
 			@mgrWIPScript()
 			@mgrQualityChartsScript()
+			@mgrStabilityChartsScript()
 		</div>
 	}
 }
@@ -411,6 +425,67 @@ templ mgrQualityChartsScript() {
 					},
 				});
 			});
+		})();
+	</script>
+}
+
+templ mgrStabilityChartsScript() {
+	<script>
+		(function() {
+			const data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');
+			const lm = data.LeadershipMonthly || [];
+			const labels = lm.map(function(r) { return r.YearMonth; });
+
+			// Customer bug trend
+			const stab = document.getElementById('mgr-stability');
+			if (stab) {
+				new Chart(stab, {
+					type: 'line',
+					data: {
+						labels: labels,
+						datasets: [
+							{ label: 'New',    data: lm.map(function(r) { return r.StabilityNewCount; }),    borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', tension: 0.3 },
+							{ label: 'Closed', data: lm.map(function(r) { return r.StabilityClosedCount; }), borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', tension: 0.3 },
+							{ label: 'Open',   data: lm.map(function(r) { return r.StabilityOpenCount; }),   borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', tension: 0.3 },
+						],
+					},
+					options: {
+						responsive: true,
+						maintainAspectRatio: false,
+						plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+						scales: {
+							x: { ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 45 } },
+							y: { beginAtZero: true, ticks: { font: { size: 10 } } },
+						},
+					},
+				});
+			}
+
+			// Defect Escape Rate trend
+			const esc = document.getElementById('mgr-escape');
+			if (esc) {
+				new Chart(esc, {
+					type: 'bar',
+					data: {
+						labels: labels,
+						datasets: [{
+							data: lm.map(function(r) { return r.DefectEscapeRatePct; }),
+							backgroundColor: '#ef4444',
+							borderColor: '#b91c1c',
+							borderWidth: 1,
+						}],
+					},
+					options: {
+						responsive: true,
+						maintainAspectRatio: false,
+						plugins: { legend: { display: false }, tooltip: { enabled: true } },
+						scales: {
+							x: { ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 45 } },
+							y: { beginAtZero: true, max: 100, ticks: { font: { size: 10 }, callback: function(v) { return v + '%'; } } },
+						},
+					},
+				});
+			}
 		})();
 	</script>
 }
