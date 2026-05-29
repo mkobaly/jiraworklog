@@ -294,6 +294,22 @@ func TestManagerMetricsTimeInStatus(t *testing.T) {
 	}
 }
 
+func TestManagerMetricsWIPSeries(t *testing.T) {
+	cfg, err := GetTestConfig()
+	require.NoError(t, err)
+	repo, err := repository.NewPostgresRepo(cfg)
+	require.NoError(t, err)
+
+	data, err := repo.ManagerMetrics("SYM", "", "")
+	require.NoError(t, err)
+	require.Greater(t, len(data.WIPSeries), 300,
+		"expected ~390 daily WIP points across 13 months")
+	for _, p := range data.WIPSeries {
+		require.Regexp(t, `^\d{4}-\d{2}-\d{2}$`, p.Day)
+		require.GreaterOrEqual(t, p.WIPCount, 0)
+	}
+}
+
 func TestMonthlyTeamMetricsStability(t *testing.T) {
 	cfg, err := GetTestConfig()
 	require.NoError(t, err)

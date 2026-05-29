@@ -1143,6 +1143,11 @@ func (s *Postgres) ManagerMetrics(team string, fromMonth, toMonth string) (types
 		return data, err
 	}
 
+	data.WIPSeries, err = s.wipSeries(team, fromMonth, toMonth)
+	if err != nil {
+		return data, err
+	}
+
 	return data, nil
 }
 
@@ -1178,6 +1183,42 @@ func (s *Postgres) timeInStatus(team string, fromMonth, toMonth string) ([]types
 		) sub
 		WHERE bucket IS NOT NULL
 		ORDER BY year_month, bucket`
+
+	err := s.DB.Select(&result, query, team, from, to)
+	return result, err
+}
+
+// wipSeries returns one row per day across the 13-month window — the count
+// of the team's closeable-type issues currently in a Dev or QA status on
+// that day. Used by the WIP-trend line chart.
+func (s *Postgres) wipSeries(team string, fromMonth, toMonth string) ([]types.WIPPoint, error) {
+	result := []types.WIPPoint{}
+	from, to := s.calculateDateRange(fromMonth, toMonth)
+
+	query := `
+		WITH days AS (
+			SELECT generate_series(
+				date_trunc('month', $2::timestamptz),
+				date_trunc('month', $3::timestamptz) - INTERVAL '1 day',
+				'1 day'::interval
+			)::date AS day
+		),
+		team_issues AS (
+			SELECT id FROM issue
+			WHERE project = $1
+			AND type IN ` + closeableTypes + `
+		)
+		SELECT
+			to_char(d.day, 'YYYY-MM-DD') AS day,
+			COUNT(DISTINCT ss.issueid) AS wip_count
+		FROM days d
+		LEFT JOIN status_stints ss
+			ON ss.issueid IN (SELECT id FROM team_issues)
+			AND ss.status IN ` + devQAStatuses + `
+			AND ss.datestarted::date <= d.day
+			AND (ss.dateended IS NULL OR ss.dateended::date > d.day)
+		GROUP BY d.day
+		ORDER BY d.day`
 
 	err := s.DB.Select(&result, query, team, from, to)
 	return result, err
