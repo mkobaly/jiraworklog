@@ -1016,6 +1016,24 @@ func (s *Postgres) MonthlyTeamMetrics(teams []string, fromMonth, toMonth string)
 			LEFT JOIN failed_qa_stories fqs
 			  ON fqs.team = cs.team AND fqs.year_month = cs.year_month AND fqs.issueid = cs.issueid
 			GROUP BY cs.team, cs.year_month
+		),
+		defect_escape AS (
+			SELECT
+				project AS team,
+				to_char(createdate, 'YYYY-MM') AS year_month,
+				CASE
+					WHEN COUNT(*) FILTER (WHERE type IN ('Customer Bug','HW / FW Customer Bug','Bug','Hardware Bug')) > 0
+					THEN 100.0 *
+						COUNT(*) FILTER (WHERE type IN ('Customer Bug','HW / FW Customer Bug'))::float8
+						/ COUNT(*) FILTER (WHERE type IN ('Customer Bug','HW / FW Customer Bug','Bug','Hardware Bug'))::float8
+					ELSE 0
+				END AS defect_escape_rate_pct
+			FROM issue
+			WHERE project = ANY($1::text[])
+			AND createdate >= $2::timestamptz
+			AND createdate <  $3::timestamptz
+			AND type IN ('Customer Bug','HW / FW Customer Bug','Bug','Hardware Bug')
+			GROUP BY project, to_char(createdate, 'YYYY-MM')
 		)
 		SELECT
 			tl.team,
@@ -1024,7 +1042,7 @@ func (s *Postgres) MonthlyTeamMetrics(teams []string, fromMonth, toMonth string)
 			COALESCE(th.closed_issue_count, 0)   AS closed_issue_count,
 			COALESCE(fe.flow_efficiency_pct, 0)::float8 AS flow_efficiency_pct,
 			COALESCE(fqr.failed_qa_ratio_pct, 0)::float8 AS failed_qa_ratio_pct,
-			0::float8                            AS defect_escape_rate_pct,
+			COALESCE(de.defect_escape_rate_pct, 0)::float8 AS defect_escape_rate_pct,
 			0                                    AS stability_new_count,
 			0                                    AS stability_closed_count,
 			0                                    AS stability_open_count
@@ -1038,6 +1056,8 @@ func (s *Postgres) MonthlyTeamMetrics(teams []string, fromMonth, toMonth string)
 		  ON fe.team = tl.team AND fe.year_month = m.year_month
 		LEFT JOIN failed_qa_ratio fqr
 		  ON fqr.team = tl.team AND fqr.year_month = m.year_month
+		LEFT JOIN defect_escape de
+		  ON de.team = tl.team AND de.year_month = m.year_month
 		ORDER BY tl.team, m.year_month`
 
 	err := s.DB.Select(&result, query, teams, from, to)
