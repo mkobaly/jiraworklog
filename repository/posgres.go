@@ -625,6 +625,10 @@ const (
 
 	// doneStatuses lists the statuses that mark an issue as closed.
 	doneStatuses = `('Done','Closed','Cancelled','Awaiting Release to Customer')`
+
+	// waitingStatuses lists the statuses that represent waiting time
+	// (issue is open but not actively progressing in Dev or QA).
+	waitingStatuses = `('On Hold','QA Backlog')`
 )
 
 // ProjectKPIs runs all KPI queries for the given epic key or fixed version and
