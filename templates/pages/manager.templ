@@ -144,9 +144,27 @@ templ ManagerDashboard(data types.ManagerMetricsData, teams []string) {
 	}
 }
 
-// mgrHelpModal is the manager-page help glossary. Phase 2 Task 18 adds the
-// metric cards. For now this is a hidden placeholder so the button has
-// somewhere to open.
+templ mgrHelpCard(name, what, how, soWhat string) {
+	<div>
+		<h3 class="text-base font-semibold text-gray-800 mb-2">{ name }</h3>
+		<dl class="space-y-1.5">
+			<div class="flex gap-2">
+				<dt class="font-medium text-gray-600 whitespace-nowrap">What:</dt>
+				<dd>{ what }</dd>
+			</div>
+			<div class="flex gap-2">
+				<dt class="font-medium text-gray-600 whitespace-nowrap">How:</dt>
+				<dd>{ how }</dd>
+			</div>
+			<div class="flex gap-2">
+				<dt class="font-medium text-gray-600 whitespace-nowrap">So what:</dt>
+				<dd>{ soWhat }</dd>
+			</div>
+		</dl>
+	</div>
+}
+
+// mgrHelpModal is the manager-page help glossary.
 templ mgrHelpModal() {
 	<div
 		id="mgrHelpModal"
@@ -160,7 +178,76 @@ templ mgrHelpModal() {
 				<button type="button" onclick="document.getElementById('mgrHelpModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-700 text-2xl leading-none px-2" aria-label="Close">&times;</button>
 			</div>
 			<div class="px-6 py-5 space-y-6 text-sm text-gray-700">
-				Help content goes here (Task 18).
+				@mgrHelpCard(
+					"Cycle Time (median)",
+					"Median time issues spend actively moving through Development and QA — the \"typical\" elapsed time from dev start to QA done.",
+					"Sum of time in Dev statuses plus QA statuses, per issue. Median across all issues closed in the month.",
+					"Lower = faster delivery. A rising trend is an early warning of bottlenecks (more bugs, more rework, harder problems, distractions).",
+				)
+				@mgrHelpCard(
+					"Throughput",
+					"Count of issues closed in the month for this team.",
+					"Issues of type Story / Bug / Hardware Bug / Customer Bug / HW-FW Customer Bug that entered Done / Closed / Cancelled / Awaiting Release for the first time in the month.",
+					"Steady throughput + steady cycle time = predictable team. Erratic throughput = lumpy delivery, hard to plan around.",
+				)
+				@mgrHelpCard(
+					"Flow Efficiency",
+					"Percent of an issue's elapsed time spent actively progressing vs waiting.",
+					"Active (Dev + QA) seconds / total (Dev + QA + Waiting + Done) seconds, summed across closed issues in the month.",
+					"Low flow efficiency means most cycle time is waiting in queues. High = clean handoffs and low queue time.",
+				)
+				@mgrHelpCard(
+					"Failed QA Ratio",
+					"Percent of Stories closed this month that failed QA at least once.",
+					"Numerator = stories closed in month that hit Failed QA status. Denominator = all stories closed in month. Bugs and Tasks excluded.",
+					"Your \"first-time-right\" rate. High = stories aren't actually ready when devs hand them off.",
+				)
+				@mgrHelpCard(
+					"Time in Status",
+					"Average time issues spent in each flow bucket (Dev / QA / Waiting) per month.",
+					"Avg of status_stints.durationseconds, grouped by the month the stint ended and the bucket. Stacked bars show the composition over time.",
+					"Surfaces where the team's time is actually going. Big QA stack = QA bottleneck. Big Waiting stack = handoff or blocker problem.",
+				)
+				@mgrHelpCard(
+					"WIP & Aging WIP",
+					"WIP = count of open issues currently in Dev or QA. Aging WIP = the subset that have been stuck longer than the team's typical cycle time.",
+					"WIP series sampled daily. Aging WIP threshold = team's 85th-percentile cycle time over the last 13 months. List capped at 20.",
+					"Rising WIP without rising throughput = work piling up. Aging WIP items are the specific tickets stuck — usually the place to start digging when delivery slows.",
+				)
+				@mgrHelpCard(
+					"Rework Cycles",
+					"Average QA→Dev transitions per closed issue in the month.",
+					"For issues closed in the month, count the number of times the issue transitioned from a QA/test status back to a dev status. Average across those issues.",
+					"When stuff fails QA, how badly does it thrash? Rising rework cycles is the deeper-dive signal behind Failed QA Ratio.",
+				)
+				@mgrHelpCard(
+					"Status Bounce Rate",
+					"How often issues re-enter the same status (status thrash).",
+					"Re-entries = times an issue's status was entered more than once. Bounce rate = re-entries / total transitions per closed issue, averaged for the month.",
+					"High bounce = unclear workflow, requirement churn, or thrash. Useful for catching process problems separately from QA-specific rework.",
+				)
+				@mgrHelpCard(
+					"QA hrs / Eng hrs",
+					"Ratio of hours logged by people with role=qa to hours logged by people with role=dev, per month.",
+					"Sum of worklog.timespenthours where author has role 'qa', divided by the same sum for role 'dev'. Bucketed by worklog date.",
+					"Indicates QA capacity relative to dev capacity. A persistent low ratio (e.g. <0.2) may mean QA is undersized and creates a downstream bottleneck.",
+				)
+				@mgrHelpCard(
+					"Bug hrs / Forward-work hrs",
+					"Ratio of hours spent fixing internal bugs to hours spent on Story + Task work, per month.",
+					"Sum of hours on type Bug + Hardware Bug, divided by sum of hours on type Story + Task. Bucketed by worklog date.",
+					"High = team is firefighting more than delivering. Rising trend is an early warning of accumulating quality debt.",
+				)
+				@mgrHelpCard(
+					"Stability (Customer Bugs) & Defect Escape Rate",
+					"Customer-reported bug volume over time, plus the % of bugs found this month that came from customers vs internally.",
+					"Customer Bug + HW/FW Customer Bug counts (new, closed, running open) per month. Escape Rate = customer bugs / (customer + internal bugs), by createdate month.",
+					"The customer-pain signal. Open trend rising = customers filing faster than the team fixes. High escape rate = team isn't catching defects before release.",
+				)
+
+				<p class="text-xs text-gray-400 italic pt-2 border-t border-gray-100">
+					"Forward work" = Story + Task. Tasks don't go through QA, so they're excluded from Failed QA Ratio but counted in throughput and the hours ratio.
+				</p>
 			</div>
 		</div>
 	</div>

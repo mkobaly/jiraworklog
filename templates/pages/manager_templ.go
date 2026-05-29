@@ -344,10 +344,7 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 	})
 }
 
-// mgrHelpModal is the manager-page help glossary. Phase 2 Task 18 adds the
-// metric cards. For now this is a hidden placeholder so the button has
-// somewhere to open.
-func mgrHelpModal() templ.Component {
+func mgrHelpCard(name, what, how, soWhat string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -368,7 +365,192 @@ func mgrHelpModal() templ.Component {
 			templ_7745c5c3_Var14 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<div id=\"mgrHelpModal\" class=\"hidden fixed inset-0 z-50 flex items-center justify-center p-4\" onclick=\"if (event.target === this) this.classList.add('hidden')\"><div class=\"fixed inset-0 bg-black bg-opacity-50\"></div><div class=\"relative bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto\"><div class=\"sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between\"><h2 class=\"text-xl font-bold text-gray-800\">What these metrics mean</h2><button type=\"button\" onclick=\"document.getElementById('mgrHelpModal').classList.add('hidden')\" class=\"text-gray-400 hover:text-gray-700 text-2xl leading-none px-2\" aria-label=\"Close\">&times;</button></div><div class=\"px-6 py-5 space-y-6 text-sm text-gray-700\">Help content goes here (Task 18).</div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<div><h3 class=\"text-base font-semibold text-gray-800 mb-2\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var15 string
+		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(name)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 149, Col: 63}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</h3><dl class=\"space-y-1.5\"><div class=\"flex gap-2\"><dt class=\"font-medium text-gray-600 whitespace-nowrap\">What:</dt><dd>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var16 string
+		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(what)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 153, Col: 14}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "</dd></div><div class=\"flex gap-2\"><dt class=\"font-medium text-gray-600 whitespace-nowrap\">How:</dt><dd>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var17 string
+		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(how)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 157, Col: 13}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "</dd></div><div class=\"flex gap-2\"><dt class=\"font-medium text-gray-600 whitespace-nowrap\">So what:</dt><dd>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var18 string
+		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(soWhat)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 161, Col: 16}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</dd></div></dl></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+// mgrHelpModal is the manager-page help glossary.
+func mgrHelpModal() templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var19 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var19 == nil {
+			templ_7745c5c3_Var19 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<div id=\"mgrHelpModal\" class=\"hidden fixed inset-0 z-50 flex items-center justify-center p-4\" onclick=\"if (event.target === this) this.classList.add('hidden')\"><div class=\"fixed inset-0 bg-black bg-opacity-50\"></div><div class=\"relative bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto\"><div class=\"sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between\"><h2 class=\"text-xl font-bold text-gray-800\">What these metrics mean</h2><button type=\"button\" onclick=\"document.getElementById('mgrHelpModal').classList.add('hidden')\" class=\"text-gray-400 hover:text-gray-700 text-2xl leading-none px-2\" aria-label=\"Close\">&times;</button></div><div class=\"px-6 py-5 space-y-6 text-sm text-gray-700\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = mgrHelpCard(
+			"Cycle Time (median)",
+			"Median time issues spend actively moving through Development and QA — the \"typical\" elapsed time from dev start to QA done.",
+			"Sum of time in Dev statuses plus QA statuses, per issue. Median across all issues closed in the month.",
+			"Lower = faster delivery. A rising trend is an early warning of bottlenecks (more bugs, more rework, harder problems, distractions).",
+		).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = mgrHelpCard(
+			"Throughput",
+			"Count of issues closed in the month for this team.",
+			"Issues of type Story / Bug / Hardware Bug / Customer Bug / HW-FW Customer Bug that entered Done / Closed / Cancelled / Awaiting Release for the first time in the month.",
+			"Steady throughput + steady cycle time = predictable team. Erratic throughput = lumpy delivery, hard to plan around.",
+		).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = mgrHelpCard(
+			"Flow Efficiency",
+			"Percent of an issue's elapsed time spent actively progressing vs waiting.",
+			"Active (Dev + QA) seconds / total (Dev + QA + Waiting + Done) seconds, summed across closed issues in the month.",
+			"Low flow efficiency means most cycle time is waiting in queues. High = clean handoffs and low queue time.",
+		).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = mgrHelpCard(
+			"Failed QA Ratio",
+			"Percent of Stories closed this month that failed QA at least once.",
+			"Numerator = stories closed in month that hit Failed QA status. Denominator = all stories closed in month. Bugs and Tasks excluded.",
+			"Your \"first-time-right\" rate. High = stories aren't actually ready when devs hand them off.",
+		).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = mgrHelpCard(
+			"Time in Status",
+			"Average time issues spent in each flow bucket (Dev / QA / Waiting) per month.",
+			"Avg of status_stints.durationseconds, grouped by the month the stint ended and the bucket. Stacked bars show the composition over time.",
+			"Surfaces where the team's time is actually going. Big QA stack = QA bottleneck. Big Waiting stack = handoff or blocker problem.",
+		).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = mgrHelpCard(
+			"WIP & Aging WIP",
+			"WIP = count of open issues currently in Dev or QA. Aging WIP = the subset that have been stuck longer than the team's typical cycle time.",
+			"WIP series sampled daily. Aging WIP threshold = team's 85th-percentile cycle time over the last 13 months. List capped at 20.",
+			"Rising WIP without rising throughput = work piling up. Aging WIP items are the specific tickets stuck — usually the place to start digging when delivery slows.",
+		).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = mgrHelpCard(
+			"Rework Cycles",
+			"Average QA→Dev transitions per closed issue in the month.",
+			"For issues closed in the month, count the number of times the issue transitioned from a QA/test status back to a dev status. Average across those issues.",
+			"When stuff fails QA, how badly does it thrash? Rising rework cycles is the deeper-dive signal behind Failed QA Ratio.",
+		).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = mgrHelpCard(
+			"Status Bounce Rate",
+			"How often issues re-enter the same status (status thrash).",
+			"Re-entries = times an issue's status was entered more than once. Bounce rate = re-entries / total transitions per closed issue, averaged for the month.",
+			"High bounce = unclear workflow, requirement churn, or thrash. Useful for catching process problems separately from QA-specific rework.",
+		).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = mgrHelpCard(
+			"QA hrs / Eng hrs",
+			"Ratio of hours logged by people with role=qa to hours logged by people with role=dev, per month.",
+			"Sum of worklog.timespenthours where author has role 'qa', divided by the same sum for role 'dev'. Bucketed by worklog date.",
+			"Indicates QA capacity relative to dev capacity. A persistent low ratio (e.g. <0.2) may mean QA is undersized and creates a downstream bottleneck.",
+		).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = mgrHelpCard(
+			"Bug hrs / Forward-work hrs",
+			"Ratio of hours spent fixing internal bugs to hours spent on Story + Task work, per month.",
+			"Sum of hours on type Bug + Hardware Bug, divided by sum of hours on type Story + Task. Bucketed by worklog date.",
+			"High = team is firefighting more than delivering. Rising trend is an early warning of accumulating quality debt.",
+		).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = mgrHelpCard(
+			"Stability (Customer Bugs) & Defect Escape Rate",
+			"Customer-reported bug volume over time, plus the % of bugs found this month that came from customers vs internally.",
+			"Customer Bug + HW/FW Customer Bug counts (new, closed, running open) per month. Escape Rate = customer bugs / (customer + internal bugs), by createdate month.",
+			"The customer-pain signal. Open trend rising = customers filing faster than the team fixes. High escape rate = team isn't catching defects before release.",
+		).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<p class=\"text-xs text-gray-400 italic pt-2 border-t border-gray-100\">\"Forward work\" = Story + Task. Tasks don't go through QA, so they're excluded from Failed QA Ratio but counted in throughput and the hours ratio.</p></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -454,12 +636,12 @@ func mgrLeadershipChartsScript() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var15 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var15 == nil {
-			templ_7745c5c3_Var15 = templ.NopComponent
+		templ_7745c5c3_Var20 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var20 == nil {
+			templ_7745c5c3_Var20 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<script>\n\t\t(function() {\n\t\t\tconst data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');\n\t\t\tconst lm = data.LeadershipMonthly || [];\n\t\t\tconst labels = lm.map(function(r) { return r.YearMonth; });\n\t\t\tconst series = {\n\t\t\t\t'mgr-cycle':      lm.map(function(r) { return r.MedianCycleTimeSecs / 86400; }),\n\t\t\t\t'mgr-throughput': lm.map(function(r) { return r.ClosedIssueCount; }),\n\t\t\t\t'mgr-flow':       lm.map(function(r) { return r.FlowEfficiencyPct; }),\n\t\t\t\t'mgr-failedqa':   lm.map(function(r) { return r.FailedQARatioPct; }),\n\t\t\t};\n\t\t\tObject.keys(series).forEach(function(id) {\n\t\t\t\tconst canvas = document.getElementById(id);\n\t\t\t\tif (!canvas) return;\n\t\t\t\tnew Chart(canvas, {\n\t\t\t\t\ttype: 'bar',\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tlabels: labels,\n\t\t\t\t\t\tdatasets: [{\n\t\t\t\t\t\t\tdata: series[id],\n\t\t\t\t\t\t\tbackgroundColor: '#3b82f6',\n\t\t\t\t\t\t\tborderColor: '#1d4ed8',\n\t\t\t\t\t\t\tborderWidth: 1,\n\t\t\t\t\t\t}],\n\t\t\t\t\t},\n\t\t\t\t\toptions: {\n\t\t\t\t\t\tresponsive: true,\n\t\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\t\tplugins: { legend: { display: false }, tooltip: { enabled: true } },\n\t\t\t\t\t\tscales: {\n\t\t\t\t\t\t\tx: { ticks: { font: { size: 8 }, maxRotation: 45, minRotation: 45 } },\n\t\t\t\t\t\t\ty: { beginAtZero: true, ticks: { font: { size: 9 } } },\n\t\t\t\t\t\t},\n\t\t\t\t\t},\n\t\t\t\t});\n\t\t\t});\n\t\t})();\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<script>\n\t\t(function() {\n\t\t\tconst data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');\n\t\t\tconst lm = data.LeadershipMonthly || [];\n\t\t\tconst labels = lm.map(function(r) { return r.YearMonth; });\n\t\t\tconst series = {\n\t\t\t\t'mgr-cycle':      lm.map(function(r) { return r.MedianCycleTimeSecs / 86400; }),\n\t\t\t\t'mgr-throughput': lm.map(function(r) { return r.ClosedIssueCount; }),\n\t\t\t\t'mgr-flow':       lm.map(function(r) { return r.FlowEfficiencyPct; }),\n\t\t\t\t'mgr-failedqa':   lm.map(function(r) { return r.FailedQARatioPct; }),\n\t\t\t};\n\t\t\tObject.keys(series).forEach(function(id) {\n\t\t\t\tconst canvas = document.getElementById(id);\n\t\t\t\tif (!canvas) return;\n\t\t\t\tnew Chart(canvas, {\n\t\t\t\t\ttype: 'bar',\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tlabels: labels,\n\t\t\t\t\t\tdatasets: [{\n\t\t\t\t\t\t\tdata: series[id],\n\t\t\t\t\t\t\tbackgroundColor: '#3b82f6',\n\t\t\t\t\t\t\tborderColor: '#1d4ed8',\n\t\t\t\t\t\t\tborderWidth: 1,\n\t\t\t\t\t\t}],\n\t\t\t\t\t},\n\t\t\t\t\toptions: {\n\t\t\t\t\t\tresponsive: true,\n\t\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\t\tplugins: { legend: { display: false }, tooltip: { enabled: true } },\n\t\t\t\t\t\tscales: {\n\t\t\t\t\t\t\tx: { ticks: { font: { size: 8 }, maxRotation: 45, minRotation: 45 } },\n\t\t\t\t\t\t\ty: { beginAtZero: true, ticks: { font: { size: 9 } } },\n\t\t\t\t\t\t},\n\t\t\t\t\t},\n\t\t\t\t});\n\t\t\t});\n\t\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -483,12 +665,12 @@ func mgrTimeInStatusScript() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var16 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var16 == nil {
-			templ_7745c5c3_Var16 = templ.NopComponent
+		templ_7745c5c3_Var21 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var21 == nil {
+			templ_7745c5c3_Var21 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<script>\n\t\t(function() {\n\t\t\tconst data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');\n\t\t\tconst tis = data.TimeInStatus || [];\n\t\t\t// Pivot tis into { months: [...], Dev: [...], QA: [...], Waiting: [...] }\n\t\t\tconst monthSet = new Set();\n\t\t\ttis.forEach(function(p) { monthSet.add(p.YearMonth); });\n\t\t\tconst months = Array.from(monthSet).sort();\n\t\t\tconst buckets = { Dev: {}, QA: {}, Waiting: {} };\n\t\t\ttis.forEach(function(p) { (buckets[p.Bucket] || {})[p.YearMonth] = p.AvgSecs / 86400; });\n\t\t\tconst dataFor = function(bucket) {\n\t\t\t\treturn months.map(function(m) { return buckets[bucket][m] || 0; });\n\t\t\t};\n\t\t\tconst canvas = document.getElementById('mgr-tis');\n\t\t\tif (!canvas) return;\n\t\t\tnew Chart(canvas, {\n\t\t\t\ttype: 'bar',\n\t\t\t\tdata: {\n\t\t\t\t\tlabels: months,\n\t\t\t\t\tdatasets: [\n\t\t\t\t\t\t{ label: 'Dev',     data: dataFor('Dev'),     backgroundColor: '#3b82f6' },\n\t\t\t\t\t\t{ label: 'QA',      data: dataFor('QA'),      backgroundColor: '#10b981' },\n\t\t\t\t\t\t{ label: 'Waiting', data: dataFor('Waiting'), backgroundColor: '#f59e0b' },\n\t\t\t\t\t],\n\t\t\t\t},\n\t\t\t\toptions: {\n\t\t\t\t\tresponsive: true,\n\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\tplugins: {\n\t\t\t\t\t\tlegend: { position: 'bottom', labels: { font: { size: 11 } } },\n\t\t\t\t\t\ttooltip: { callbacks: { label: function(ctx) { return ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + 'd'; } } },\n\t\t\t\t\t},\n\t\t\t\t\tscales: {\n\t\t\t\t\t\tx: { stacked: true, ticks: { font: { size: 10 } } },\n\t\t\t\t\t\ty: { stacked: true, beginAtZero: true, ticks: { font: { size: 10 }, callback: function(v) { return v + 'd'; } } },\n\t\t\t\t\t},\n\t\t\t\t},\n\t\t\t});\n\t\t})();\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "<script>\n\t\t(function() {\n\t\t\tconst data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');\n\t\t\tconst tis = data.TimeInStatus || [];\n\t\t\t// Pivot tis into { months: [...], Dev: [...], QA: [...], Waiting: [...] }\n\t\t\tconst monthSet = new Set();\n\t\t\ttis.forEach(function(p) { monthSet.add(p.YearMonth); });\n\t\t\tconst months = Array.from(monthSet).sort();\n\t\t\tconst buckets = { Dev: {}, QA: {}, Waiting: {} };\n\t\t\ttis.forEach(function(p) { (buckets[p.Bucket] || {})[p.YearMonth] = p.AvgSecs / 86400; });\n\t\t\tconst dataFor = function(bucket) {\n\t\t\t\treturn months.map(function(m) { return buckets[bucket][m] || 0; });\n\t\t\t};\n\t\t\tconst canvas = document.getElementById('mgr-tis');\n\t\t\tif (!canvas) return;\n\t\t\tnew Chart(canvas, {\n\t\t\t\ttype: 'bar',\n\t\t\t\tdata: {\n\t\t\t\t\tlabels: months,\n\t\t\t\t\tdatasets: [\n\t\t\t\t\t\t{ label: 'Dev',     data: dataFor('Dev'),     backgroundColor: '#3b82f6' },\n\t\t\t\t\t\t{ label: 'QA',      data: dataFor('QA'),      backgroundColor: '#10b981' },\n\t\t\t\t\t\t{ label: 'Waiting', data: dataFor('Waiting'), backgroundColor: '#f59e0b' },\n\t\t\t\t\t],\n\t\t\t\t},\n\t\t\t\toptions: {\n\t\t\t\t\tresponsive: true,\n\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\tplugins: {\n\t\t\t\t\t\tlegend: { position: 'bottom', labels: { font: { size: 11 } } },\n\t\t\t\t\t\ttooltip: { callbacks: { label: function(ctx) { return ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + 'd'; } } },\n\t\t\t\t\t},\n\t\t\t\t\tscales: {\n\t\t\t\t\t\tx: { stacked: true, ticks: { font: { size: 10 } } },\n\t\t\t\t\t\ty: { stacked: true, beginAtZero: true, ticks: { font: { size: 10 }, callback: function(v) { return v + 'd'; } } },\n\t\t\t\t\t},\n\t\t\t\t},\n\t\t\t});\n\t\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -512,12 +694,12 @@ func mgrWIPScript() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var17 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var17 == nil {
-			templ_7745c5c3_Var17 = templ.NopComponent
+		templ_7745c5c3_Var22 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var22 == nil {
+			templ_7745c5c3_Var22 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<script>\n\t\t(function() {\n\t\t\tconst data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');\n\t\t\tconst wip = data.WIPSeries || [];\n\t\t\tconst canvas = document.getElementById('mgr-wip');\n\t\t\tif (!canvas) return;\n\t\t\tnew Chart(canvas, {\n\t\t\t\ttype: 'line',\n\t\t\t\tdata: {\n\t\t\t\t\tlabels: wip.map(function(p) { return p.Day; }),\n\t\t\t\t\tdatasets: [{\n\t\t\t\t\t\tdata: wip.map(function(p) { return p.WIPCount; }),\n\t\t\t\t\t\tborderColor: '#6366f1',\n\t\t\t\t\t\tbackgroundColor: 'rgba(99,102,241,0.1)',\n\t\t\t\t\t\tfill: true,\n\t\t\t\t\t\tpointRadius: 0,\n\t\t\t\t\t\ttension: 0.25,\n\t\t\t\t\t\tborderWidth: 1.5,\n\t\t\t\t\t}],\n\t\t\t\t},\n\t\t\t\toptions: {\n\t\t\t\t\tresponsive: true,\n\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\tplugins: { legend: { display: false }, tooltip: { enabled: true } },\n\t\t\t\t\tscales: {\n\t\t\t\t\t\tx: { ticks: { font: { size: 9 }, maxTicksLimit: 13 } },\n\t\t\t\t\t\ty: { beginAtZero: true, ticks: { font: { size: 10 } } },\n\t\t\t\t\t},\n\t\t\t\t},\n\t\t\t});\n\t\t})();\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<script>\n\t\t(function() {\n\t\t\tconst data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');\n\t\t\tconst wip = data.WIPSeries || [];\n\t\t\tconst canvas = document.getElementById('mgr-wip');\n\t\t\tif (!canvas) return;\n\t\t\tnew Chart(canvas, {\n\t\t\t\ttype: 'line',\n\t\t\t\tdata: {\n\t\t\t\t\tlabels: wip.map(function(p) { return p.Day; }),\n\t\t\t\t\tdatasets: [{\n\t\t\t\t\t\tdata: wip.map(function(p) { return p.WIPCount; }),\n\t\t\t\t\t\tborderColor: '#6366f1',\n\t\t\t\t\t\tbackgroundColor: 'rgba(99,102,241,0.1)',\n\t\t\t\t\t\tfill: true,\n\t\t\t\t\t\tpointRadius: 0,\n\t\t\t\t\t\ttension: 0.25,\n\t\t\t\t\t\tborderWidth: 1.5,\n\t\t\t\t\t}],\n\t\t\t\t},\n\t\t\t\toptions: {\n\t\t\t\t\tresponsive: true,\n\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\tplugins: { legend: { display: false }, tooltip: { enabled: true } },\n\t\t\t\t\tscales: {\n\t\t\t\t\t\tx: { ticks: { font: { size: 9 }, maxTicksLimit: 13 } },\n\t\t\t\t\t\ty: { beginAtZero: true, ticks: { font: { size: 10 } } },\n\t\t\t\t\t},\n\t\t\t\t},\n\t\t\t});\n\t\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -569,12 +751,12 @@ func mgrQualityChartsScript() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var18 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var18 == nil {
-			templ_7745c5c3_Var18 = templ.NopComponent
+		templ_7745c5c3_Var23 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var23 == nil {
+			templ_7745c5c3_Var23 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "<script>\n\t\t(function() {\n\t\t\tconst data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');\n\t\t\tconst series = {\n\t\t\t\t'mgr-rework': {\n\t\t\t\t\tlabels: (data.ReworkCycles || []).map(function(p) { return p.YearMonth; }),\n\t\t\t\t\tvalues: (data.ReworkCycles || []).map(function(p) { return p.AvgCycles; }),\n\t\t\t\t},\n\t\t\t\t'mgr-bounce': {\n\t\t\t\t\tlabels: (data.StatusBounce || []).map(function(p) { return p.YearMonth; }),\n\t\t\t\t\tvalues: (data.StatusBounce || []).map(function(p) { return p.BouncePct; }),\n\t\t\t\t},\n\t\t\t\t'mgr-qaeng': {\n\t\t\t\t\tlabels: (data.QAvsEngHours || []).map(function(p) { return p.YearMonth; }),\n\t\t\t\t\tvalues: (data.QAvsEngHours || []).map(function(p) { return p.Ratio; }),\n\t\t\t\t},\n\t\t\t\t'mgr-bugfwd': {\n\t\t\t\t\tlabels: (data.BugvsForwardHours || []).map(function(p) { return p.YearMonth; }),\n\t\t\t\t\tvalues: (data.BugvsForwardHours || []).map(function(p) { return p.Ratio; }),\n\t\t\t\t},\n\t\t\t};\n\t\t\tObject.keys(series).forEach(function(id) {\n\t\t\t\tconst canvas = document.getElementById(id);\n\t\t\t\tif (!canvas) return;\n\t\t\t\tnew Chart(canvas, {\n\t\t\t\t\ttype: 'line',\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tlabels: series[id].labels,\n\t\t\t\t\t\tdatasets: [{\n\t\t\t\t\t\t\tdata: series[id].values,\n\t\t\t\t\t\t\tborderColor: '#8b5cf6',\n\t\t\t\t\t\t\tbackgroundColor: 'rgba(139,92,246,0.1)',\n\t\t\t\t\t\t\tfill: true,\n\t\t\t\t\t\t\tpointRadius: 0,\n\t\t\t\t\t\t\ttension: 0.3,\n\t\t\t\t\t\t\tborderWidth: 1.5,\n\t\t\t\t\t\t}],\n\t\t\t\t\t},\n\t\t\t\t\toptions: {\n\t\t\t\t\t\tresponsive: true,\n\t\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\t\tplugins: { legend: { display: false }, tooltip: { enabled: true } },\n\t\t\t\t\t\tscales: {\n\t\t\t\t\t\t\tx: { ticks: { font: { size: 8 }, maxRotation: 45, minRotation: 45 } },\n\t\t\t\t\t\t\ty: { beginAtZero: true, ticks: { font: { size: 9 } } },\n\t\t\t\t\t\t},\n\t\t\t\t\t},\n\t\t\t\t});\n\t\t\t});\n\t\t})();\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "<script>\n\t\t(function() {\n\t\t\tconst data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');\n\t\t\tconst series = {\n\t\t\t\t'mgr-rework': {\n\t\t\t\t\tlabels: (data.ReworkCycles || []).map(function(p) { return p.YearMonth; }),\n\t\t\t\t\tvalues: (data.ReworkCycles || []).map(function(p) { return p.AvgCycles; }),\n\t\t\t\t},\n\t\t\t\t'mgr-bounce': {\n\t\t\t\t\tlabels: (data.StatusBounce || []).map(function(p) { return p.YearMonth; }),\n\t\t\t\t\tvalues: (data.StatusBounce || []).map(function(p) { return p.BouncePct; }),\n\t\t\t\t},\n\t\t\t\t'mgr-qaeng': {\n\t\t\t\t\tlabels: (data.QAvsEngHours || []).map(function(p) { return p.YearMonth; }),\n\t\t\t\t\tvalues: (data.QAvsEngHours || []).map(function(p) { return p.Ratio; }),\n\t\t\t\t},\n\t\t\t\t'mgr-bugfwd': {\n\t\t\t\t\tlabels: (data.BugvsForwardHours || []).map(function(p) { return p.YearMonth; }),\n\t\t\t\t\tvalues: (data.BugvsForwardHours || []).map(function(p) { return p.Ratio; }),\n\t\t\t\t},\n\t\t\t};\n\t\t\tObject.keys(series).forEach(function(id) {\n\t\t\t\tconst canvas = document.getElementById(id);\n\t\t\t\tif (!canvas) return;\n\t\t\t\tnew Chart(canvas, {\n\t\t\t\t\ttype: 'line',\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tlabels: series[id].labels,\n\t\t\t\t\t\tdatasets: [{\n\t\t\t\t\t\t\tdata: series[id].values,\n\t\t\t\t\t\t\tborderColor: '#8b5cf6',\n\t\t\t\t\t\t\tbackgroundColor: 'rgba(139,92,246,0.1)',\n\t\t\t\t\t\t\tfill: true,\n\t\t\t\t\t\t\tpointRadius: 0,\n\t\t\t\t\t\t\ttension: 0.3,\n\t\t\t\t\t\t\tborderWidth: 1.5,\n\t\t\t\t\t\t}],\n\t\t\t\t\t},\n\t\t\t\t\toptions: {\n\t\t\t\t\t\tresponsive: true,\n\t\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\t\tplugins: { legend: { display: false }, tooltip: { enabled: true } },\n\t\t\t\t\t\tscales: {\n\t\t\t\t\t\t\tx: { ticks: { font: { size: 8 }, maxRotation: 45, minRotation: 45 } },\n\t\t\t\t\t\t\ty: { beginAtZero: true, ticks: { font: { size: 9 } } },\n\t\t\t\t\t\t},\n\t\t\t\t\t},\n\t\t\t\t});\n\t\t\t});\n\t\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -598,12 +780,12 @@ func mgrStabilityChartsScript() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var19 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var19 == nil {
-			templ_7745c5c3_Var19 = templ.NopComponent
+		templ_7745c5c3_Var24 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var24 == nil {
+			templ_7745c5c3_Var24 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<script>\n\t\t(function() {\n\t\t\tconst data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');\n\t\t\tconst lm = data.LeadershipMonthly || [];\n\t\t\tconst labels = lm.map(function(r) { return r.YearMonth; });\n\n\t\t\t// Customer bug trend\n\t\t\tconst stab = document.getElementById('mgr-stability');\n\t\t\tif (stab) {\n\t\t\t\tnew Chart(stab, {\n\t\t\t\t\ttype: 'line',\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tlabels: labels,\n\t\t\t\t\t\tdatasets: [\n\t\t\t\t\t\t\t{ label: 'New',    data: lm.map(function(r) { return r.StabilityNewCount; }),    borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', tension: 0.3 },\n\t\t\t\t\t\t\t{ label: 'Closed', data: lm.map(function(r) { return r.StabilityClosedCount; }), borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', tension: 0.3 },\n\t\t\t\t\t\t\t{ label: 'Open',   data: lm.map(function(r) { return r.StabilityOpenCount; }),   borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', tension: 0.3 },\n\t\t\t\t\t\t],\n\t\t\t\t\t},\n\t\t\t\t\toptions: {\n\t\t\t\t\t\tresponsive: true,\n\t\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\t\tplugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },\n\t\t\t\t\t\tscales: {\n\t\t\t\t\t\t\tx: { ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 45 } },\n\t\t\t\t\t\t\ty: { beginAtZero: true, ticks: { font: { size: 10 } } },\n\t\t\t\t\t\t},\n\t\t\t\t\t},\n\t\t\t\t});\n\t\t\t}\n\n\t\t\t// Defect Escape Rate trend\n\t\t\tconst esc = document.getElementById('mgr-escape');\n\t\t\tif (esc) {\n\t\t\t\tnew Chart(esc, {\n\t\t\t\t\ttype: 'bar',\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tlabels: labels,\n\t\t\t\t\t\tdatasets: [{\n\t\t\t\t\t\t\tdata: lm.map(function(r) { return r.DefectEscapeRatePct; }),\n\t\t\t\t\t\t\tbackgroundColor: '#ef4444',\n\t\t\t\t\t\t\tborderColor: '#b91c1c',\n\t\t\t\t\t\t\tborderWidth: 1,\n\t\t\t\t\t\t}],\n\t\t\t\t\t},\n\t\t\t\t\toptions: {\n\t\t\t\t\t\tresponsive: true,\n\t\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\t\tplugins: { legend: { display: false }, tooltip: { enabled: true } },\n\t\t\t\t\t\tscales: {\n\t\t\t\t\t\t\tx: { ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 45 } },\n\t\t\t\t\t\t\ty: { beginAtZero: true, max: 100, ticks: { font: { size: 10 }, callback: function(v) { return v + '%'; } } },\n\t\t\t\t\t\t},\n\t\t\t\t\t},\n\t\t\t\t});\n\t\t\t}\n\t\t})();\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "<script>\n\t\t(function() {\n\t\t\tconst data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');\n\t\t\tconst lm = data.LeadershipMonthly || [];\n\t\t\tconst labels = lm.map(function(r) { return r.YearMonth; });\n\n\t\t\t// Customer bug trend\n\t\t\tconst stab = document.getElementById('mgr-stability');\n\t\t\tif (stab) {\n\t\t\t\tnew Chart(stab, {\n\t\t\t\t\ttype: 'line',\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tlabels: labels,\n\t\t\t\t\t\tdatasets: [\n\t\t\t\t\t\t\t{ label: 'New',    data: lm.map(function(r) { return r.StabilityNewCount; }),    borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', tension: 0.3 },\n\t\t\t\t\t\t\t{ label: 'Closed', data: lm.map(function(r) { return r.StabilityClosedCount; }), borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', tension: 0.3 },\n\t\t\t\t\t\t\t{ label: 'Open',   data: lm.map(function(r) { return r.StabilityOpenCount; }),   borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', tension: 0.3 },\n\t\t\t\t\t\t],\n\t\t\t\t\t},\n\t\t\t\t\toptions: {\n\t\t\t\t\t\tresponsive: true,\n\t\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\t\tplugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },\n\t\t\t\t\t\tscales: {\n\t\t\t\t\t\t\tx: { ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 45 } },\n\t\t\t\t\t\t\ty: { beginAtZero: true, ticks: { font: { size: 10 } } },\n\t\t\t\t\t\t},\n\t\t\t\t\t},\n\t\t\t\t});\n\t\t\t}\n\n\t\t\t// Defect Escape Rate trend\n\t\t\tconst esc = document.getElementById('mgr-escape');\n\t\t\tif (esc) {\n\t\t\t\tnew Chart(esc, {\n\t\t\t\t\ttype: 'bar',\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tlabels: labels,\n\t\t\t\t\t\tdatasets: [{\n\t\t\t\t\t\t\tdata: lm.map(function(r) { return r.DefectEscapeRatePct; }),\n\t\t\t\t\t\t\tbackgroundColor: '#ef4444',\n\t\t\t\t\t\t\tborderColor: '#b91c1c',\n\t\t\t\t\t\t\tborderWidth: 1,\n\t\t\t\t\t\t}],\n\t\t\t\t\t},\n\t\t\t\t\toptions: {\n\t\t\t\t\t\tresponsive: true,\n\t\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\t\tplugins: { legend: { display: false }, tooltip: { enabled: true } },\n\t\t\t\t\t\tscales: {\n\t\t\t\t\t\t\tx: { ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 45 } },\n\t\t\t\t\t\t\ty: { beginAtZero: true, max: 100, ticks: { font: { size: 10 }, callback: function(v) { return v + '%'; } } },\n\t\t\t\t\t\t},\n\t\t\t\t\t},\n\t\t\t\t});\n\t\t\t}\n\t\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
