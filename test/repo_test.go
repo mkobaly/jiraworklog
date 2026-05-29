@@ -172,3 +172,27 @@ func TestMonthlyTeamMetricsSkeleton(t *testing.T) {
 	require.Equal(t, 13, teamCounts["SYM"])
 	require.Equal(t, 13, teamCounts["ESG"])
 }
+
+func TestMonthlyTeamMetricsCycleTime(t *testing.T) {
+	cfg, err := GetTestConfig()
+	require.NoError(t, err)
+	repo, err := repository.NewPostgresRepo(cfg)
+	require.NoError(t, err)
+
+	rows, err := repo.MonthlyTeamMetrics([]string{"IDM", "SYM", "ESG"}, "", "")
+	require.NoError(t, err)
+
+	// For any (team, month) row where throughput > 0, median cycle time must
+	// also be > 0. Cycle time = 0 with throughput > 0 means the cycle-time
+	// query failed to populate.
+	foundPositive := false
+	for _, r := range rows {
+		if r.ClosedIssueCount > 0 {
+			require.Greaterf(t, r.MedianCycleTimeSecs, 0.0,
+				"team=%s month=%s has %d closed issues but median cycle time is 0",
+				r.Team, r.YearMonth, r.ClosedIssueCount)
+			foundPositive = true
+		}
+	}
+	require.True(t, foundPositive, "no closed-issue rows found; can't validate cycle time")
+}

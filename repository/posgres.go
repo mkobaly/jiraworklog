@@ -952,11 +952,31 @@ func (s *Postgres) MonthlyTeamMetrics(teams []string, fromMonth, toMonth string)
 			SELECT project AS team, year_month, COUNT(DISTINCT issueid) AS closed_issue_count
 			FROM issue_close_month
 			GROUP BY project, year_month
+		),
+		issue_cycle_secs AS (
+			-- Per-issue total active (Dev+QA) seconds, joined to its close month.
+			SELECT
+				icm.project   AS team,
+				icm.year_month,
+				ss.issueid,
+				SUM(ss.durationseconds)::float8 AS total_secs
+			FROM status_stints ss
+			JOIN issue_close_month icm ON icm.issueid = ss.issueid
+			WHERE ss.status IN ` + devQAStatuses + `
+			GROUP BY icm.project, icm.year_month, ss.issueid
+		),
+		cycle_time AS (
+			SELECT
+				team,
+				year_month,
+				PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY total_secs) AS median_cycle_time_secs
+			FROM issue_cycle_secs
+			GROUP BY team, year_month
 		)
 		SELECT
 			tl.team,
 			m.year_month,
-			0::float8                            AS median_cycle_time_secs,
+			COALESCE(ct.median_cycle_time_secs, 0)::float8 AS median_cycle_time_secs,
 			COALESCE(th.closed_issue_count, 0)   AS closed_issue_count,
 			0::float8                            AS flow_efficiency_pct,
 			0::float8                            AS failed_qa_ratio_pct,
@@ -968,6 +988,8 @@ func (s *Postgres) MonthlyTeamMetrics(teams []string, fromMonth, toMonth string)
 		CROSS JOIN months m
 		LEFT JOIN throughput th
 		  ON th.team = tl.team AND th.year_month = m.year_month
+		LEFT JOIN cycle_time ct
+		  ON ct.team = tl.team AND ct.year_month = m.year_month
 		ORDER BY tl.team, m.year_month`
 
 	err := s.DB.Select(&result, query, teams, from, to)
