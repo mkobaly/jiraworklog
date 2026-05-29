@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strconv"
@@ -912,7 +913,7 @@ func (s *Postgres) ProjectKPIs(epicOrVersion string) (types.ProjectKPIData, erro
 }
 
 // MonthlyTeamMetrics — see repository/repo.go for contract.
-func (s *Postgres) MonthlyTeamMetrics(teams []string, fromMonth, toMonth string) ([]types.MonthlyTeamMetrics, error) {
+func (s *Postgres) MonthlyTeamMetrics(ctx context.Context, teams []string, fromMonth, toMonth string) ([]types.MonthlyTeamMetrics, error) {
 	result := []types.MonthlyTeamMetrics{}
 	from, to := s.calculateDateRange(fromMonth, toMonth)
 
@@ -1117,7 +1118,7 @@ func (s *Postgres) MonthlyTeamMetrics(teams []string, fromMonth, toMonth string)
 		  ON st.team = tl.team AND st.year_month = m.year_month
 		ORDER BY tl.team, m.year_month`
 
-	err := s.DB.Select(&result, query, teams, from, to)
+	err := s.DB.SelectContext(ctx, &result, query, teams, from, to)
 	return result, err
 }
 
@@ -1128,13 +1129,19 @@ func (s *Postgres) MonthlyTeamMetrics(teams []string, fromMonth, toMonth string)
 // errgroup. Each writes to a different field of `data`, which is safe in
 // Go (no shared memory location). errgroup returns the first error if any
 // sub-query fails, and waits for all in-flight ones to finish.
-func (s *Postgres) ManagerMetrics(team string, fromMonth, toMonth string) (types.ManagerMetricsData, error) {
+func (s *Postgres) ManagerMetrics(ctx context.Context, team string, fromMonth, toMonth string) (types.ManagerMetricsData, error) {
 	data := types.ManagerMetricsData{Team: team}
 
-	var g errgroup.Group
+	// errgroup.WithContext gives each sub-query a derived context that is
+	// cancelled when either the parent (HTTP request) is cancelled or when
+	// any sibling sub-query fails. Postgres receives the cancellation via
+	// SelectContext and aborts the in-flight query mid-execution — so a
+	// user toggling the team selector quickly does not leave orphan
+	// queries piling up in the DB.
+	g, gctx := errgroup.WithContext(ctx)
 
 	g.Go(func() error {
-		rows, err := s.MonthlyTeamMetrics([]string{team}, fromMonth, toMonth)
+		rows, err := s.MonthlyTeamMetrics(gctx, []string{team}, fromMonth, toMonth)
 		if err != nil {
 			return err
 		}
@@ -1142,7 +1149,7 @@ func (s *Postgres) ManagerMetrics(team string, fromMonth, toMonth string) (types
 		return nil
 	})
 	g.Go(func() error {
-		v, err := s.timeInStatus(team, fromMonth, toMonth)
+		v, err := s.timeInStatus(gctx, team, fromMonth, toMonth)
 		if err != nil {
 			return err
 		}
@@ -1150,7 +1157,7 @@ func (s *Postgres) ManagerMetrics(team string, fromMonth, toMonth string) (types
 		return nil
 	})
 	g.Go(func() error {
-		v, err := s.wipSeries(team, fromMonth, toMonth)
+		v, err := s.wipSeries(gctx, team, fromMonth, toMonth)
 		if err != nil {
 			return err
 		}
@@ -1158,7 +1165,7 @@ func (s *Postgres) ManagerMetrics(team string, fromMonth, toMonth string) (types
 		return nil
 	})
 	g.Go(func() error {
-		v, err := s.agingWIP(team, fromMonth, toMonth)
+		v, err := s.agingWIP(gctx, team, fromMonth, toMonth)
 		if err != nil {
 			return err
 		}
@@ -1166,7 +1173,7 @@ func (s *Postgres) ManagerMetrics(team string, fromMonth, toMonth string) (types
 		return nil
 	})
 	g.Go(func() error {
-		v, err := s.reworkCycles(team, fromMonth, toMonth)
+		v, err := s.reworkCycles(gctx, team, fromMonth, toMonth)
 		if err != nil {
 			return err
 		}
@@ -1174,7 +1181,7 @@ func (s *Postgres) ManagerMetrics(team string, fromMonth, toMonth string) (types
 		return nil
 	})
 	g.Go(func() error {
-		v, err := s.statusBounce(team, fromMonth, toMonth)
+		v, err := s.statusBounce(gctx, team, fromMonth, toMonth)
 		if err != nil {
 			return err
 		}
@@ -1182,7 +1189,7 @@ func (s *Postgres) ManagerMetrics(team string, fromMonth, toMonth string) (types
 		return nil
 	})
 	g.Go(func() error {
-		v, err := s.qaVsEngHours(team, fromMonth, toMonth)
+		v, err := s.qaVsEngHours(gctx, team, fromMonth, toMonth)
 		if err != nil {
 			return err
 		}
@@ -1190,7 +1197,7 @@ func (s *Postgres) ManagerMetrics(team string, fromMonth, toMonth string) (types
 		return nil
 	})
 	g.Go(func() error {
-		v, err := s.bugVsForwardHours(team, fromMonth, toMonth)
+		v, err := s.bugVsForwardHours(gctx, team, fromMonth, toMonth)
 		if err != nil {
 			return err
 		}
@@ -1206,7 +1213,7 @@ func (s *Postgres) ManagerMetrics(team string, fromMonth, toMonth string) (types
 
 // timeInStatus returns one row per (month status was exited, bucket) for the
 // team's closeable-type issues. Used by the Time-in-Status stacked-bar chart.
-func (s *Postgres) timeInStatus(team string, fromMonth, toMonth string) ([]types.TimeInStatusPoint, error) {
+func (s *Postgres) timeInStatus(ctx context.Context, team string, fromMonth, toMonth string) ([]types.TimeInStatusPoint, error) {
 	result := []types.TimeInStatusPoint{}
 	from, to := s.calculateDateRange(fromMonth, toMonth)
 
@@ -1239,14 +1246,14 @@ func (s *Postgres) timeInStatus(team string, fromMonth, toMonth string) ([]types
 		GROUP BY year_month, bucket
 		ORDER BY year_month, bucket`
 
-	err := s.DB.Select(&result, query, team, from, to)
+	err := s.DB.SelectContext(ctx, &result, query, team, from, to)
 	return result, err
 }
 
 // wipSeries returns one row per day across the 13-month window — the count
 // of the team's closeable-type issues currently in a Dev or QA status on
 // that day. Used by the WIP-trend line chart.
-func (s *Postgres) wipSeries(team string, fromMonth, toMonth string) ([]types.WIPPoint, error) {
+func (s *Postgres) wipSeries(ctx context.Context, team string, fromMonth, toMonth string) ([]types.WIPPoint, error) {
 	result := []types.WIPPoint{}
 	from, to := s.calculateDateRange(fromMonth, toMonth)
 
@@ -1275,7 +1282,7 @@ func (s *Postgres) wipSeries(team string, fromMonth, toMonth string) ([]types.WI
 		GROUP BY d.day
 		ORDER BY d.day`
 
-	err := s.DB.Select(&result, query, team, from, to)
+	err := s.DB.SelectContext(ctx, &result, query, team, from, to)
 	return result, err
 }
 
@@ -1285,7 +1292,7 @@ func (s *Postgres) wipSeries(team string, fromMonth, toMonth string) ([]types.WI
 // to a total-cycle p85, this is the right unit-of-comparison: time spent in
 // the current status vs. typical time spent in any one status. Returns at
 // most 20 rows, sorted by current_secs DESC.
-func (s *Postgres) agingWIP(team string, fromMonth, toMonth string) ([]types.AgingWIPItem, error) {
+func (s *Postgres) agingWIP(ctx context.Context, team string, fromMonth, toMonth string) ([]types.AgingWIPItem, error) {
 	result := []types.AgingWIPItem{}
 	from, to := s.calculateDateRange(fromMonth, toMonth)
 
@@ -1339,13 +1346,13 @@ func (s *Postgres) agingWIP(team string, fromMonth, toMonth string) ([]types.Agi
 		ORDER BY cs.current_secs DESC
 		LIMIT 20`
 
-	err := s.DB.Select(&result, query, team, from, to)
+	err := s.DB.SelectContext(ctx, &result, query, team, from, to)
 	return result, err
 }
 
 // reworkCycles returns the average number of QA→Dev transitions per closed
 // issue, bucketed by close month. Reuses the pattern from ProjectKPIs.
-func (s *Postgres) reworkCycles(team string, fromMonth, toMonth string) ([]types.ReworkCyclesPoint, error) {
+func (s *Postgres) reworkCycles(ctx context.Context, team string, fromMonth, toMonth string) ([]types.ReworkCyclesPoint, error) {
 	result := []types.ReworkCyclesPoint{}
 	from, to := s.calculateDateRange(fromMonth, toMonth)
 
@@ -1394,13 +1401,13 @@ func (s *Postgres) reworkCycles(team string, fromMonth, toMonth string) ([]types
 		GROUP BY icm.year_month
 		ORDER BY icm.year_month`
 
-	err := s.DB.Select(&result, query, team, from, to)
+	err := s.DB.SelectContext(ctx, &result, query, team, from, to)
 	return result, err
 }
 
 // statusBounce returns monthly bounce rate (status re-entries / total
 // transitions) for the team's closed issues.
-func (s *Postgres) statusBounce(team string, fromMonth, toMonth string) ([]types.BouncePoint, error) {
+func (s *Postgres) statusBounce(ctx context.Context, team string, fromMonth, toMonth string) ([]types.BouncePoint, error) {
 	result := []types.BouncePoint{}
 	from, to := s.calculateDateRange(fromMonth, toMonth)
 
@@ -1452,14 +1459,14 @@ func (s *Postgres) statusBounce(team string, fromMonth, toMonth string) ([]types
 		FROM per_month
 		ORDER BY year_month`
 
-	err := s.DB.Select(&result, query, team, from, to)
+	err := s.DB.SelectContext(ctx, &result, query, team, from, to)
 	return result, err
 }
 
 // qaVsEngHours returns the monthly ratio of QA hours to Eng hours for the
 // team's issues (worklog.date month bucketing). Numerator = QA-role hours,
 // Denominator = Dev-role hours.
-func (s *Postgres) qaVsEngHours(team string, fromMonth, toMonth string) ([]types.HoursRatioPoint, error) {
+func (s *Postgres) qaVsEngHours(ctx context.Context, team string, fromMonth, toMonth string) ([]types.HoursRatioPoint, error) {
 	result := []types.HoursRatioPoint{}
 	from, to := s.calculateDateRange(fromMonth, toMonth)
 
@@ -1498,14 +1505,14 @@ func (s *Postgres) qaVsEngHours(team string, fromMonth, toMonth string) ([]types
 		LEFT JOIN hours h ON h.year_month = m.year_month
 		ORDER BY m.year_month`
 
-	err := s.DB.Select(&result, query, team, from, to)
+	err := s.DB.SelectContext(ctx, &result, query, team, from, to)
 	return result, err
 }
 
 // bugVsForwardHours returns the monthly ratio of bug-fix hours to forward-
 // work (Story + Task) hours for the team. Bucketed by worklog.date month.
 // Numerator = Bug + Hardware Bug hours. Denominator = Story + Task hours.
-func (s *Postgres) bugVsForwardHours(team string, fromMonth, toMonth string) ([]types.HoursRatioPoint, error) {
+func (s *Postgres) bugVsForwardHours(ctx context.Context, team string, fromMonth, toMonth string) ([]types.HoursRatioPoint, error) {
 	result := []types.HoursRatioPoint{}
 	from, to := s.calculateDateRange(fromMonth, toMonth)
 
@@ -1543,7 +1550,7 @@ func (s *Postgres) bugVsForwardHours(team string, fromMonth, toMonth string) ([]
 		LEFT JOIN hours h ON h.year_month = m.year_month
 		ORDER BY m.year_month`
 
-	err := s.DB.Select(&result, query, team, from, to)
+	err := s.DB.SelectContext(ctx, &result, query, team, from, to)
 	return result, err
 }
 

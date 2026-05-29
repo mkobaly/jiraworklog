@@ -1003,7 +1003,7 @@ func (h *Handler) GetLeadershipDashboard(c echo.Context) error {
 	// v1: hard-coded team list. v2 will pull from a teams table or projectCharge.
 	teams := []string{"IDM", "SYM", "ESG"}
 
-	rows, err := h.repo.MonthlyTeamMetrics(teams, "", "")
+	rows, err := h.repo.MonthlyTeamMetrics(c.Request().Context(), teams, "", "")
 	if err != nil {
 		h.logger.Error("error fetching monthly team metrics", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch monthly team metrics")
@@ -1058,7 +1058,7 @@ func (h *Handler) GetManagerDashboard(c echo.Context) error {
 		}
 	}
 
-	data, err := h.repo.ManagerMetrics(team, "", "")
+	data, err := h.repo.ManagerMetrics(c.Request().Context(), team, "", "")
 	if err != nil {
 		h.logger.Error("error fetching manager metrics", "error", err, "team", team)
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch manager metrics")

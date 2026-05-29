@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"time"
 
 	"github.com/mkobaly/jiraworklog/types"
@@ -69,14 +70,18 @@ type Repo interface {
 	// dashboard's all-teams comparison grid. `teams` is the list of Jira project
 	// prefixes to include (e.g. ["IDM","SYM","ESG"]); `fromMonth` and `toMonth`
 	// are YYYY-MM strings; empty strings default to last-13-months trailing.
-	MonthlyTeamMetrics(teams []string, fromMonth, toMonth string) ([]types.MonthlyTeamMetrics, error)
+	// `ctx` is honored: when the caller (e.g. the HTTP request) is cancelled,
+	// the in-flight query is cancelled in Postgres mid-execution.
+	MonthlyTeamMetrics(ctx context.Context, teams []string, fromMonth, toMonth string) ([]types.MonthlyTeamMetrics, error)
 
 	// ManagerMetrics returns the full single-team payload for the manager
 	// dashboard: the leadership-tier monthly KPIs filtered to `team`, plus
 	// seven manager-only sub-metrics (Time in Status, WIP series, Aging WIP,
 	// Rework Cycles, Status Bounce, QA vs Eng Hours, Bug vs Forward-Work Hours).
 	// `fromMonth` and `toMonth` are YYYY-MM strings; empty defaults to last 13.
-	ManagerMetrics(team string, fromMonth, toMonth string) (types.ManagerMetricsData, error)
+	// Sub-queries run concurrently and share `ctx`: when the caller cancels,
+	// all in-flight queries cancel too.
+	ManagerMetrics(ctx context.Context, team string, fromMonth, toMonth string) (types.ManagerMetricsData, error)
 
 	//WorklogsPerDay() ([]types.WorklogsPerDay, error)
 	//WorklogsPerDevDay() ([]types.WorklogsPerDevDay, error)

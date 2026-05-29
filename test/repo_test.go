@@ -1,6 +1,7 @@
 package test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -138,7 +139,7 @@ func TestMonthlyTeamMetricsThroughput(t *testing.T) {
 	repo, err := repository.NewPostgresRepo(cfg)
 	require.NoError(t, err)
 
-	rows, err := repo.MonthlyTeamMetrics([]string{"IDM", "SYM", "ESG"}, "", "")
+	rows, err := repo.MonthlyTeamMetrics(context.Background(), []string{"IDM", "SYM", "ESG"}, "", "")
 	require.NoError(t, err)
 
 	// At least one row across the whole grid must have a positive throughput.
@@ -157,7 +158,7 @@ func TestMonthlyTeamMetricsSkeleton(t *testing.T) {
 	repo, err := repository.NewPostgresRepo(cfg)
 	require.NoError(t, err)
 
-	rows, err := repo.MonthlyTeamMetrics([]string{"IDM", "SYM", "ESG"}, "", "")
+	rows, err := repo.MonthlyTeamMetrics(context.Background(), []string{"IDM", "SYM", "ESG"}, "", "")
 	require.NoError(t, err)
 	// 3 teams * 13 months = 39 rows
 	require.Equal(t, 39, len(rows))
@@ -179,7 +180,7 @@ func TestMonthlyTeamMetricsCycleTime(t *testing.T) {
 	repo, err := repository.NewPostgresRepo(cfg)
 	require.NoError(t, err)
 
-	rows, err := repo.MonthlyTeamMetrics([]string{"IDM", "SYM", "ESG"}, "", "")
+	rows, err := repo.MonthlyTeamMetrics(context.Background(), []string{"IDM", "SYM", "ESG"}, "", "")
 	require.NoError(t, err)
 
 	// For any (team, month) row where throughput > 0, median cycle time must
@@ -203,7 +204,7 @@ func TestMonthlyTeamMetricsFlowEfficiency(t *testing.T) {
 	repo, err := repository.NewPostgresRepo(cfg)
 	require.NoError(t, err)
 
-	rows, err := repo.MonthlyTeamMetrics([]string{"IDM", "SYM", "ESG"}, "", "")
+	rows, err := repo.MonthlyTeamMetrics(context.Background(), []string{"IDM", "SYM", "ESG"}, "", "")
 	require.NoError(t, err)
 
 	for _, r := range rows {
@@ -225,7 +226,7 @@ func TestMonthlyTeamMetricsFailedQARatio(t *testing.T) {
 	repo, err := repository.NewPostgresRepo(cfg)
 	require.NoError(t, err)
 
-	rows, err := repo.MonthlyTeamMetrics([]string{"IDM", "SYM", "ESG"}, "", "")
+	rows, err := repo.MonthlyTeamMetrics(context.Background(), []string{"IDM", "SYM", "ESG"}, "", "")
 	require.NoError(t, err)
 
 	for _, r := range rows {
@@ -240,7 +241,7 @@ func TestMonthlyTeamMetricsDefectEscapeRate(t *testing.T) {
 	repo, err := repository.NewPostgresRepo(cfg)
 	require.NoError(t, err)
 
-	rows, err := repo.MonthlyTeamMetrics([]string{"IDM", "SYM", "ESG"}, "", "")
+	rows, err := repo.MonthlyTeamMetrics(context.Background(), []string{"IDM", "SYM", "ESG"}, "", "")
 	require.NoError(t, err)
 
 	for _, r := range rows {
@@ -266,7 +267,7 @@ func TestManagerMetricsSkeleton(t *testing.T) {
 	repo, err := repository.NewPostgresRepo(cfg)
 	require.NoError(t, err)
 
-	data, err := repo.ManagerMetrics("SYM", "", "")
+	data, err := repo.ManagerMetrics(context.Background(), "SYM", "", "")
 	require.NoError(t, err)
 	require.Equal(t, "SYM", data.Team)
 	// 13 months of leadership rows for the single team
@@ -283,7 +284,7 @@ func TestManagerMetricsTimeInStatus(t *testing.T) {
 	repo, err := repository.NewPostgresRepo(cfg)
 	require.NoError(t, err)
 
-	data, err := repo.ManagerMetrics("SYM", "", "")
+	data, err := repo.ManagerMetrics(context.Background(), "SYM", "", "")
 	require.NoError(t, err)
 	require.Greater(t, len(data.TimeInStatus), 0,
 		"expected at least one TimeInStatus row across 13 months × 3 buckets")
@@ -300,7 +301,7 @@ func TestManagerMetricsWIPSeries(t *testing.T) {
 	repo, err := repository.NewPostgresRepo(cfg)
 	require.NoError(t, err)
 
-	data, err := repo.ManagerMetrics("SYM", "", "")
+	data, err := repo.ManagerMetrics(context.Background(), "SYM", "", "")
 	require.NoError(t, err)
 	require.Greater(t, len(data.WIPSeries), 300,
 		"expected ~390 daily WIP points across 13 months")
@@ -316,7 +317,7 @@ func TestManagerMetricsAgingWIP(t *testing.T) {
 	repo, err := repository.NewPostgresRepo(cfg)
 	require.NoError(t, err)
 
-	data, err := repo.ManagerMetrics("SYM", "", "")
+	data, err := repo.ManagerMetrics(context.Background(), "SYM", "", "")
 	require.NoError(t, err)
 	// AgingWIPItems may legitimately be empty (healthy team), but the field
 	// must be initialized (non-nil) after the query runs. Pre-implementation
@@ -343,7 +344,7 @@ func TestManagerMetricsReworkCycles(t *testing.T) {
 	repo, err := repository.NewPostgresRepo(cfg)
 	require.NoError(t, err)
 
-	data, err := repo.ManagerMetrics("SYM", "", "")
+	data, err := repo.ManagerMetrics(context.Background(), "SYM", "", "")
 	require.NoError(t, err)
 	require.NotNil(t, data.ReworkCycles)
 	for _, p := range data.ReworkCycles {
@@ -359,7 +360,7 @@ func TestManagerMetricsStatusBounce(t *testing.T) {
 	repo, err := repository.NewPostgresRepo(cfg)
 	require.NoError(t, err)
 
-	data, err := repo.ManagerMetrics("SYM", "", "")
+	data, err := repo.ManagerMetrics(context.Background(), "SYM", "", "")
 	require.NoError(t, err)
 	require.NotNil(t, data.StatusBounce)
 	for _, p := range data.StatusBounce {
@@ -375,7 +376,7 @@ func TestManagerMetricsQAvsEngHours(t *testing.T) {
 	repo, err := repository.NewPostgresRepo(cfg)
 	require.NoError(t, err)
 
-	data, err := repo.ManagerMetrics("SYM", "", "")
+	data, err := repo.ManagerMetrics(context.Background(), "SYM", "", "")
 	require.NoError(t, err)
 	require.NotNil(t, data.QAvsEngHours)
 	for _, p := range data.QAvsEngHours {
@@ -391,7 +392,7 @@ func TestManagerMetricsBugVsForwardHours(t *testing.T) {
 	repo, err := repository.NewPostgresRepo(cfg)
 	require.NoError(t, err)
 
-	data, err := repo.ManagerMetrics("SYM", "", "")
+	data, err := repo.ManagerMetrics(context.Background(), "SYM", "", "")
 	require.NoError(t, err)
 	require.NotNil(t, data.BugvsForwardHours)
 	for _, p := range data.BugvsForwardHours {
@@ -407,7 +408,7 @@ func TestMonthlyTeamMetricsStability(t *testing.T) {
 	repo, err := repository.NewPostgresRepo(cfg)
 	require.NoError(t, err)
 
-	rows, err := repo.MonthlyTeamMetrics([]string{"IDM", "SYM", "ESG"}, "", "")
+	rows, err := repo.MonthlyTeamMetrics(context.Background(), []string{"IDM", "SYM", "ESG"}, "", "")
 	require.NoError(t, err)
 
 	// All counts must be non-negative
