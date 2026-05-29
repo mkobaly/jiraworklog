@@ -132,6 +132,25 @@ func TestProjectKPIsSmoke(t *testing.T) {
 	require.GreaterOrEqual(t, data.IssueCount, 0)
 }
 
+func TestMonthlyTeamMetricsThroughput(t *testing.T) {
+	cfg, err := GetTestConfig()
+	require.NoError(t, err)
+	repo, err := repository.NewPostgresRepo(cfg)
+	require.NoError(t, err)
+
+	rows, err := repo.MonthlyTeamMetrics([]string{"IDM", "SYM", "ESG"}, "", "")
+	require.NoError(t, err)
+
+	// At least one row across the whole grid must have a positive throughput.
+	// (If this fails, either no issues have closed in the last 13 months for
+	// these teams, or the close-month bucketing logic is broken.)
+	total := 0
+	for _, r := range rows {
+		total += r.ClosedIssueCount
+	}
+	require.Greater(t, total, 0, "expected at least one closed issue across all teams/months")
+}
+
 func TestMonthlyTeamMetricsSkeleton(t *testing.T) {
 	cfg, err := GetTestConfig()
 	require.NoError(t, err)

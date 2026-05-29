@@ -923,8 +923,6 @@ func (s *Postgres) MonthlyTeamMetrics(teams []string, fromMonth, toMonth string)
 	result := []types.MonthlyTeamMetrics{}
 	from, to := s.calculateDateRange(fromMonth, toMonth)
 
-	// Skeleton query: cross-join teams × months, all metrics zero.
-	// Subsequent tasks add LEFT JOIN sub-queries to populate each metric.
 	query := `
 		WITH months AS (
 			SELECT to_char(gs, 'YYYY-MM') AS year_month
@@ -936,20 +934,40 @@ func (s *Postgres) MonthlyTeamMetrics(teams []string, fromMonth, toMonth string)
 		),
 		team_list AS (
 			SELECT unnest($1::text[]) AS team
+		),
+		issue_close_month AS (
+			-- First time each closeable-type issue entered a done status.
+			SELECT
+				ss.issueid,
+				i.project,
+				to_char(MIN(ss.datestarted), 'YYYY-MM') AS year_month
+			FROM status_stints ss
+			JOIN issue i ON i.id = ss.issueid
+			WHERE ss.status IN ` + doneStatuses + `
+			AND i.type IN ` + closeableTypes + `
+			AND i.project = ANY($1::text[])
+			GROUP BY ss.issueid, i.project
+		),
+		throughput AS (
+			SELECT project AS team, year_month, COUNT(DISTINCT issueid) AS closed_issue_count
+			FROM issue_close_month
+			GROUP BY project, year_month
 		)
 		SELECT
 			tl.team,
 			m.year_month,
-			0::float8 AS median_cycle_time_secs,
-			0         AS closed_issue_count,
-			0::float8 AS flow_efficiency_pct,
-			0::float8 AS failed_qa_ratio_pct,
-			0::float8 AS defect_escape_rate_pct,
-			0         AS stability_new_count,
-			0         AS stability_closed_count,
-			0         AS stability_open_count
+			0::float8                            AS median_cycle_time_secs,
+			COALESCE(th.closed_issue_count, 0)   AS closed_issue_count,
+			0::float8                            AS flow_efficiency_pct,
+			0::float8                            AS failed_qa_ratio_pct,
+			0::float8                            AS defect_escape_rate_pct,
+			0                                    AS stability_new_count,
+			0                                    AS stability_closed_count,
+			0                                    AS stability_open_count
 		FROM team_list tl
 		CROSS JOIN months m
+		LEFT JOIN throughput th
+		  ON th.team = tl.team AND th.year_month = m.year_month
 		ORDER BY tl.team, m.year_month`
 
 	err := s.DB.Select(&result, query, teams, from, to)
