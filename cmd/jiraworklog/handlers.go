@@ -1034,6 +1034,29 @@ func (h *Handler) GetLeadershipDashboard(c echo.Context) error {
 	return c.JSON(http.StatusOK, rows)
 }
 
+// GET /dashboard/manager
+func (h *Handler) GetManagerDashboard(c echo.Context) error {
+	// v1: hard-coded team list matches the leadership page.
+	teams := []string{"IDM", "SYM", "ESG"}
+
+	team := c.QueryParam("team")
+	if team == "" {
+		team = teams[0] // default to first team alphabetically
+	}
+
+	data, err := h.repo.ManagerMetrics(team, "", "")
+	if err != nil {
+		h.logger.Error("error fetching manager metrics", "error", err, "team", team)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch manager metrics")
+	}
+
+	if wantsHTML(c) {
+		return pages.ManagerDashboard(data, teams).
+			Render(c.Request().Context(), c.Response().Writer)
+	}
+	return c.JSON(http.StatusOK, data)
+}
+
 func (h *Handler) validEmail(email string) bool {
 	for _, v := range h.cfg.AuthorizedUsers {
 		parts := strings.Split(v, "@")

@@ -107,6 +107,7 @@ func main() {
 	e.GET("/", handler.Dashboard, handler.AuthMiddleware)
 	e.GET("/dashboard", handler.Dashboard, handler.AuthMiddleware)
 	e.GET("/dashboard/leadership", handler.GetLeadershipDashboard, handler.AuthMiddleware)
+	e.GET("/dashboard/manager", handler.GetManagerDashboard, handler.AuthMiddleware)
 
 	// Worklog routes
 	// worklogs := e.Group("/worklogs", handler.AuthMiddleware)
