@@ -112,3 +112,22 @@ func TestRefreshOfStatus(t *testing.T) {
 		t.Error("Error bulk inserting changlogs", err.Error())
 	}
 }
+
+func TestProjectKPIsSmoke(t *testing.T) {
+	cfg, err := GetTestConfig()
+	require.NoError(t, err)
+	repo, err := repository.NewPostgresRepo(cfg)
+	require.NoError(t, err)
+
+	// Pull any real epic key from the DB so the test doesn't depend on a
+	// hard-coded key that may not exist.
+	var key string
+	err = repo.DB.Get(&key, `SELECT key FROM issue WHERE type = 'Epic' LIMIT 1`)
+	if err != nil {
+		t.Skip("no epic in DB; skipping ProjectKPIs smoke test")
+	}
+
+	data, err := repo.ProjectKPIs(key)
+	require.NoError(t, err)
+	require.GreaterOrEqual(t, data.IssueCount, 0)
+}

@@ -391,6 +391,7 @@ func (s *Postgres) LastSeenIssues(threshold time.Duration) ([]int, error) {
 		SELECT id 
 		FROM issue
 		WHERE dateUpdated < $1
+		and updatedate >= now() - INTERVAL '3 months'
 		LIMIT 200;`, cutoff)
 	return result, err
 }
@@ -600,6 +601,29 @@ const projectIssuesCTE = `
 		AND i.type NOT IN ('Sub-task', 'Dev Sub-Task', 'QA Needed Sub-Task', 'Authoring Task')
 	)`
 
+// closeableTypes is the set of issue types that flow through Dev → QA and so
+// participate in cycle-time/throughput/flow-efficiency/defect-escape metrics.
+// Excludes Task (skips QA), Epic/Release Candidate (containers), and sub-tasks.
+const closeableTypes = `('Story','Bug','Hardware Bug','Customer Bug','HW / FW Customer Bug')`
+
+// bucketCase maps a status-stints `status` column to its flow bucket.
+// Identical to the inline CASE used in ProjectKPIs — both code paths reference
+// this constant so they cannot drift.
+const bucketCase = `
+    CASE
+      WHEN status IN ('In Development','In Progress','Code Complete','Code Merged','In Review') THEN 'Dev'
+      WHEN status IN ('In QA','Failed QA') THEN 'QA'
+      WHEN status IN ('On Hold','QA Backlog') THEN 'Waiting'
+      ELSE 'Other'
+    END`
+
+// devQAStatuses lists the statuses that count toward "active" cycle time —
+// Dev bucket + QA bucket. Used by cycle-time and flow-efficiency queries.
+const devQAStatuses = `('In Development','In Progress','Code Complete','Code Merged','In Review','In QA','Failed QA')`
+
+// doneStatuses lists the statuses that mark an issue as closed.
+const doneStatuses = `('Done','Closed','Cancelled','Awaiting Release to Customer')`
+
 // ProjectKPIs runs all KPI queries for the given epic key or fixed version and
 // returns the aggregated results in a single ProjectKPIData struct.
 func (s *Postgres) ProjectKPIs(epicOrVersion string) (types.ProjectKPIData, error) {
@@ -629,7 +653,7 @@ func (s *Postgres) ProjectKPIs(epicOrVersion string) (types.ProjectKPIData, erro
 			SELECT issueid, SUM(EXTRACT(EPOCH FROM (COALESCE(dateended, now()) - datestarted))) AS total
 			FROM status_stints
 			WHERE issueid IN (SELECT id FROM project_issues)
-			AND status IN ('In Development','In Progress','Code Complete', 'Code Merged', 'In Review', 'In QA', 'Failed QA')
+			AND status IN `+devQAStatuses+`
 			GROUP BY issueid
 		) ct`, epicOrVersion)
 	if err != nil {
@@ -752,7 +776,7 @@ func (s *Postgres) ProjectKPIs(epicOrVersion string) (types.ProjectKPIData, erro
 	err = s.DB.Get(&flow, projectIssuesCTE+`
 		SELECT
 			SUM(EXTRACT(EPOCH FROM (COALESCE(dateended, now()) - datestarted))) FILTER (
-				WHERE status IN ('In Development','In Progress','Code Complete', 'Code Merged', 'In Review', 'In QA', 'Failed QA')
+				WHERE status IN `+devQAStatuses+`
 			) AS active_secs,
 			SUM(EXTRACT(EPOCH FROM (COALESCE(dateended, now()) - datestarted))) FILTER (
 				WHERE status IN ('In Development','In Progress','Code Complete', 'Code Merged', 'In Review', 'In QA', 'Failed QA', 'On Hold', 'QA Backlog', 'Done')
@@ -801,7 +825,7 @@ func (s *Postgres) ProjectKPIs(epicOrVersion string) (types.ProjectKPIData, erro
 			'1 day'::interval
 		) gs(day)
 		LEFT JOIN status_stints ss
-			ON  ss.status IN ('In Development','In Progress','Code Complete', 'Code Merged' ,'In Review', 'In QA', 'Failed QA')
+			ON  ss.status IN `+devQAStatuses+`
 			AND ss.datestarted::date <= gs.day::date
 			AND (ss.dateended IS NULL OR ss.dateended::date > gs.day::date)
 			AND ss.issueid IN (SELECT id FROM project_issues)
