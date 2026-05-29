@@ -1158,6 +1158,11 @@ func (s *Postgres) ManagerMetrics(team string, fromMonth, toMonth string) (types
 		return data, err
 	}
 
+	data.StatusBounce, err = s.statusBounce(team, fromMonth, toMonth)
+	if err != nil {
+		return data, err
+	}
+
 	return data, nil
 }
 
@@ -1338,6 +1343,55 @@ func (s *Postgres) reworkCycles(team string, fromMonth, toMonth string) ([]types
 		LEFT JOIN qa_to_dev qtd ON qtd.issueid = icm.issueid
 		GROUP BY icm.year_month
 		ORDER BY icm.year_month`
+
+	err := s.DB.Select(&result, query, team, from, to)
+	return result, err
+}
+
+// statusBounce returns monthly bounce rate (status re-entries / total
+// transitions) for the team's closed issues.
+func (s *Postgres) statusBounce(team string, fromMonth, toMonth string) ([]types.BouncePoint, error) {
+	result := []types.BouncePoint{}
+	from, to := s.calculateDateRange(fromMonth, toMonth)
+
+	query := `
+		WITH issue_close_month AS (
+			SELECT
+				ss.issueid,
+				to_char(MIN(ss.datestarted), 'YYYY-MM') AS year_month
+			FROM status_stints ss
+			JOIN issue i ON i.id = ss.issueid
+			WHERE ss.status IN ` + doneStatuses + `
+			AND i.project = $1
+			AND i.type IN ` + closeableTypes + `
+			AND ss.datestarted >= $2::timestamptz
+			AND ss.datestarted <  $3::timestamptz
+			GROUP BY ss.issueid
+		),
+		per_month AS (
+			SELECT
+				icm.year_month,
+				COUNT(*) AS total_entries,
+				SUM(CASE WHEN status_count > 1 THEN status_count - 1 ELSE 0 END) AS re_entries,
+				COUNT(DISTINCT icm.issueid) AS total_issues
+			FROM issue_close_month icm
+			JOIN (
+				SELECT issueid, tostatus, COUNT(*) AS status_count
+				FROM issue_transition
+				GROUP BY issueid, tostatus
+			) tx ON tx.issueid = icm.issueid
+			GROUP BY icm.year_month
+		)
+		SELECT
+			year_month,
+			CASE
+				WHEN total_entries > 0
+				THEN 100.0 * re_entries::float8 / total_entries::float8
+				ELSE 0
+			END AS bounce_pct,
+			total_issues
+		FROM per_month
+		ORDER BY year_month`
 
 	err := s.DB.Select(&result, query, team, from, to)
 	return result, err

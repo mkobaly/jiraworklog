@@ -353,6 +353,22 @@ func TestManagerMetricsReworkCycles(t *testing.T) {
 	}
 }
 
+func TestManagerMetricsStatusBounce(t *testing.T) {
+	cfg, err := GetTestConfig()
+	require.NoError(t, err)
+	repo, err := repository.NewPostgresRepo(cfg)
+	require.NoError(t, err)
+
+	data, err := repo.ManagerMetrics("SYM", "", "")
+	require.NoError(t, err)
+	require.NotNil(t, data.StatusBounce)
+	for _, p := range data.StatusBounce {
+		require.GreaterOrEqual(t, p.BouncePct, 0.0)
+		require.LessOrEqual(t, p.BouncePct, 100.0)
+		require.GreaterOrEqual(t, p.TotalIssues, 0)
+	}
+}
+
 func TestMonthlyTeamMetricsStability(t *testing.T) {
 	cfg, err := GetTestConfig()
 	require.NoError(t, err)
