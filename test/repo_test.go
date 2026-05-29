@@ -260,6 +260,23 @@ func TestMonthlyTeamMetricsDefectEscapeRate(t *testing.T) {
 	require.True(t, foundNonZero, "expected defect escape rate > 0 somewhere on the grid")
 }
 
+func TestManagerMetricsSkeleton(t *testing.T) {
+	cfg, err := GetTestConfig()
+	require.NoError(t, err)
+	repo, err := repository.NewPostgresRepo(cfg)
+	require.NoError(t, err)
+
+	data, err := repo.ManagerMetrics("SYM", "", "")
+	require.NoError(t, err)
+	require.Equal(t, "SYM", data.Team)
+	// 13 months of leadership rows for the single team
+	require.Equal(t, 13, len(data.LeadershipMonthly))
+	for _, r := range data.LeadershipMonthly {
+		require.Equal(t, "SYM", r.Team)
+		require.Regexp(t, `^\d{4}-\d{2}$`, r.YearMonth)
+	}
+}
+
 func TestMonthlyTeamMetricsStability(t *testing.T) {
 	cfg, err := GetTestConfig()
 	require.NoError(t, err)

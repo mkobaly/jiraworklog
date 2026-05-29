@@ -71,6 +71,13 @@ type Repo interface {
 	// are YYYY-MM strings; empty strings default to last-13-months trailing.
 	MonthlyTeamMetrics(teams []string, fromMonth, toMonth string) ([]types.MonthlyTeamMetrics, error)
 
+	// ManagerMetrics returns the full single-team payload for the manager
+	// dashboard: the leadership-tier monthly KPIs filtered to `team`, plus
+	// seven manager-only sub-metrics (Time in Status, WIP series, Aging WIP,
+	// Rework Cycles, Status Bounce, QA vs Eng Hours, Bug vs Forward-Work Hours).
+	// `fromMonth` and `toMonth` are YYYY-MM strings; empty defaults to last 13.
+	ManagerMetrics(team string, fromMonth, toMonth string) (types.ManagerMetricsData, error)
+
 	//WorklogsPerDay() ([]types.WorklogsPerDay, error)
 	//WorklogsPerDevDay() ([]types.WorklogsPerDevDay, error)
 

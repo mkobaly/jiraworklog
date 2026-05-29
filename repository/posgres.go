@@ -1125,6 +1125,22 @@ func (s *Postgres) MonthlyTeamMetrics(teams []string, fromMonth, toMonth string)
 	return result, err
 }
 
+// ManagerMetrics — see repository/repo.go for contract.
+func (s *Postgres) ManagerMetrics(team string, fromMonth, toMonth string) (types.ManagerMetricsData, error) {
+	data := types.ManagerMetricsData{Team: team}
+
+	// Reuse the leadership-tier monthly query, filtered to one team.
+	rows, err := s.MonthlyTeamMetrics([]string{team}, fromMonth, toMonth)
+	if err != nil {
+		return data, err
+	}
+	data.LeadershipMonthly = rows
+
+	// Subsequent tasks populate the manager-only sub-fields here.
+
+	return data, nil
+}
+
 // Close will close the database connection
 func (s *Postgres) Close() {
 	s.DB.Close()
