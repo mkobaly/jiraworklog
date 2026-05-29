@@ -67,6 +67,32 @@ templ ManagerDashboard(data types.ManagerMetricsData, teams []string) {
 						<canvas id="mgr-tis"></canvas>
 					</div>
 				</div>
+				<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
+					<div class="bg-white rounded-lg shadow p-6 lg:col-span-2">
+						<h3 class="text-base font-semibold text-gray-700 mb-1">WIP Trend</h3>
+						<p class="text-xs text-gray-400 mb-3">Open issues in Dev or QA on each day, last 13 months.</p>
+						<div class="h-56">
+							<canvas id="mgr-wip"></canvas>
+						</div>
+					</div>
+					<div class="bg-white rounded-lg shadow p-6">
+						<h3 class="text-base font-semibold text-gray-700 mb-1">Aging WIP</h3>
+						<p class="text-xs text-gray-400 mb-3">Currently open issues exceeding the team's 85th-percentile cycle time. Top 20.</p>
+						if len(data.AgingWIPItems) == 0 {
+							<p class="text-sm text-gray-400 italic">No aging items — team is healthy.</p>
+						} else {
+							<ul class="divide-y divide-gray-100 text-sm">
+								for _, item := range data.AgingWIPItems {
+									<li class="py-2 flex items-center justify-between gap-2">
+										<span class="font-mono text-blue-600">{ item.Key }</span>
+										<span class="text-gray-500 text-xs">{ item.Status }</span>
+										<span class="font-medium text-gray-700">{ fmt.Sprintf("%dd", item.DaysInStatus) }</span>
+									</li>
+								}
+							</ul>
+						}
+					</div>
+				</div>
 			</section>
 
 			<!-- Quality section (Rework, Bounce, QA/Eng, Bug/Fwd cards) -->
@@ -96,6 +122,7 @@ templ ManagerDashboard(data types.ManagerMetricsData, teams []string) {
 			<div id="mgrData" data-payload={ mgrSerialize(data) } style="display:none;"></div>
 			@mgrLeadershipChartsScript()
 			@mgrTimeInStatusScript()
+			@mgrWIPScript()
 		</div>
 	}
 }
@@ -261,6 +288,41 @@ templ mgrTimeInStatusScript() {
 					scales: {
 						x: { stacked: true, ticks: { font: { size: 10 } } },
 						y: { stacked: true, beginAtZero: true, ticks: { font: { size: 10 }, callback: function(v) { return v + 'd'; } } },
+					},
+				},
+			});
+		})();
+	</script>
+}
+
+templ mgrWIPScript() {
+	<script>
+		(function() {
+			const data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');
+			const wip = data.WIPSeries || [];
+			const canvas = document.getElementById('mgr-wip');
+			if (!canvas) return;
+			new Chart(canvas, {
+				type: 'line',
+				data: {
+					labels: wip.map(function(p) { return p.Day; }),
+					datasets: [{
+						data: wip.map(function(p) { return p.WIPCount; }),
+						borderColor: '#6366f1',
+						backgroundColor: 'rgba(99,102,241,0.1)',
+						fill: true,
+						pointRadius: 0,
+						tension: 0.25,
+						borderWidth: 1.5,
+					}],
+				},
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					plugins: { legend: { display: false }, tooltip: { enabled: true } },
+					scales: {
+						x: { ticks: { font: { size: 9 }, maxTicksLimit: 13 } },
+						y: { beginAtZero: true, ticks: { font: { size: 10 } } },
 					},
 				},
 			});
