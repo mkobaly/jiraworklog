@@ -1153,6 +1153,11 @@ func (s *Postgres) ManagerMetrics(team string, fromMonth, toMonth string) (types
 		return data, err
 	}
 
+	data.ReworkCycles, err = s.reworkCycles(team, fromMonth, toMonth)
+	if err != nil {
+		return data, err
+	}
+
 	return data, nil
 }
 
@@ -1289,6 +1294,50 @@ func (s *Postgres) agingWIP(team string, fromMonth, toMonth string) ([]types.Agi
 		WHERE cs.current_secs > p.p85_secs
 		ORDER BY cs.current_secs DESC
 		LIMIT 20`
+
+	err := s.DB.Select(&result, query, team, from, to)
+	return result, err
+}
+
+// reworkCycles returns the average number of QA→Dev transitions per closed
+// issue, bucketed by close month. Reuses the pattern from ProjectKPIs.
+func (s *Postgres) reworkCycles(team string, fromMonth, toMonth string) ([]types.ReworkCyclesPoint, error) {
+	result := []types.ReworkCyclesPoint{}
+	from, to := s.calculateDateRange(fromMonth, toMonth)
+
+	query := `
+		WITH issue_close_month AS (
+			SELECT
+				ss.issueid,
+				to_char(MIN(ss.datestarted), 'YYYY-MM') AS year_month
+			FROM status_stints ss
+			JOIN issue i ON i.id = ss.issueid
+			WHERE ss.status IN ` + doneStatuses + `
+			AND i.project = $1
+			AND i.type IN ` + closeableTypes + `
+			AND ss.datestarted >= $2::timestamptz
+			AND ss.datestarted <  $3::timestamptz
+			GROUP BY ss.issueid
+		),
+		qa_to_dev AS (
+			SELECT
+				icm.year_month,
+				icm.issueid,
+				COUNT(*) AS cycles
+			FROM issue_close_month icm
+			JOIN issue_transition it ON it.issueid = icm.issueid
+			WHERE (it.fromstatus ILIKE '%qa%' OR it.fromstatus ILIKE '%test%')
+			AND (it.tostatus ILIKE '%dev%' OR it.tostatus = 'In Progress' OR it.tostatus = 'In Development')
+			GROUP BY icm.year_month, icm.issueid
+		)
+		SELECT
+			icm.year_month,
+			COALESCE(AVG(qtd.cycles), 0)::float8 AS avg_cycles,
+			COUNT(DISTINCT qtd.issueid) AS issue_count
+		FROM issue_close_month icm
+		LEFT JOIN qa_to_dev qtd ON qtd.issueid = icm.issueid
+		GROUP BY icm.year_month
+		ORDER BY icm.year_month`
 
 	err := s.DB.Select(&result, query, team, from, to)
 	return result, err

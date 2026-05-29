@@ -337,6 +337,22 @@ func TestManagerMetricsAgingWIP(t *testing.T) {
 	}
 }
 
+func TestManagerMetricsReworkCycles(t *testing.T) {
+	cfg, err := GetTestConfig()
+	require.NoError(t, err)
+	repo, err := repository.NewPostgresRepo(cfg)
+	require.NoError(t, err)
+
+	data, err := repo.ManagerMetrics("SYM", "", "")
+	require.NoError(t, err)
+	require.NotNil(t, data.ReworkCycles)
+	for _, p := range data.ReworkCycles {
+		require.Regexp(t, `^\d{4}-\d{2}$`, p.YearMonth)
+		require.GreaterOrEqual(t, p.AvgCycles, 0.0)
+		require.GreaterOrEqual(t, p.IssueCount, 0)
+	}
+}
+
 func TestMonthlyTeamMetricsStability(t *testing.T) {
 	cfg, err := GetTestConfig()
 	require.NoError(t, err)
