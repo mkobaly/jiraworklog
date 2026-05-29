@@ -1168,6 +1168,11 @@ func (s *Postgres) ManagerMetrics(team string, fromMonth, toMonth string) (types
 		return data, err
 	}
 
+	data.BugvsForwardHours, err = s.bugVsForwardHours(team, fromMonth, toMonth)
+	if err != nil {
+		return data, err
+	}
+
 	return data, nil
 }
 
@@ -1438,6 +1443,51 @@ func (s *Postgres) qaVsEngHours(team string, fromMonth, toMonth string) ([]types
 			CASE
 				WHEN COALESCE(h.dev_hours, 0) > 0
 				THEN h.qa_hours / h.dev_hours
+				ELSE 0
+			END AS ratio
+		FROM months m
+		LEFT JOIN hours h ON h.year_month = m.year_month
+		ORDER BY m.year_month`
+
+	err := s.DB.Select(&result, query, team, from, to)
+	return result, err
+}
+
+// bugVsForwardHours returns the monthly ratio of bug-fix hours to forward-
+// work (Story + Task) hours for the team. Bucketed by worklog.date month.
+// Numerator = Bug + Hardware Bug hours. Denominator = Story + Task hours.
+func (s *Postgres) bugVsForwardHours(team string, fromMonth, toMonth string) ([]types.HoursRatioPoint, error) {
+	result := []types.HoursRatioPoint{}
+	from, to := s.calculateDateRange(fromMonth, toMonth)
+
+	query := `
+		WITH months AS (
+			SELECT to_char(gs, 'YYYY-MM') AS year_month
+			FROM generate_series(
+				date_trunc('month', $2::timestamptz),
+				date_trunc('month', $3::timestamptz) - INTERVAL '1 day',
+				'1 month'::interval
+			) gs
+		),
+		hours AS (
+			SELECT
+				to_char(w.date, 'YYYY-MM') AS year_month,
+				SUM(CASE WHEN i.type IN ('Bug','Hardware Bug')  THEN w.timespenthours ELSE 0 END)::float8 AS bug_hours,
+				SUM(CASE WHEN i.type IN ('Story','Task')        THEN w.timespenthours ELSE 0 END)::float8 AS fwd_hours
+			FROM worklog w
+			JOIN issue i ON i.id = w.issueid
+			WHERE i.project = $1
+			AND w.date >= $2::timestamptz
+			AND w.date <  $3::timestamptz
+			GROUP BY to_char(w.date, 'YYYY-MM')
+		)
+		SELECT
+			m.year_month,
+			COALESCE(h.bug_hours, 0) AS numerator_hours,
+			COALESCE(h.fwd_hours, 0) AS denominator_hours,
+			CASE
+				WHEN COALESCE(h.fwd_hours, 0) > 0
+				THEN h.bug_hours / h.fwd_hours
 				ELSE 0
 			END AS ratio
 		FROM months m
