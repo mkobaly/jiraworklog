@@ -1324,12 +1324,7 @@ func (s *Postgres) agingWIP(ctx context.Context, team string, fromMonth, toMonth
 			AND ss.durationseconds IS NOT NULL
 		),
 		current_stints AS (
-			-- Issues that are currently in a Dev/QA status. We cross-check
-			-- ss.status against i.status: an open stint only "counts" if the
-			-- issue's actual current status agrees. This guards against stale
-			-- status_stints rows (e.g., an issue that transitioned past
-			-- "In QA" to "Done" but the stints view hasn't been refreshed
-			-- yet) from showing up here as still active.
+			-- Issues that are currently in a Dev/QA status (dateended IS NULL)
 			SELECT
 				i.key,
 				ss.status,
@@ -1338,7 +1333,6 @@ func (s *Postgres) agingWIP(ctx context.Context, team string, fromMonth, toMonth
 			JOIN issue i ON i.id = ss.issueid
 			WHERE ss.dateended IS NULL
 			AND ss.status IN ` + devQAStatuses + `
-			AND i.status = ss.status
 			AND i.project = $1
 			AND i.type IN ` + closeableTypes + `
 		)
