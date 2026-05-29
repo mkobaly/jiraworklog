@@ -84,7 +84,13 @@ templ ManagerDashboard(data types.ManagerMetricsData, teams []string) {
 							<ul class="divide-y divide-gray-100 text-sm">
 								for _, item := range data.AgingWIPItems {
 									<li class="py-2 flex items-center justify-between gap-2">
-										<span class="font-mono text-blue-600">{ item.Key }</span>
+										<a
+											href={ templ.SafeURL("https://amagsymmetry.atlassian.net/browse/" + item.Key) }
+											target="_blank"
+											rel="noopener noreferrer"
+											class="font-mono text-blue-600 hover:text-blue-800 hover:underline"
+											title={ "Open " + item.Key + " in Jira" }
+										>{ item.Key }</a>
 										<span class="text-gray-500 text-xs">{ item.Status }</span>
 										<span class="font-medium text-gray-700">{ fmt.Sprintf("%dd", item.DaysInStatus) }</span>
 									</li>
