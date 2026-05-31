@@ -31,33 +31,31 @@ func NewPostgresRepo(cfg *jiraworklog.Config) (*Postgres, error) {
 func (s *Postgres) MaitenanceRatio(roles []string) ([]types.MaitenanceRatio, error) {
 	result := []types.MaitenanceRatio{}
 
+	// Bucket each worklog hour by classification of its issue's projectcharge.
+	// The classification logic lives in the project_classification(text) DB
+	// function — see db/migrations/001_project_classification.sql. That
+	// function mirrors types/parentIssue.go projectClassification(); keep
+	// both in sync (no compile-time check across the language boundary).
 	query := `
-        SELECT
+		SELECT
 			year_month,
-			SUM(CASE WHEN category = 'NR' THEN hours ELSE 0 END) AS nr,
-			SUM(CASE WHEN category = 'AM' THEN hours ELSE 0 END) AS am,
-			SUM(CASE WHEN category = 'PR' THEN hours ELSE 0 END) AS pr,
-			SUM(CASE WHEN category = '--' THEN hours ELSE 0 END) AS other
+			SUM(CASE WHEN classification = 'non-recoverable' THEN hours ELSE 0 END) AS nr,
+			SUM(CASE WHEN classification = 'after-market'    THEN hours ELSE 0 END) AS am,
+			SUM(CASE WHEN classification = 'project'         THEN hours ELSE 0 END) AS pr,
+			SUM(CASE WHEN classification = 'UNKNOWN'         THEN hours ELSE 0 END) AS other
 		FROM (
-				SELECT
-					to_char(date, 'YYYY-MM') AS year_month,
-					timespenthours AS hours,
-					CASE
-						WHEN i.projectcharge = 'Non-Recoverable' THEN 'NR'
-						WHEN i.projectcharge ILIKE '%after market%' THEN 'AM'
-						WHEN i.projectcharge ILIKE 'TD%' THEN 'PR'
-						ELSE '--'
-						END AS category
-				FROM worklog w
-				JOIN issue i on w.issueid = i.id
-				WHERE i.projectcharge <> ''
-				AND i.projectcharge NOT ILIKE 'SS%'
-				AND date >= date_trunc('month', CURRENT_DATE) - INTERVAL '2 years'
-				AND date < date_trunc('month', now() AT TIME ZONE 'UTC')
-				AND author IN (
-					SELECT name FROM people WHERE role = ANY($1)
-				)
-			) AS src
+			SELECT
+				to_char(w.date, 'YYYY-MM')              AS year_month,
+				w.timespenthours                        AS hours,
+				project_classification(i.projectcharge) AS classification
+			FROM worklog w
+			JOIN issue i  ON i.id = w.issueid
+			JOIN people p ON p.name = w.author
+			WHERE i.projectcharge <> ''
+			AND w.date >= date_trunc('month', CURRENT_DATE) - INTERVAL '2 years'
+			AND w.date <  date_trunc('month', now() AT TIME ZONE 'UTC')
+			AND p.role = ANY($1)
+		) AS src
 		GROUP BY year_month
 		ORDER BY year_month;`
 
@@ -634,7 +632,7 @@ const (
 	// closeableTypes is the set of issue types that flow through Dev → QA and so
 	// participate in cycle-time/throughput/flow-efficiency/defect-escape metrics.
 	// Excludes Task (skips QA), Epic/Release Candidate (containers), and sub-tasks.
-	closeableTypes = `('Story','Bug','Hardware Bug','Customer Bug','HW / FW Customer Bug')`
+	closeableTypes = `('Story', 'Hardware Story','Bug','Hardware Bug','Customer Bug','HW / FW Customer Bug', 'Code Enhancement', 'Security Flaw')`
 
 	// bucketCase maps a status-stints `status` column to its flow bucket
 	// ('Dev'/'QA'/'Waiting'/'Other'). Mirrors the inline CASE expressions in

@@ -393,6 +393,27 @@ func projectType(name string) string {
 	}
 }
 
+// projectClassification returns one of "non-recoverable", "after-market",
+// "project", or "UNKNOWN" for a given project-charge name.
+//
+// IMPORTANT: this Go function is mirrored by the Postgres function
+// project_classification(text) in db/migrations/001_project_classification.sql.
+// If you change one, change the other — there's no compile-time check that
+// the two agree.
+func projectClassification(name string) string {
+	pt := projectType(name)
+	switch pt {
+	case "New", "Enhancement":
+		return "project"
+	case "Maintenance", "Customer Support / Bug Fix", "Technical Debt":
+		return "after-market"
+	case "Non-Recoverable", "Research / Non-Recoverable":
+		return "non-recoverable"
+	default:
+		return "UNKNOWN"
+	}
+}
+
 // ProjectChargeHours represents hours worked per project charge and role
 type ProjectChargeHours struct {
 	//Project       string         `db:"project"`
