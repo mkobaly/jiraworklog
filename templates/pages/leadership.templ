@@ -102,9 +102,20 @@ templ LeadershipDashboard(rows []types.MonthlyTeamMetrics, teams []string, selec
 						title="What do these metrics mean?"
 					>?</button>
 				</div>
-				<form method="GET" action="/dashboard/leadership" class="flex items-center gap-2">
+				<!--
+					data-turbo-frame=leadership-content makes the form submission
+					target the <turbo-frame> below — Turbo swaps just its contents
+					instead of the whole <body>. data-turbo-action=advance pushes
+					the new URL onto history so the page is shareable / bookmarkable.
+					requestSubmit() (vs submit()) is mandatory because Turbo only
+					intercepts the submit *event*; plain .submit() bypasses it.
+				-->
+				<form method="GET" action="/dashboard/leadership"
+					data-turbo-frame="leadership-content"
+					data-turbo-action="advance"
+					class="flex items-center gap-2">
 					<label for="month" class="text-sm font-medium text-gray-700">Month</label>
-					<select id="month" name="month" onchange="this.form.submit()" class="border border-gray-300 rounded-md px-3 py-1.5 text-sm">
+					<select id="month" name="month" onchange="this.form.requestSubmit()" class="border border-gray-300 rounded-md px-3 py-1.5 text-sm">
 						for _, opt := range monthOptions {
 							<option value={ opt } if opt == selectedMonth { selected }>{ formatMonthOption(opt) }</option>
 						}
@@ -112,59 +123,62 @@ templ LeadershipDashboard(rows []types.MonthlyTeamMetrics, teams []string, selec
 				</form>
 			</div>
 
-			if len(rows) == 0 {
-				<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center text-yellow-700">
-					No monthly data yet. Sync must have run at least once.
-				</div>
-			} else {
-				<!-- KPI grid -->
-				<div class="bg-white rounded-lg shadow p-6 overflow-x-auto">
-					<table class="min-w-full text-sm">
-						<thead>
-							<tr class="text-left text-gray-500 uppercase tracking-wide text-xs">
-								<th class="py-2 pr-4">Metric</th>
-								for _, t := range teams {
-									<th class="py-2 px-4 text-center">
-										<a href={ templ.SafeURL("/dashboard/manager?team=" + t) } class="text-blue-600 hover:underline" title={ t }>{ teamFriendlyName(t) }</a>
-									</th>
-								}
-							</tr>
-						</thead>
-						<tbody class="divide-y divide-gray-100">
-							@kpiRow("Cycle Time (median)", pickMonthRows(rows, teams, selectedMonth), priorMonthRows(rows, teams, selectedMonth), "cycle", true)
-							@kpiRow("Throughput", pickMonthRows(rows, teams, selectedMonth), priorMonthRows(rows, teams, selectedMonth), "throughput", false)
-							@kpiRow("Flow Efficiency", pickMonthRows(rows, teams, selectedMonth), priorMonthRows(rows, teams, selectedMonth), "flow", false)
-							@kpiRow("Failed QA Ratio", pickMonthRows(rows, teams, selectedMonth), priorMonthRows(rows, teams, selectedMonth), "failedqa", true)
-							@kpiRow("Defect Escape Rate", pickMonthRows(rows, teams, selectedMonth), priorMonthRows(rows, teams, selectedMonth), "escape", true)
-						</tbody>
-					</table>
-				</div>
-
-				<div class="bg-white rounded-lg shadow p-6">
-					<h2 class="text-lg font-semibold text-gray-700 mb-1">Stability (Customer Bugs)</h2>
-					<p class="text-xs text-gray-400 mb-4">New bugs opened, bugs closed, total open bugs per month.</p>
-					<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-						for _, t := range teams {
-							<div>
-								<p class="text-sm font-medium text-gray-700 text-center mb-2" title={ t }>{ teamFriendlyName(t) }</p>
-								<div class="h-48">
-									<canvas data-stability-team={ t }></canvas>
-								</div>
-							</div>
-						}
+			<turbo-frame id="leadership-content" class="block space-y-6">
+				if len(rows) == 0 {
+					<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center text-yellow-700">
+						No monthly data yet. Sync must have run at least once.
 					</div>
-					<div id="stabilityData" data-series={ stabilitySeries(rows, teams) } style="display:none;"></div>
-				</div>
+				} else {
+					<!-- KPI grid -->
+					<div class="bg-white rounded-lg shadow p-6 overflow-x-auto">
+						<table class="min-w-full text-sm">
+							<thead>
+								<tr class="text-left text-gray-500 uppercase tracking-wide text-xs">
+									<th class="py-2 pr-4">Metric</th>
+									for _, t := range teams {
+										<th class="py-2 px-4 text-center">
+											<!-- data-turbo-frame=_top escapes the current frame so clicking goes to the manager page fully -->
+											<a href={ templ.SafeURL("/dashboard/manager?team=" + t) } data-turbo-frame="_top" class="text-blue-600 hover:underline" title={ t }>{ teamFriendlyName(t) }</a>
+										</th>
+									}
+								</tr>
+							</thead>
+							<tbody class="divide-y divide-gray-100">
+								@kpiRow("Cycle Time (median)", pickMonthRows(rows, teams, selectedMonth), priorMonthRows(rows, teams, selectedMonth), "cycle", true)
+								@kpiRow("Throughput", pickMonthRows(rows, teams, selectedMonth), priorMonthRows(rows, teams, selectedMonth), "throughput", false)
+								@kpiRow("Flow Efficiency", pickMonthRows(rows, teams, selectedMonth), priorMonthRows(rows, teams, selectedMonth), "flow", false)
+								@kpiRow("Failed QA Ratio", pickMonthRows(rows, teams, selectedMonth), priorMonthRows(rows, teams, selectedMonth), "failedqa", true)
+								@kpiRow("Defect Escape Rate", pickMonthRows(rows, teams, selectedMonth), priorMonthRows(rows, teams, selectedMonth), "escape", true)
+							</tbody>
+						</table>
+					</div>
 
-				<div id="sparklineData" data-series={ sparklineSeries(rows, teams) } style="display:none;"></div>
-				@sparklineBootstrapScript()
-				@stabilityBootstrapScript()
-			}
+					<div class="bg-white rounded-lg shadow p-6">
+						<h2 class="text-lg font-semibold text-gray-700 mb-1">Stability (Customer Bugs)</h2>
+						<p class="text-xs text-gray-400 mb-4">New bugs opened, bugs closed, total open bugs per month.</p>
+						<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+							for _, t := range teams {
+								<div>
+									<p class="text-sm font-medium text-gray-700 text-center mb-2" title={ t }>{ teamFriendlyName(t) }</p>
+									<div class="h-48">
+										<canvas data-stability-team={ t }></canvas>
+									</div>
+								</div>
+							}
+						</div>
+						<div id="stabilityData" data-series={ stabilitySeries(rows, teams) } style="display:none;"></div>
+					</div>
 
-			<!-- Footer caveat -->
-			<p class="text-xs text-gray-400 italic text-center">
-				Each project includes both project-team and stability-team work; v2 will split these.
-			</p>
+					<div id="sparklineData" data-series={ sparklineSeries(rows, teams) } style="display:none;"></div>
+					@sparklineBootstrapScript()
+					@stabilityBootstrapScript()
+				}
+
+				<!-- Footer caveat -->
+				<p class="text-xs text-gray-400 italic text-center">
+					Each project includes both project-team and stability-team work; v2 will split these.
+				</p>
+			</turbo-frame>
 
 			@metricsHelpModal()
 		</div>

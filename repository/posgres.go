@@ -266,8 +266,15 @@ func (s *Postgres) ProjectChargeHours(fromYearMonth, toYearMonth string) ([]type
 func (s *Postgres) calculateDateRange(fromYearMonth, toYearMonth string) (from time.Time, to time.Time) {
 	now := time.Now().UTC()
 	if fromYearMonth == "" {
-		t := now.AddDate(0, -13, 0)
-		from = time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, time.UTC)
+		// Compute start-of-current-month FIRST, then subtract 13 months.
+		// Doing AddDate(0, -13, 0) directly on `now` and then truncating to
+		// the 1st has an off-by-one-month rollover bug at month-end: on
+		// May 31, `May 31 - 13 months` normalizes through April 31 → June 1
+		// (since April has 30 days), so the window starts at June 1, 2025
+		// instead of April 1, 2025 — shrinking the rolling 13-month window
+		// to 12 months for ~24 hours each month.
+		startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+		from = startOfMonth.AddDate(0, -13, 0)
 	} else {
 		t, _ := time.Parse("2006-01", fromYearMonth)
 		from = time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, time.UTC)

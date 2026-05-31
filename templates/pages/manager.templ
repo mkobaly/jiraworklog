@@ -32,7 +32,6 @@ templ ManagerDashboard(data types.ManagerMetricsData, teams []string) {
 			<div class="bg-white rounded-lg shadow p-6 flex items-center justify-between flex-wrap gap-3">
 				<div class="flex items-center gap-3">
 					<h1 class="text-2xl font-bold text-gray-800">Manager Dashboard</h1>
-					<span class="text-lg text-gray-500">— { data.Team }</span>
 					<button
 						type="button"
 						onclick="document.getElementById('mgrHelpModal').classList.remove('hidden')"
@@ -41,9 +40,19 @@ templ ManagerDashboard(data types.ManagerMetricsData, teams []string) {
 						title="What do these metrics mean?"
 					>?</button>
 				</div>
-				<form method="GET" action="/dashboard/manager" class="flex items-center gap-2">
+				<!--
+					Form targets the <turbo-frame id="manager-content"> below.
+					data-turbo-action=advance keeps the URL in sync so the page
+					is shareable. requestSubmit() (not submit()) is required —
+					Turbo only intercepts the submit *event*, which .submit()
+					doesn't dispatch.
+				-->
+				<form method="GET" action="/dashboard/manager"
+					data-turbo-frame="manager-content"
+					data-turbo-action="advance"
+					class="flex items-center gap-2">
 					<label for="team" class="text-sm font-medium text-gray-700">Team</label>
-					<select id="team" name="team" onchange="this.form.submit()" class="border border-gray-300 rounded-md px-3 py-1.5 text-sm">
+					<select id="team" name="team" onchange="this.form.requestSubmit()" class="border border-gray-300 rounded-md px-3 py-1.5 text-sm">
 						for _, t := range teams {
 							<option value={ t } if t == data.Team { selected }>{ t }</option>
 						}
@@ -51,8 +60,12 @@ templ ManagerDashboard(data types.ManagerMetricsData, teams []string) {
 				</form>
 			</div>
 
-			<!-- Delivery Predictability section (KPI cards + Time-in-Status + WIP + Aging WIP) -->
-			<section>
+			<turbo-frame id="manager-content" class="block space-y-6">
+				<!-- Team banner — inside the frame so it updates when the dropdown changes -->
+				<p class="text-sm text-gray-500 italic">Showing data for team <span class="font-semibold text-gray-700">{ data.Team }</span></p>
+
+				<!-- Delivery Predictability section (KPI cards + Time-in-Status + WIP + Aging WIP) -->
+				<section>
 				<h2 class="text-lg font-bold text-gray-800 mb-3">Delivery Predictability</h2>
 				<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
 					@mgrKpiCard("Cycle Time (median)", mgrFmtDays(currentMgrCycle(data)), "mgr-cycle")
@@ -133,19 +146,22 @@ templ ManagerDashboard(data types.ManagerMetricsData, teams []string) {
 				</div>
 			</section>
 
-			<!-- Back link -->
-			<div>
-				<a href="/dashboard/leadership" class="text-sm text-blue-600 hover:underline">← Back to Leadership Dashboard</a>
-			</div>
+				<!-- Back link — data-turbo-frame="_top" escapes the frame so the
+				     leadership page loads at the document level, not into a
+				     manager-content frame (which the leadership page doesn't have). -->
+				<div>
+					<a href="/dashboard/leadership" data-turbo-frame="_top" class="text-sm text-blue-600 hover:underline">← Back to Leadership Dashboard</a>
+				</div>
+
+				<div id="mgrData" data-payload={ mgrSerialize(data) } style="display:none;"></div>
+				@mgrLeadershipChartsScript()
+				@mgrTimeInStatusScript()
+				@mgrWIPScript()
+				@mgrQualityChartsScript()
+				@mgrStabilityChartsScript()
+			</turbo-frame>
 
 			@mgrHelpModal()
-
-			<div id="mgrData" data-payload={ mgrSerialize(data) } style="display:none;"></div>
-			@mgrLeadershipChartsScript()
-			@mgrTimeInStatusScript()
-			@mgrWIPScript()
-			@mgrQualityChartsScript()
-			@mgrStabilityChartsScript()
 		</div>
 	}
 }
@@ -324,10 +340,11 @@ func currentMgrFailedQA(data types.ManagerMetricsData) float64 {
 templ mgrLeadershipChartsScript() {
 	<script>
 		(function() {
-			// Cache the parsed payload on window so the 5 chart scripts share
-			// one JSON.parse call instead of each parsing the full ~25-40 KB
-			// blob independently.
-			const data = window.__mgrData || (window.__mgrData = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}'));
+			// Parse the payload fresh each time — caching on `window` would
+			// survive Turbo frame swaps and return stale data after a team
+			// change. The 5x re-parse of a ~25-40KB blob is a few ms on
+			// modern browsers; correctness trumps the micro-optimization.
+			const data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');
 			const lm = data.LeadershipMonthly || [];
 			const labels = lm.map(function(r) { return r.YearMonth; });
 			const series = {
@@ -368,10 +385,11 @@ templ mgrLeadershipChartsScript() {
 templ mgrTimeInStatusScript() {
 	<script>
 		(function() {
-			// Cache the parsed payload on window so the 5 chart scripts share
-			// one JSON.parse call instead of each parsing the full ~25-40 KB
-			// blob independently.
-			const data = window.__mgrData || (window.__mgrData = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}'));
+			// Parse the payload fresh each time — caching on `window` would
+			// survive Turbo frame swaps and return stale data after a team
+			// change. The 5x re-parse of a ~25-40KB blob is a few ms on
+			// modern browsers; correctness trumps the micro-optimization.
+			const data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');
 			const tis = data.TimeInStatus || [];
 			// Pivot tis into { months: [...], Dev: [...], QA: [...], Waiting: [...] }
 			const monthSet = new Set();
@@ -414,10 +432,11 @@ templ mgrTimeInStatusScript() {
 templ mgrWIPScript() {
 	<script>
 		(function() {
-			// Cache the parsed payload on window so the 5 chart scripts share
-			// one JSON.parse call instead of each parsing the full ~25-40 KB
-			// blob independently.
-			const data = window.__mgrData || (window.__mgrData = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}'));
+			// Parse the payload fresh each time — caching on `window` would
+			// survive Turbo frame swaps and return stale data after a team
+			// change. The 5x re-parse of a ~25-40KB blob is a few ms on
+			// modern browsers; correctness trumps the micro-optimization.
+			const data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');
 			const wip = data.WIPSeries || [];
 			const canvas = document.getElementById('mgr-wip');
 			if (!canvas) return;
@@ -480,10 +499,11 @@ func currentMgrBugFwd(data types.ManagerMetricsData) float64 {
 templ mgrQualityChartsScript() {
 	<script>
 		(function() {
-			// Cache the parsed payload on window so the 5 chart scripts share
-			// one JSON.parse call instead of each parsing the full ~25-40 KB
-			// blob independently.
-			const data = window.__mgrData || (window.__mgrData = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}'));
+			// Parse the payload fresh each time — caching on `window` would
+			// survive Turbo frame swaps and return stale data after a team
+			// change. The 5x re-parse of a ~25-40KB blob is a few ms on
+			// modern browsers; correctness trumps the micro-optimization.
+			const data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');
 			const series = {
 				'mgr-rework': {
 					labels: (data.ReworkCycles || []).map(function(p) { return p.YearMonth; }),
@@ -537,10 +557,11 @@ templ mgrQualityChartsScript() {
 templ mgrStabilityChartsScript() {
 	<script>
 		(function() {
-			// Cache the parsed payload on window so the 5 chart scripts share
-			// one JSON.parse call instead of each parsing the full ~25-40 KB
-			// blob independently.
-			const data = window.__mgrData || (window.__mgrData = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}'));
+			// Parse the payload fresh each time — caching on `window` would
+			// survive Turbo frame swaps and return stale data after a team
+			// change. The 5x re-parse of a ~25-40KB blob is a few ms on
+			// modern browsers; correctness trumps the micro-optimization.
+			const data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');
 			const lm = data.LeadershipMonthly || [];
 			const labels = lm.map(function(r) { return r.YearMonth; });
 

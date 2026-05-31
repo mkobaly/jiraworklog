@@ -318,7 +318,7 @@ func LeadershipDashboard(rows []types.MonthlyTeamMetrics, teams []string, select
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<script src=\"https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js\"></script> <div class=\"space-y-6\"><!-- Header --><div class=\"bg-white rounded-lg shadow p-6 flex items-center justify-between flex-wrap gap-3\"><div class=\"flex items-center gap-3\"><h1 class=\"text-2xl font-bold text-gray-800\">Leadership Dashboard</h1><button type=\"button\" onclick=\"document.getElementById('metricsHelpModal').classList.remove('hidden')\" class=\"w-7 h-7 rounded-full border border-gray-300 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition flex items-center justify-center text-sm font-semibold\" aria-label=\"Help: what these metrics mean\" title=\"What do these metrics mean?\">?</button></div><form method=\"GET\" action=\"/dashboard/leadership\" class=\"flex items-center gap-2\"><label for=\"month\" class=\"text-sm font-medium text-gray-700\">Month</label> <select id=\"month\" name=\"month\" onchange=\"this.form.submit()\" class=\"border border-gray-300 rounded-md px-3 py-1.5 text-sm\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<script src=\"https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js\"></script> <div class=\"space-y-6\"><!-- Header --><div class=\"bg-white rounded-lg shadow p-6 flex items-center justify-between flex-wrap gap-3\"><div class=\"flex items-center gap-3\"><h1 class=\"text-2xl font-bold text-gray-800\">Leadership Dashboard</h1><button type=\"button\" onclick=\"document.getElementById('metricsHelpModal').classList.remove('hidden')\" class=\"w-7 h-7 rounded-full border border-gray-300 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition flex items-center justify-center text-sm font-semibold\" aria-label=\"Help: what these metrics mean\" title=\"What do these metrics mean?\">?</button></div><!--\n\t\t\t\t\tdata-turbo-frame=leadership-content makes the form submission\n\t\t\t\t\ttarget the <turbo-frame> below — Turbo swaps just its contents\n\t\t\t\t\tinstead of the whole <body>. data-turbo-action=advance pushes\n\t\t\t\t\tthe new URL onto history so the page is shareable / bookmarkable.\n\t\t\t\t\trequestSubmit() (vs submit()) is mandatory because Turbo only\n\t\t\t\t\tintercepts the submit *event*; plain .submit() bypasses it.\n\t\t\t\t--><form method=\"GET\" action=\"/dashboard/leadership\" data-turbo-frame=\"leadership-content\" data-turbo-action=\"advance\" class=\"flex items-center gap-2\"><label for=\"month\" class=\"text-sm font-medium text-gray-700\">Month</label> <select id=\"month\" name=\"month\" onchange=\"this.form.requestSubmit()\" class=\"border border-gray-300 rounded-md px-3 py-1.5 text-sm\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -330,7 +330,7 @@ func LeadershipDashboard(rows []types.MonthlyTeamMetrics, teams []string, select
 				var templ_7745c5c3_Var17 string
 				templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(opt)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 109, Col: 26}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 120, Col: 26}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 				if templ_7745c5c3_Err != nil {
@@ -353,7 +353,7 @@ func LeadershipDashboard(rows []types.MonthlyTeamMetrics, teams []string, select
 				var templ_7745c5c3_Var18 string
 				templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(formatMonthOption(opt))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 109, Col: 90}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 120, Col: 90}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 				if templ_7745c5c3_Err != nil {
@@ -364,7 +364,7 @@ func LeadershipDashboard(rows []types.MonthlyTeamMetrics, teams []string, select
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</select></form></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</select></form></div><turbo-frame id=\"leadership-content\" class=\"block space-y-6\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -379,27 +379,27 @@ func LeadershipDashboard(rows []types.MonthlyTeamMetrics, teams []string, select
 					return templ_7745c5c3_Err
 				}
 				for _, t := range teams {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<th class=\"py-2 px-4 text-center\"><a href=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<th class=\"py-2 px-4 text-center\"><!-- data-turbo-frame=_top escapes the current frame so clicking goes to the manager page fully --><a href=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var19 templ.SafeURL
 					templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/dashboard/manager?team=" + t))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 128, Col: 65}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 141, Col: 66}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "\" class=\"text-blue-600 hover:underline\" title=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "\" data-turbo-frame=\"_top\" class=\"text-blue-600 hover:underline\" title=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var20 string
 					templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(t)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 128, Col: 115}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 141, Col: 140}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 					if templ_7745c5c3_Err != nil {
@@ -412,7 +412,7 @@ func LeadershipDashboard(rows []types.MonthlyTeamMetrics, teams []string, select
 					var templ_7745c5c3_Var21 string
 					templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(teamFriendlyName(t))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 128, Col: 139}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 141, Col: 164}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 					if templ_7745c5c3_Err != nil {
@@ -459,7 +459,7 @@ func LeadershipDashboard(rows []types.MonthlyTeamMetrics, teams []string, select
 					var templ_7745c5c3_Var22 string
 					templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(t)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 149, Col: 79}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 162, Col: 80}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 					if templ_7745c5c3_Err != nil {
@@ -472,7 +472,7 @@ func LeadershipDashboard(rows []types.MonthlyTeamMetrics, teams []string, select
 					var templ_7745c5c3_Var23 string
 					templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(teamFriendlyName(t))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 149, Col: 103}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 162, Col: 104}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 					if templ_7745c5c3_Err != nil {
@@ -485,7 +485,7 @@ func LeadershipDashboard(rows []types.MonthlyTeamMetrics, teams []string, select
 					var templ_7745c5c3_Var24 string
 					templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(t)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 151, Col: 40}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 164, Col: 41}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 					if templ_7745c5c3_Err != nil {
@@ -503,7 +503,7 @@ func LeadershipDashboard(rows []types.MonthlyTeamMetrics, teams []string, select
 				var templ_7745c5c3_Var25 string
 				templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(stabilitySeries(rows, teams))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 156, Col: 71}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 169, Col: 72}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 				if templ_7745c5c3_Err != nil {
@@ -516,7 +516,7 @@ func LeadershipDashboard(rows []types.MonthlyTeamMetrics, teams []string, select
 				var templ_7745c5c3_Var26 string
 				templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(sparklineSeries(rows, teams))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 159, Col: 70}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 172, Col: 71}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 				if templ_7745c5c3_Err != nil {
@@ -539,7 +539,7 @@ func LeadershipDashboard(rows []types.MonthlyTeamMetrics, teams []string, select
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "<!-- Footer caveat --><p class=\"text-xs text-gray-400 italic text-center\">Each project includes both project-team and stability-team work; v2 will split these.</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "<!-- Footer caveat --><p class=\"text-xs text-gray-400 italic text-center\">Each project includes both project-team and stability-team work; v2 will split these.</p></turbo-frame>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -680,7 +680,7 @@ func helpCard(name, what, how, soWhat string) templ.Component {
 		var templ_7745c5c3_Var29 string
 		templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 247, Col: 63}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 261, Col: 63}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 		if templ_7745c5c3_Err != nil {
@@ -693,7 +693,7 @@ func helpCard(name, what, how, soWhat string) templ.Component {
 		var templ_7745c5c3_Var30 string
 		templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(what)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 251, Col: 14}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 265, Col: 14}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 		if templ_7745c5c3_Err != nil {
@@ -706,7 +706,7 @@ func helpCard(name, what, how, soWhat string) templ.Component {
 		var templ_7745c5c3_Var31 string
 		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(how)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 255, Col: 13}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 269, Col: 13}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 		if templ_7745c5c3_Err != nil {
@@ -719,7 +719,7 @@ func helpCard(name, what, how, soWhat string) templ.Component {
 		var templ_7745c5c3_Var32 string
 		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(soWhat)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 259, Col: 16}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/leadership.templ`, Line: 273, Col: 16}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 		if templ_7745c5c3_Err != nil {

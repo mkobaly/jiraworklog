@@ -122,66 +122,66 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<script src=\"https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js\"></script> <div class=\"space-y-6\"><!-- Header --><div class=\"bg-white rounded-lg shadow p-6 flex items-center justify-between flex-wrap gap-3\"><div class=\"flex items-center gap-3\"><h1 class=\"text-2xl font-bold text-gray-800\">Manager Dashboard</h1><span class=\"text-lg text-gray-500\">— ")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var7 string
-			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(data.Team)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 35, Col: 56}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</span> <button type=\"button\" onclick=\"document.getElementById('mgrHelpModal').classList.remove('hidden')\" class=\"w-7 h-7 rounded-full border border-gray-300 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition flex items-center justify-center text-sm font-semibold\" aria-label=\"Help: what these metrics mean\" title=\"What do these metrics mean?\">?</button></div><form method=\"GET\" action=\"/dashboard/manager\" class=\"flex items-center gap-2\"><label for=\"team\" class=\"text-sm font-medium text-gray-700\">Team</label> <select id=\"team\" name=\"team\" onchange=\"this.form.submit()\" class=\"border border-gray-300 rounded-md px-3 py-1.5 text-sm\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<script src=\"https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js\"></script> <div class=\"space-y-6\"><!-- Header --><div class=\"bg-white rounded-lg shadow p-6 flex items-center justify-between flex-wrap gap-3\"><div class=\"flex items-center gap-3\"><h1 class=\"text-2xl font-bold text-gray-800\">Manager Dashboard</h1><button type=\"button\" onclick=\"document.getElementById('mgrHelpModal').classList.remove('hidden')\" class=\"w-7 h-7 rounded-full border border-gray-300 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition flex items-center justify-center text-sm font-semibold\" aria-label=\"Help: what these metrics mean\" title=\"What do these metrics mean?\">?</button></div><!--\n\t\t\t\t\tForm targets the <turbo-frame id=\"manager-content\"> below.\n\t\t\t\t\tdata-turbo-action=advance keeps the URL in sync so the page\n\t\t\t\t\tis shareable. requestSubmit() (not submit()) is required —\n\t\t\t\t\tTurbo only intercepts the submit *event*, which .submit()\n\t\t\t\t\tdoesn't dispatch.\n\t\t\t\t--><form method=\"GET\" action=\"/dashboard/manager\" data-turbo-frame=\"manager-content\" data-turbo-action=\"advance\" class=\"flex items-center gap-2\"><label for=\"team\" class=\"text-sm font-medium text-gray-700\">Team</label> <select id=\"team\" name=\"team\" onchange=\"this.form.requestSubmit()\" class=\"border border-gray-300 rounded-md px-3 py-1.5 text-sm\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, t := range teams {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<option value=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<option value=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var7 string
+				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(t)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 57, Col: 24}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				if t == data.Team {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, " selected")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, ">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var8 string
 				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(t)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 48, Col: 24}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 57, Col: 61}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				if t == data.Team {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, " selected")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, ">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var9 string
-				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(t)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 48, Col: 61}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</option>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</option>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</select></form></div><!-- Delivery Predictability section (KPI cards + Time-in-Status + WIP + Aging WIP) --><section><h2 class=\"text-lg font-bold text-gray-800 mb-3\">Delivery Predictability</h2><div class=\"grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</select></form></div><turbo-frame id=\"manager-content\" class=\"block space-y-6\"><!-- Team banner — inside the frame so it updates when the dropdown changes --><p class=\"text-sm text-gray-500 italic\">Showing data for team <span class=\"font-semibold text-gray-700\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var9 string
+			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(data.Team)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 65, Col: 119}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</span></p><!-- Delivery Predictability section (KPI cards + Time-in-Status + WIP + Aging WIP) --><section><h2 class=\"text-lg font-bold text-gray-800 mb-3\">Delivery Predictability</h2><div class=\"grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -223,7 +223,7 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 					var templ_7745c5c3_Var10 templ.SafeURL
 					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("https://amagsymmetry.atlassian.net/browse/" + item.Key))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 88, Col: 88}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 101, Col: 88}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 					if templ_7745c5c3_Err != nil {
@@ -236,7 +236,7 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 					var templ_7745c5c3_Var11 string
 					templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs("Open " + item.Key + " in Jira")
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 92, Col: 50}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 105, Col: 50}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 					if templ_7745c5c3_Err != nil {
@@ -249,7 +249,7 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 					var templ_7745c5c3_Var12 string
 					templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(item.Key)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 93, Col: 21}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 106, Col: 21}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 					if templ_7745c5c3_Err != nil {
@@ -262,7 +262,7 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 					var templ_7745c5c3_Var13 string
 					templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(item.Status)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 94, Col: 59}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 107, Col: 59}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 					if templ_7745c5c3_Err != nil {
@@ -275,7 +275,7 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 					var templ_7745c5c3_Var14 string
 					templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%dd", item.DaysInStatus))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 95, Col: 89}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 108, Col: 89}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 					if templ_7745c5c3_Err != nil {
@@ -311,28 +311,20 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</div></section><!-- Stability section --><section><h2 class=\"text-lg font-bold text-gray-800 mb-3\">Stability</h2><div class=\"grid grid-cols-1 lg:grid-cols-2 gap-4\"><div class=\"bg-white rounded-lg shadow p-6\"><h3 class=\"text-base font-semibold text-gray-700 mb-1\">Customer Bugs</h3><p class=\"text-xs text-gray-400 mb-3\">New bugs opened, bugs closed, total open bugs per month.</p><div class=\"h-72\"><canvas id=\"mgr-stability\"></canvas></div></div><div class=\"bg-white rounded-lg shadow p-6\"><h3 class=\"text-base font-semibold text-gray-700 mb-1\">Defect Escape Rate</h3><p class=\"text-xs text-gray-400 mb-3\">% of bugs found this month that came from customers vs were found internally.</p><div class=\"h-72\"><canvas id=\"mgr-escape\"></canvas></div></div></div></section><!-- Back link --><div><a href=\"/dashboard/leadership\" class=\"text-sm text-blue-600 hover:underline\">← Back to Leadership Dashboard</a></div>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = mgrHelpModal().Render(ctx, templ_7745c5c3_Buffer)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<div id=\"mgrData\" data-payload=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</div></section><!-- Stability section --><section><h2 class=\"text-lg font-bold text-gray-800 mb-3\">Stability</h2><div class=\"grid grid-cols-1 lg:grid-cols-2 gap-4\"><div class=\"bg-white rounded-lg shadow p-6\"><h3 class=\"text-base font-semibold text-gray-700 mb-1\">Customer Bugs</h3><p class=\"text-xs text-gray-400 mb-3\">New bugs opened, bugs closed, total open bugs per month.</p><div class=\"h-72\"><canvas id=\"mgr-stability\"></canvas></div></div><div class=\"bg-white rounded-lg shadow p-6\"><h3 class=\"text-base font-semibold text-gray-700 mb-1\">Defect Escape Rate</h3><p class=\"text-xs text-gray-400 mb-3\">% of bugs found this month that came from customers vs were found internally.</p><div class=\"h-72\"><canvas id=\"mgr-escape\"></canvas></div></div></div></section><!-- Back link — data-turbo-frame=\"_top\" escapes the frame so the\n\t\t\t\t     leadership page loads at the document level, not into a\n\t\t\t\t     manager-content frame (which the leadership page doesn't have). --><div><a href=\"/dashboard/leadership\" data-turbo-frame=\"_top\" class=\"text-sm text-blue-600 hover:underline\">← Back to Leadership Dashboard</a></div><div id=\"mgrData\" data-payload=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(mgrSerialize(data))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 143, Col: 54}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 156, Col: 55}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\" style=\"display:none;\"></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\" style=\"display:none;\"></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -353,6 +345,14 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 				return templ_7745c5c3_Err
 			}
 			templ_7745c5c3_Err = mgrStabilityChartsScript().Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</turbo-frame>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = mgrHelpModal().Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -398,7 +398,7 @@ func mgrHelpCard(name, what, how, soWhat string) templ.Component {
 		var templ_7745c5c3_Var17 string
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 155, Col: 63}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 171, Col: 63}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
@@ -411,7 +411,7 @@ func mgrHelpCard(name, what, how, soWhat string) templ.Component {
 		var templ_7745c5c3_Var18 string
 		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(what)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 159, Col: 14}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 175, Col: 14}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 		if templ_7745c5c3_Err != nil {
@@ -424,7 +424,7 @@ func mgrHelpCard(name, what, how, soWhat string) templ.Component {
 		var templ_7745c5c3_Var19 string
 		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(how)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 163, Col: 13}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 179, Col: 13}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 		if templ_7745c5c3_Err != nil {
@@ -437,7 +437,7 @@ func mgrHelpCard(name, what, how, soWhat string) templ.Component {
 		var templ_7745c5c3_Var20 string
 		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(soWhat)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 167, Col: 16}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 183, Col: 16}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 		if templ_7745c5c3_Err != nil {
@@ -667,7 +667,7 @@ func mgrLeadershipChartsScript() templ.Component {
 			templ_7745c5c3_Var22 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<script>\n\t\t(function() {\n\t\t\t// Cache the parsed payload on window so the 5 chart scripts share\n\t\t\t// one JSON.parse call instead of each parsing the full ~25-40 KB\n\t\t\t// blob independently.\n\t\t\tconst data = window.__mgrData || (window.__mgrData = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}'));\n\t\t\tconst lm = data.LeadershipMonthly || [];\n\t\t\tconst labels = lm.map(function(r) { return r.YearMonth; });\n\t\t\tconst series = {\n\t\t\t\t'mgr-cycle':      lm.map(function(r) { return r.MedianCycleTimeSecs / 86400; }),\n\t\t\t\t'mgr-throughput': lm.map(function(r) { return r.ClosedIssueCount; }),\n\t\t\t\t'mgr-flow':       lm.map(function(r) { return r.FlowEfficiencyPct; }),\n\t\t\t\t'mgr-failedqa':   lm.map(function(r) { return r.FailedQARatioPct; }),\n\t\t\t};\n\t\t\tObject.keys(series).forEach(function(id) {\n\t\t\t\tconst canvas = document.getElementById(id);\n\t\t\t\tif (!canvas) return;\n\t\t\t\tnew Chart(canvas, {\n\t\t\t\t\ttype: 'bar',\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tlabels: labels,\n\t\t\t\t\t\tdatasets: [{\n\t\t\t\t\t\t\tdata: series[id],\n\t\t\t\t\t\t\tbackgroundColor: '#3b82f6',\n\t\t\t\t\t\t\tborderColor: '#1d4ed8',\n\t\t\t\t\t\t\tborderWidth: 1,\n\t\t\t\t\t\t}],\n\t\t\t\t\t},\n\t\t\t\t\toptions: {\n\t\t\t\t\t\tresponsive: true,\n\t\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\t\tplugins: { legend: { display: false }, tooltip: { enabled: true } },\n\t\t\t\t\t\tscales: {\n\t\t\t\t\t\t\tx: { ticks: { font: { size: 8 }, maxRotation: 45, minRotation: 45 } },\n\t\t\t\t\t\t\ty: { beginAtZero: true, ticks: { font: { size: 9 } } },\n\t\t\t\t\t\t},\n\t\t\t\t\t},\n\t\t\t\t});\n\t\t\t});\n\t\t})();\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<script>\n\t\t(function() {\n\t\t\t// Parse the payload fresh each time — caching on `window` would\n\t\t\t// survive Turbo frame swaps and return stale data after a team\n\t\t\t// change. The 5x re-parse of a ~25-40KB blob is a few ms on\n\t\t\t// modern browsers; correctness trumps the micro-optimization.\n\t\t\tconst data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');\n\t\t\tconst lm = data.LeadershipMonthly || [];\n\t\t\tconst labels = lm.map(function(r) { return r.YearMonth; });\n\t\t\tconst series = {\n\t\t\t\t'mgr-cycle':      lm.map(function(r) { return r.MedianCycleTimeSecs / 86400; }),\n\t\t\t\t'mgr-throughput': lm.map(function(r) { return r.ClosedIssueCount; }),\n\t\t\t\t'mgr-flow':       lm.map(function(r) { return r.FlowEfficiencyPct; }),\n\t\t\t\t'mgr-failedqa':   lm.map(function(r) { return r.FailedQARatioPct; }),\n\t\t\t};\n\t\t\tObject.keys(series).forEach(function(id) {\n\t\t\t\tconst canvas = document.getElementById(id);\n\t\t\t\tif (!canvas) return;\n\t\t\t\tnew Chart(canvas, {\n\t\t\t\t\ttype: 'bar',\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tlabels: labels,\n\t\t\t\t\t\tdatasets: [{\n\t\t\t\t\t\t\tdata: series[id],\n\t\t\t\t\t\t\tbackgroundColor: '#3b82f6',\n\t\t\t\t\t\t\tborderColor: '#1d4ed8',\n\t\t\t\t\t\t\tborderWidth: 1,\n\t\t\t\t\t\t}],\n\t\t\t\t\t},\n\t\t\t\t\toptions: {\n\t\t\t\t\t\tresponsive: true,\n\t\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\t\tplugins: { legend: { display: false }, tooltip: { enabled: true } },\n\t\t\t\t\t\tscales: {\n\t\t\t\t\t\t\tx: { ticks: { font: { size: 8 }, maxRotation: 45, minRotation: 45 } },\n\t\t\t\t\t\t\ty: { beginAtZero: true, ticks: { font: { size: 9 } } },\n\t\t\t\t\t\t},\n\t\t\t\t\t},\n\t\t\t\t});\n\t\t\t});\n\t\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -696,7 +696,7 @@ func mgrTimeInStatusScript() templ.Component {
 			templ_7745c5c3_Var23 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "<script>\n\t\t(function() {\n\t\t\t// Cache the parsed payload on window so the 5 chart scripts share\n\t\t\t// one JSON.parse call instead of each parsing the full ~25-40 KB\n\t\t\t// blob independently.\n\t\t\tconst data = window.__mgrData || (window.__mgrData = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}'));\n\t\t\tconst tis = data.TimeInStatus || [];\n\t\t\t// Pivot tis into { months: [...], Dev: [...], QA: [...], Waiting: [...] }\n\t\t\tconst monthSet = new Set();\n\t\t\ttis.forEach(function(p) { monthSet.add(p.YearMonth); });\n\t\t\tconst months = Array.from(monthSet).sort();\n\t\t\tconst buckets = { Dev: {}, QA: {}, Waiting: {} };\n\t\t\ttis.forEach(function(p) { (buckets[p.Bucket] || {})[p.YearMonth] = p.AvgSecs / 86400; });\n\t\t\tconst dataFor = function(bucket) {\n\t\t\t\treturn months.map(function(m) { return buckets[bucket][m] || 0; });\n\t\t\t};\n\t\t\tconst canvas = document.getElementById('mgr-tis');\n\t\t\tif (!canvas) return;\n\t\t\tnew Chart(canvas, {\n\t\t\t\ttype: 'bar',\n\t\t\t\tdata: {\n\t\t\t\t\tlabels: months,\n\t\t\t\t\tdatasets: [\n\t\t\t\t\t\t{ label: 'Dev',     data: dataFor('Dev'),     backgroundColor: '#3b82f6' },\n\t\t\t\t\t\t{ label: 'QA',      data: dataFor('QA'),      backgroundColor: '#10b981' },\n\t\t\t\t\t\t{ label: 'Waiting', data: dataFor('Waiting'), backgroundColor: '#f59e0b' },\n\t\t\t\t\t],\n\t\t\t\t},\n\t\t\t\toptions: {\n\t\t\t\t\tresponsive: true,\n\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\tplugins: {\n\t\t\t\t\t\tlegend: { position: 'bottom', labels: { font: { size: 11 } } },\n\t\t\t\t\t\ttooltip: { callbacks: { label: function(ctx) { return ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + 'd'; } } },\n\t\t\t\t\t},\n\t\t\t\t\tscales: {\n\t\t\t\t\t\tx: { stacked: true, ticks: { font: { size: 10 } } },\n\t\t\t\t\t\ty: { stacked: true, beginAtZero: true, ticks: { font: { size: 10 }, callback: function(v) { return v + 'd'; } } },\n\t\t\t\t\t},\n\t\t\t\t},\n\t\t\t});\n\t\t})();\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "<script>\n\t\t(function() {\n\t\t\t// Parse the payload fresh each time — caching on `window` would\n\t\t\t// survive Turbo frame swaps and return stale data after a team\n\t\t\t// change. The 5x re-parse of a ~25-40KB blob is a few ms on\n\t\t\t// modern browsers; correctness trumps the micro-optimization.\n\t\t\tconst data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');\n\t\t\tconst tis = data.TimeInStatus || [];\n\t\t\t// Pivot tis into { months: [...], Dev: [...], QA: [...], Waiting: [...] }\n\t\t\tconst monthSet = new Set();\n\t\t\ttis.forEach(function(p) { monthSet.add(p.YearMonth); });\n\t\t\tconst months = Array.from(monthSet).sort();\n\t\t\tconst buckets = { Dev: {}, QA: {}, Waiting: {} };\n\t\t\ttis.forEach(function(p) { (buckets[p.Bucket] || {})[p.YearMonth] = p.AvgSecs / 86400; });\n\t\t\tconst dataFor = function(bucket) {\n\t\t\t\treturn months.map(function(m) { return buckets[bucket][m] || 0; });\n\t\t\t};\n\t\t\tconst canvas = document.getElementById('mgr-tis');\n\t\t\tif (!canvas) return;\n\t\t\tnew Chart(canvas, {\n\t\t\t\ttype: 'bar',\n\t\t\t\tdata: {\n\t\t\t\t\tlabels: months,\n\t\t\t\t\tdatasets: [\n\t\t\t\t\t\t{ label: 'Dev',     data: dataFor('Dev'),     backgroundColor: '#3b82f6' },\n\t\t\t\t\t\t{ label: 'QA',      data: dataFor('QA'),      backgroundColor: '#10b981' },\n\t\t\t\t\t\t{ label: 'Waiting', data: dataFor('Waiting'), backgroundColor: '#f59e0b' },\n\t\t\t\t\t],\n\t\t\t\t},\n\t\t\t\toptions: {\n\t\t\t\t\tresponsive: true,\n\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\tplugins: {\n\t\t\t\t\t\tlegend: { position: 'bottom', labels: { font: { size: 11 } } },\n\t\t\t\t\t\ttooltip: { callbacks: { label: function(ctx) { return ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + 'd'; } } },\n\t\t\t\t\t},\n\t\t\t\t\tscales: {\n\t\t\t\t\t\tx: { stacked: true, ticks: { font: { size: 10 } } },\n\t\t\t\t\t\ty: { stacked: true, beginAtZero: true, ticks: { font: { size: 10 }, callback: function(v) { return v + 'd'; } } },\n\t\t\t\t\t},\n\t\t\t\t},\n\t\t\t});\n\t\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -725,7 +725,7 @@ func mgrWIPScript() templ.Component {
 			templ_7745c5c3_Var24 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "<script>\n\t\t(function() {\n\t\t\t// Cache the parsed payload on window so the 5 chart scripts share\n\t\t\t// one JSON.parse call instead of each parsing the full ~25-40 KB\n\t\t\t// blob independently.\n\t\t\tconst data = window.__mgrData || (window.__mgrData = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}'));\n\t\t\tconst wip = data.WIPSeries || [];\n\t\t\tconst canvas = document.getElementById('mgr-wip');\n\t\t\tif (!canvas) return;\n\t\t\tnew Chart(canvas, {\n\t\t\t\ttype: 'line',\n\t\t\t\tdata: {\n\t\t\t\t\tlabels: wip.map(function(p) { return p.Day; }),\n\t\t\t\t\tdatasets: [{\n\t\t\t\t\t\tdata: wip.map(function(p) { return p.WIPCount; }),\n\t\t\t\t\t\tborderColor: '#6366f1',\n\t\t\t\t\t\tbackgroundColor: 'rgba(99,102,241,0.1)',\n\t\t\t\t\t\tfill: true,\n\t\t\t\t\t\tpointRadius: 0,\n\t\t\t\t\t\ttension: 0.25,\n\t\t\t\t\t\tborderWidth: 1.5,\n\t\t\t\t\t}],\n\t\t\t\t},\n\t\t\t\toptions: {\n\t\t\t\t\tresponsive: true,\n\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\tplugins: { legend: { display: false }, tooltip: { enabled: true } },\n\t\t\t\t\tscales: {\n\t\t\t\t\t\tx: { ticks: { font: { size: 9 }, maxTicksLimit: 13 } },\n\t\t\t\t\t\ty: { beginAtZero: true, ticks: { font: { size: 10 } } },\n\t\t\t\t\t},\n\t\t\t\t},\n\t\t\t});\n\t\t})();\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "<script>\n\t\t(function() {\n\t\t\t// Parse the payload fresh each time — caching on `window` would\n\t\t\t// survive Turbo frame swaps and return stale data after a team\n\t\t\t// change. The 5x re-parse of a ~25-40KB blob is a few ms on\n\t\t\t// modern browsers; correctness trumps the micro-optimization.\n\t\t\tconst data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');\n\t\t\tconst wip = data.WIPSeries || [];\n\t\t\tconst canvas = document.getElementById('mgr-wip');\n\t\t\tif (!canvas) return;\n\t\t\tnew Chart(canvas, {\n\t\t\t\ttype: 'line',\n\t\t\t\tdata: {\n\t\t\t\t\tlabels: wip.map(function(p) { return p.Day; }),\n\t\t\t\t\tdatasets: [{\n\t\t\t\t\t\tdata: wip.map(function(p) { return p.WIPCount; }),\n\t\t\t\t\t\tborderColor: '#6366f1',\n\t\t\t\t\t\tbackgroundColor: 'rgba(99,102,241,0.1)',\n\t\t\t\t\t\tfill: true,\n\t\t\t\t\t\tpointRadius: 0,\n\t\t\t\t\t\ttension: 0.25,\n\t\t\t\t\t\tborderWidth: 1.5,\n\t\t\t\t\t}],\n\t\t\t\t},\n\t\t\t\toptions: {\n\t\t\t\t\tresponsive: true,\n\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\tplugins: { legend: { display: false }, tooltip: { enabled: true } },\n\t\t\t\t\tscales: {\n\t\t\t\t\t\tx: { ticks: { font: { size: 9 }, maxTicksLimit: 13 } },\n\t\t\t\t\t\ty: { beginAtZero: true, ticks: { font: { size: 10 } } },\n\t\t\t\t\t},\n\t\t\t\t},\n\t\t\t});\n\t\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -782,7 +782,7 @@ func mgrQualityChartsScript() templ.Component {
 			templ_7745c5c3_Var25 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<script>\n\t\t(function() {\n\t\t\t// Cache the parsed payload on window so the 5 chart scripts share\n\t\t\t// one JSON.parse call instead of each parsing the full ~25-40 KB\n\t\t\t// blob independently.\n\t\t\tconst data = window.__mgrData || (window.__mgrData = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}'));\n\t\t\tconst series = {\n\t\t\t\t'mgr-rework': {\n\t\t\t\t\tlabels: (data.ReworkCycles || []).map(function(p) { return p.YearMonth; }),\n\t\t\t\t\tvalues: (data.ReworkCycles || []).map(function(p) { return p.AvgCycles; }),\n\t\t\t\t},\n\t\t\t\t'mgr-bounce': {\n\t\t\t\t\tlabels: (data.StatusBounce || []).map(function(p) { return p.YearMonth; }),\n\t\t\t\t\tvalues: (data.StatusBounce || []).map(function(p) { return p.BouncePct; }),\n\t\t\t\t},\n\t\t\t\t'mgr-qaeng': {\n\t\t\t\t\tlabels: (data.QAvsEngHours || []).map(function(p) { return p.YearMonth; }),\n\t\t\t\t\tvalues: (data.QAvsEngHours || []).map(function(p) { return p.Ratio; }),\n\t\t\t\t},\n\t\t\t\t'mgr-bugfwd': {\n\t\t\t\t\tlabels: (data.BugvsForwardHours || []).map(function(p) { return p.YearMonth; }),\n\t\t\t\t\tvalues: (data.BugvsForwardHours || []).map(function(p) { return p.Ratio; }),\n\t\t\t\t},\n\t\t\t};\n\t\t\tObject.keys(series).forEach(function(id) {\n\t\t\t\tconst canvas = document.getElementById(id);\n\t\t\t\tif (!canvas) return;\n\t\t\t\tnew Chart(canvas, {\n\t\t\t\t\ttype: 'line',\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tlabels: series[id].labels,\n\t\t\t\t\t\tdatasets: [{\n\t\t\t\t\t\t\tdata: series[id].values,\n\t\t\t\t\t\t\tborderColor: '#8b5cf6',\n\t\t\t\t\t\t\tbackgroundColor: 'rgba(139,92,246,0.1)',\n\t\t\t\t\t\t\tfill: true,\n\t\t\t\t\t\t\tpointRadius: 0,\n\t\t\t\t\t\t\ttension: 0.3,\n\t\t\t\t\t\t\tborderWidth: 1.5,\n\t\t\t\t\t\t}],\n\t\t\t\t\t},\n\t\t\t\t\toptions: {\n\t\t\t\t\t\tresponsive: true,\n\t\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\t\tplugins: { legend: { display: false }, tooltip: { enabled: true } },\n\t\t\t\t\t\tscales: {\n\t\t\t\t\t\t\tx: { ticks: { font: { size: 8 }, maxRotation: 45, minRotation: 45 } },\n\t\t\t\t\t\t\ty: { beginAtZero: true, ticks: { font: { size: 9 } } },\n\t\t\t\t\t\t},\n\t\t\t\t\t},\n\t\t\t\t});\n\t\t\t});\n\t\t})();\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<script>\n\t\t(function() {\n\t\t\t// Parse the payload fresh each time — caching on `window` would\n\t\t\t// survive Turbo frame swaps and return stale data after a team\n\t\t\t// change. The 5x re-parse of a ~25-40KB blob is a few ms on\n\t\t\t// modern browsers; correctness trumps the micro-optimization.\n\t\t\tconst data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');\n\t\t\tconst series = {\n\t\t\t\t'mgr-rework': {\n\t\t\t\t\tlabels: (data.ReworkCycles || []).map(function(p) { return p.YearMonth; }),\n\t\t\t\t\tvalues: (data.ReworkCycles || []).map(function(p) { return p.AvgCycles; }),\n\t\t\t\t},\n\t\t\t\t'mgr-bounce': {\n\t\t\t\t\tlabels: (data.StatusBounce || []).map(function(p) { return p.YearMonth; }),\n\t\t\t\t\tvalues: (data.StatusBounce || []).map(function(p) { return p.BouncePct; }),\n\t\t\t\t},\n\t\t\t\t'mgr-qaeng': {\n\t\t\t\t\tlabels: (data.QAvsEngHours || []).map(function(p) { return p.YearMonth; }),\n\t\t\t\t\tvalues: (data.QAvsEngHours || []).map(function(p) { return p.Ratio; }),\n\t\t\t\t},\n\t\t\t\t'mgr-bugfwd': {\n\t\t\t\t\tlabels: (data.BugvsForwardHours || []).map(function(p) { return p.YearMonth; }),\n\t\t\t\t\tvalues: (data.BugvsForwardHours || []).map(function(p) { return p.Ratio; }),\n\t\t\t\t},\n\t\t\t};\n\t\t\tObject.keys(series).forEach(function(id) {\n\t\t\t\tconst canvas = document.getElementById(id);\n\t\t\t\tif (!canvas) return;\n\t\t\t\tnew Chart(canvas, {\n\t\t\t\t\ttype: 'line',\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tlabels: series[id].labels,\n\t\t\t\t\t\tdatasets: [{\n\t\t\t\t\t\t\tdata: series[id].values,\n\t\t\t\t\t\t\tborderColor: '#8b5cf6',\n\t\t\t\t\t\t\tbackgroundColor: 'rgba(139,92,246,0.1)',\n\t\t\t\t\t\t\tfill: true,\n\t\t\t\t\t\t\tpointRadius: 0,\n\t\t\t\t\t\t\ttension: 0.3,\n\t\t\t\t\t\t\tborderWidth: 1.5,\n\t\t\t\t\t\t}],\n\t\t\t\t\t},\n\t\t\t\t\toptions: {\n\t\t\t\t\t\tresponsive: true,\n\t\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\t\tplugins: { legend: { display: false }, tooltip: { enabled: true } },\n\t\t\t\t\t\tscales: {\n\t\t\t\t\t\t\tx: { ticks: { font: { size: 8 }, maxRotation: 45, minRotation: 45 } },\n\t\t\t\t\t\t\ty: { beginAtZero: true, ticks: { font: { size: 9 } } },\n\t\t\t\t\t\t},\n\t\t\t\t\t},\n\t\t\t\t});\n\t\t\t});\n\t\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -811,7 +811,7 @@ func mgrStabilityChartsScript() templ.Component {
 			templ_7745c5c3_Var26 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<script>\n\t\t(function() {\n\t\t\t// Cache the parsed payload on window so the 5 chart scripts share\n\t\t\t// one JSON.parse call instead of each parsing the full ~25-40 KB\n\t\t\t// blob independently.\n\t\t\tconst data = window.__mgrData || (window.__mgrData = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}'));\n\t\t\tconst lm = data.LeadershipMonthly || [];\n\t\t\tconst labels = lm.map(function(r) { return r.YearMonth; });\n\n\t\t\t// Customer bug trend\n\t\t\tconst stab = document.getElementById('mgr-stability');\n\t\t\tif (stab) {\n\t\t\t\tnew Chart(stab, {\n\t\t\t\t\ttype: 'line',\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tlabels: labels,\n\t\t\t\t\t\tdatasets: [\n\t\t\t\t\t\t\t{ label: 'New',    data: lm.map(function(r) { return r.StabilityNewCount; }),    borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', tension: 0.3 },\n\t\t\t\t\t\t\t{ label: 'Closed', data: lm.map(function(r) { return r.StabilityClosedCount; }), borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', tension: 0.3 },\n\t\t\t\t\t\t\t{ label: 'Open',   data: lm.map(function(r) { return r.StabilityOpenCount; }),   borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', tension: 0.3 },\n\t\t\t\t\t\t],\n\t\t\t\t\t},\n\t\t\t\t\toptions: {\n\t\t\t\t\t\tresponsive: true,\n\t\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\t\tplugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },\n\t\t\t\t\t\tscales: {\n\t\t\t\t\t\t\tx: { ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 45 } },\n\t\t\t\t\t\t\ty: { beginAtZero: true, ticks: { font: { size: 10 } } },\n\t\t\t\t\t\t},\n\t\t\t\t\t},\n\t\t\t\t});\n\t\t\t}\n\n\t\t\t// Defect Escape Rate trend\n\t\t\tconst esc = document.getElementById('mgr-escape');\n\t\t\tif (esc) {\n\t\t\t\tnew Chart(esc, {\n\t\t\t\t\ttype: 'bar',\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tlabels: labels,\n\t\t\t\t\t\tdatasets: [{\n\t\t\t\t\t\t\tdata: lm.map(function(r) { return r.DefectEscapeRatePct; }),\n\t\t\t\t\t\t\tbackgroundColor: '#ef4444',\n\t\t\t\t\t\t\tborderColor: '#b91c1c',\n\t\t\t\t\t\t\tborderWidth: 1,\n\t\t\t\t\t\t}],\n\t\t\t\t\t},\n\t\t\t\t\toptions: {\n\t\t\t\t\t\tresponsive: true,\n\t\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\t\tplugins: { legend: { display: false }, tooltip: { enabled: true } },\n\t\t\t\t\t\tscales: {\n\t\t\t\t\t\t\tx: { ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 45 } },\n\t\t\t\t\t\t\ty: { beginAtZero: true, max: 100, ticks: { font: { size: 10 }, callback: function(v) { return v + '%'; } } },\n\t\t\t\t\t\t},\n\t\t\t\t\t},\n\t\t\t\t});\n\t\t\t}\n\t\t})();\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<script>\n\t\t(function() {\n\t\t\t// Parse the payload fresh each time — caching on `window` would\n\t\t\t// survive Turbo frame swaps and return stale data after a team\n\t\t\t// change. The 5x re-parse of a ~25-40KB blob is a few ms on\n\t\t\t// modern browsers; correctness trumps the micro-optimization.\n\t\t\tconst data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');\n\t\t\tconst lm = data.LeadershipMonthly || [];\n\t\t\tconst labels = lm.map(function(r) { return r.YearMonth; });\n\n\t\t\t// Customer bug trend\n\t\t\tconst stab = document.getElementById('mgr-stability');\n\t\t\tif (stab) {\n\t\t\t\tnew Chart(stab, {\n\t\t\t\t\ttype: 'line',\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tlabels: labels,\n\t\t\t\t\t\tdatasets: [\n\t\t\t\t\t\t\t{ label: 'New',    data: lm.map(function(r) { return r.StabilityNewCount; }),    borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', tension: 0.3 },\n\t\t\t\t\t\t\t{ label: 'Closed', data: lm.map(function(r) { return r.StabilityClosedCount; }), borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', tension: 0.3 },\n\t\t\t\t\t\t\t{ label: 'Open',   data: lm.map(function(r) { return r.StabilityOpenCount; }),   borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', tension: 0.3 },\n\t\t\t\t\t\t],\n\t\t\t\t\t},\n\t\t\t\t\toptions: {\n\t\t\t\t\t\tresponsive: true,\n\t\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\t\tplugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },\n\t\t\t\t\t\tscales: {\n\t\t\t\t\t\t\tx: { ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 45 } },\n\t\t\t\t\t\t\ty: { beginAtZero: true, ticks: { font: { size: 10 } } },\n\t\t\t\t\t\t},\n\t\t\t\t\t},\n\t\t\t\t});\n\t\t\t}\n\n\t\t\t// Defect Escape Rate trend\n\t\t\tconst esc = document.getElementById('mgr-escape');\n\t\t\tif (esc) {\n\t\t\t\tnew Chart(esc, {\n\t\t\t\t\ttype: 'bar',\n\t\t\t\t\tdata: {\n\t\t\t\t\t\tlabels: labels,\n\t\t\t\t\t\tdatasets: [{\n\t\t\t\t\t\t\tdata: lm.map(function(r) { return r.DefectEscapeRatePct; }),\n\t\t\t\t\t\t\tbackgroundColor: '#ef4444',\n\t\t\t\t\t\t\tborderColor: '#b91c1c',\n\t\t\t\t\t\t\tborderWidth: 1,\n\t\t\t\t\t\t}],\n\t\t\t\t\t},\n\t\t\t\t\toptions: {\n\t\t\t\t\t\tresponsive: true,\n\t\t\t\t\t\tmaintainAspectRatio: false,\n\t\t\t\t\t\tplugins: { legend: { display: false }, tooltip: { enabled: true } },\n\t\t\t\t\t\tscales: {\n\t\t\t\t\t\t\tx: { ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 45 } },\n\t\t\t\t\t\t\ty: { beginAtZero: true, max: 100, ticks: { font: { size: 10 }, callback: function(v) { return v + '%'; } } },\n\t\t\t\t\t\t},\n\t\t\t\t\t},\n\t\t\t\t});\n\t\t\t}\n\t\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
