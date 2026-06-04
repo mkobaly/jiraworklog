@@ -48,7 +48,7 @@ func MaintenanceRatio(data []types.MaitenanceRatio, allRoles []string, selectedR
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"mb-6\"><h1 class=\"text-3xl font-bold text-gray-900\">Maintenance Ratio</h1><p class=\"text-gray-600 mt-2\">Project vs After Market time distribution with PR/AM ratio</p></div><!-- Role filter dropdown --> <div class=\"mb-6\"><div class=\"relative inline-block\"><button type=\"button\" id=\"role-dropdown-btn\" class=\"inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500\" onclick=\"toggleRoleDropdown()\"><span class=\"mr-2\">Filter by Roles</span> <span id=\"selected-count\" class=\"bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"mb-6\"><h1 class=\"text-3xl font-bold text-gray-900\">Maintenance Ratio</h1><p class=\"text-gray-600 mt-2\">Project vs After Market time distribution with PR/AM ratio</p></div><!-- Role filter dropdown --> <div class=\"mb-6\"><div class=\"relative inline-block\"><button type=\"button\" id=\"role-dropdown-btn\" class=\"inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-xs hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-blue-500\" onclick=\"toggleRoleDropdown()\"><span class=\"mr-2\">Filter by Roles</span> <span id=\"selected-count\" class=\"bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -117,7 +117,7 @@ func MaintenanceRatio(data []types.MaitenanceRatio, allRoles []string, selectedR
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</div><div class=\"p-3 border-t border-gray-200\"><button type=\"button\" class=\"w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500\" onclick=\"applyRoleFilter()\">Apply Filter</button></div></div></div><!-- Hidden data for selected roles --><div id=\"selectedRolesData\" data-roles=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</div><div class=\"p-3 border-t border-gray-200\"><button type=\"button\" class=\"w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-hidden focus:ring-2 focus:ring-blue-500\" onclick=\"applyRoleFilter()\">Apply Filter</button></div></div></div><!-- Hidden data for selected roles --><div id=\"selectedRolesData\" data-roles=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -248,7 +248,7 @@ func MaintenanceRatio(data []types.MaitenanceRatio, allRoles []string, selectedR
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\" style=\"display:none;\"></div><!-- Chart.js from CDN --> <script src=\"https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js\"></script> ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\" style=\"display:none;\"></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

@@ -41,8 +41,8 @@ type Repo interface {
 
 	AllRoles() ([]string, error)
 
-	IssuesMissingProjectCharge() ([]types.IssueMissingCharge, error)
-	IssuesMismatchedProjectCharge() ([]types.IssueMismatchedCharge, error)
+	IssuesMissingProjectCharge(excludedProjects []string) ([]types.IssueMissingCharge, error)
+	IssuesMismatchedProjectCharge(excludedProjects []string) ([]types.IssueMismatchedCharge, error)
 
 	CustomerBugCounts(project string) ([]types.CustomerBugCount, error)
 	CustomerBugTrends(project string) ([]types.CustomerBugTrend, error)
@@ -56,7 +56,7 @@ type Repo interface {
 	DailyHoursByRole(roles []string, startDate, endDate time.Time) ([]types.DailyHours, error)
 
 	// Project charge hours reporting (fromMonth/toMonth are YYYY-MM, empty = default range)
-	ProjectChargeHours(fromMonth, toMonth string) ([]types.ProjectChargeHours, error)
+	ProjectChargeHours(fromMonth, toMonth string, excludedProjects []string) ([]types.ProjectChargeHours, error)
 
 	// Project time tracking
 	ProjectTimeTracking(fixedVersion string) ([]types.ProjectTimeTracking, error)

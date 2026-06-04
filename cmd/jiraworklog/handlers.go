@@ -262,7 +262,7 @@ func (h *Handler) Dashboard(c echo.Context) error {
 	}
 
 	// Fetch missing project charges count
-	missingCharges, err := h.repo.IssuesMissingProjectCharge()
+	missingCharges, err := h.repo.IssuesMissingProjectCharge(h.cfg.QueryExcludedProjects)
 	if err != nil {
 		h.logger.Error("error fetching missing charges for dashboard", "error", err)
 		missingCharges = nil
@@ -270,7 +270,7 @@ func (h *Handler) Dashboard(c echo.Context) error {
 	missingChargesCount := len(missingCharges)
 
 	// Fetch mismatched project charges count
-	mismatchedCharges, err := h.repo.IssuesMismatchedProjectCharge()
+	mismatchedCharges, err := h.repo.IssuesMismatchedProjectCharge(h.cfg.QueryExcludedProjects)
 	if err != nil {
 		h.logger.Error("error fetching mismatched charges for dashboard", "error", err)
 		mismatchedCharges = nil
@@ -590,7 +590,7 @@ func (h *Handler) UpdatePerson(c echo.Context) error {
 }
 
 func (h *Handler) GetIssuesMissingProjectCharge(c echo.Context) error {
-	issues, err := h.repo.IssuesMissingProjectCharge()
+	issues, err := h.repo.IssuesMissingProjectCharge(h.cfg.QueryExcludedProjects)
 	if err != nil {
 		h.logger.Error("error fetching issues missing project charge", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch issues")
@@ -605,7 +605,7 @@ func (h *Handler) GetIssuesMissingProjectCharge(c echo.Context) error {
 }
 
 func (h *Handler) GetIssuesMismatchedProjectCharge(c echo.Context) error {
-	issues, err := h.repo.IssuesMismatchedProjectCharge()
+	issues, err := h.repo.IssuesMismatchedProjectCharge(h.cfg.QueryExcludedProjects)
 	if err != nil {
 		h.logger.Error("error fetching issues with mismatched project charge", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch issues")
@@ -690,7 +690,7 @@ func (h *Handler) GetProjectChargeHours(c echo.Context) error {
 	fromYearMonth := c.QueryParam("from")
 	toYearMonth := c.QueryParam("to")
 
-	data, err := h.repo.ProjectChargeHours(fromYearMonth, toYearMonth)
+	data, err := h.repo.ProjectChargeHours(fromYearMonth, toYearMonth, h.cfg.QueryExcludedProjects)
 	if err != nil {
 		h.logger.Error("error fetching project charge hours", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch project charge hours")
@@ -741,7 +741,7 @@ func (h *Handler) GetProjectChargeHours(c echo.Context) error {
 func (h *Handler) GetProjectChargeHoursCSV(c echo.Context) error {
 	fromMonth := c.QueryParam("from")
 	toMonth := c.QueryParam("to")
-	data, err := h.repo.ProjectChargeHours(fromMonth, toMonth)
+	data, err := h.repo.ProjectChargeHours(fromMonth, toMonth, h.cfg.QueryExcludedProjects)
 	if err != nil {
 		h.logger.Error("error fetching project charge hours", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch project charge hours")

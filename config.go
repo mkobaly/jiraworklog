@@ -37,12 +37,13 @@ type Config struct {
 	WorklogDeletedLastTimestamp int64
 	IssueLastTimestamp          int64
 
-	UserList         []string
-	DoneStatus       []string
-	ExcludedProjects []string
-	AuthorizedUsers  []string
-	HTTPSecureCookie bool
-	UtcOffsetHours   int
+	UserList              []string
+	DoneStatus            []string
+	ExcludedProjects      []string
+	QueryExcludedProjects []string
+	AuthorizedUsers       []string
+	HTTPSecureCookie      bool
+	UtcOffsetHours        int
 }
 
 // Save will persist the configuration information

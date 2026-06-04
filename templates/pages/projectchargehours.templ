@@ -177,6 +177,11 @@ func groupProjectChargeHours(data []types.ProjectChargeHours, opts GroupingOptio
 			charge.DetailRows = details
 			project.Charges = append(project.Charges, *charge)
 		}
+		// Charges were collected from a map (random iteration order), so sort
+		// them deterministically to avoid the order jumping on each refresh.
+		slices.SortFunc(project.Charges, func(a, b ChargeGroup) int {
+			return strings.Compare(a.Name, b.Name)
+		})
 		result = append(result, *project)
 	}
 
@@ -208,7 +213,7 @@ templ ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilt
 							type="month"
 							name="from"
 							value={ filters.FromMonth }
-							class="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+							class="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500"
 						/>
 					</div>
 					<div class="flex items-center gap-2">
@@ -217,7 +222,7 @@ templ ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilt
 							type="month"
 							name="to"
 							value={ filters.ToMonth }
-							class="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+							class="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500"
 						/>
 					</div>
 
@@ -279,7 +284,7 @@ templ ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilt
 									name="charge"
 									multiple
 									size="8"
-									class="w-full border border-gray-300 rounded-md py-1 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+									class="w-full border border-gray-300 rounded-md py-1 text-xs text-gray-700 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
 								>
 									for _, c := range filters.AllCharges {
 										<option value={ c } if contains(filters.Charges, c) { selected }>{ c }</option>

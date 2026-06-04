@@ -47,7 +47,7 @@ func CustomerBugs(trends []types.CustomerBugTrend, projects []string, selectedPr
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"mb-6\"><h1 class=\"text-3xl font-bold text-gray-900\">Stability Team</h1><p class=\"text-gray-600 mt-2\">Customer bug trends over time</p></div><!-- Filters --> <div class=\"mb-6 flex flex-wrap items-end gap-4\"><div><label for=\"project-select\" class=\"block text-sm font-medium text-gray-700 mb-2\">Select Project</label> <select id=\"project-select\" class=\"block w-64 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500\" onchange=\"applyFilters()\"><option value=\"\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"mb-6\"><h1 class=\"text-3xl font-bold text-gray-900\">Stability Team</h1><p class=\"text-gray-600 mt-2\">Customer bug trends over time</p></div><!-- Filters --> <div class=\"mb-6 flex flex-wrap items-end gap-4\"><div><label for=\"project-select\" class=\"block text-sm font-medium text-gray-700 mb-2\">Select Project</label> <select id=\"project-select\" class=\"block w-64 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-xs focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-blue-500\" onchange=\"applyFilters()\"><option value=\"\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -126,7 +126,7 @@ func CustomerBugs(trends []types.CustomerBugTrend, projects []string, selectedPr
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" style=\"display:none;\"></div>     <!-- Data table (hidden on mobile) -->                                          <!-- Chart.js from CDN --> <script src=\"https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js\"></script> <script src=\"https://cdn.jsdelivr.net/npm/chartjs-plugin-trendline\"></script> ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" style=\"display:none;\"></div>     <!-- Data table (hidden on mobile) -->                                          ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

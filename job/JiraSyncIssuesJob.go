@@ -36,7 +36,7 @@ func (j *JiraSyncIssuesJob) GetName() string {
 }
 
 func (j *JiraSyncIssuesJob) GetInterval() time.Duration {
-	return time.Minute * 5
+	return time.Minute * 3
 }
 
 // Maximum amount of Jira-update history fetched in a single Run. After a long
@@ -48,7 +48,7 @@ const syncMaxQueryWindow = 24 * time.Hour
 // and the minute-precision JQL filter, can leave sub-minute updates straddling
 // the boundary. BulkInsertChangelogs uses ON CONFLICT DO NOTHING and
 // UpdateIssue is an upsert, so re-fetching is harmless.
-const syncQueryOverlap = 1 * time.Minute
+const syncQueryOverlap = 5 * time.Minute
 
 // First-run / cold-start cap. If the on-disk lastTimestamp is missing or
 // absurdly old (treat anything older than this as suspect), we sync only
@@ -97,8 +97,8 @@ func (j *JiraSyncIssuesJob) Run() error {
 		return errors.Wrap(err, "error syncing project charges")
 	}
 
-	// Step 4: detect issues deleted in Jira (touched older than 60 days).
-	return j.processDeletes(time.Hour * 1440)
+	// Step 4: detect issues deleted in Jira (touched older than 5 days).
+	return j.processDeletes(time.Hour * 120)
 }
 
 // processMissingIssues fetches issues whose ID appears in worklog rows but

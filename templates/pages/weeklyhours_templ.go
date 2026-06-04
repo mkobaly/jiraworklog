@@ -138,7 +138,7 @@ func WeeklyHours(data []types.DailyHours, allRoles []string, selectedRoles []str
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"mb-6\"><h1 class=\"text-3xl font-bold text-gray-900\">Weekly Hours by Author</h1><p class=\"text-gray-600 mt-2\">Daily breakdown of hours by category (NR=Non-Recoverable, AM=After Market, PR=Project)</p></div><!-- Filters row --> <div class=\"mb-6 flex flex-wrap gap-4 items-center\"><!-- Week selector --><div><label for=\"week-select\" class=\"block text-sm font-medium text-gray-700 mb-1\">Week</label> <select id=\"week-select\" class=\"px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500\" onchange=\"applyFilters()\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"mb-6\"><h1 class=\"text-3xl font-bold text-gray-900\">Weekly Hours by Author</h1><p class=\"text-gray-600 mt-2\">Daily breakdown of hours by category (NR=Non-Recoverable, AM=After Market, PR=Project)</p></div><!-- Filters row --> <div class=\"mb-6 flex flex-wrap gap-4 items-center\"><!-- Week selector --><div><label for=\"week-select\" class=\"block text-sm font-medium text-gray-700 mb-1\">Week</label> <select id=\"week-select\" class=\"px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-xs focus:outline-hidden focus:ring-2 focus:ring-blue-500\" onchange=\"applyFilters()\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -184,7 +184,7 @@ func WeeklyHours(data []types.DailyHours, allRoles []string, selectedRoles []str
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</select></div><!-- Role filter dropdown --><div><label class=\"block text-sm font-medium text-gray-700 mb-1\">Roles</label><div class=\"relative inline-block\"><button type=\"button\" id=\"role-dropdown-btn\" class=\"inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500\" onclick=\"toggleRoleDropdown()\"><span class=\"mr-2\">Filter by Roles</span> <span id=\"selected-count\" class=\"bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</select></div><!-- Role filter dropdown --><div><label class=\"block text-sm font-medium text-gray-700 mb-1\">Roles</label><div class=\"relative inline-block\"><button type=\"button\" id=\"role-dropdown-btn\" class=\"inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-xs hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-blue-500\" onclick=\"toggleRoleDropdown()\"><span class=\"mr-2\">Filter by Roles</span> <span id=\"selected-count\" class=\"bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -253,7 +253,7 @@ func WeeklyHours(data []types.DailyHours, allRoles []string, selectedRoles []str
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</div><div class=\"p-3 border-t border-gray-200\"><button type=\"button\" class=\"w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500\" onclick=\"applyFilters()\">Apply Filter</button></div></div></div></div><div id=\"selectedRolesData\" data-roles=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</div><div class=\"p-3 border-t border-gray-200\"><button type=\"button\" class=\"w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-hidden focus:ring-2 focus:ring-blue-500\" onclick=\"applyFilters()\">Apply Filter</button></div></div></div></div><div id=\"selectedRolesData\" data-roles=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

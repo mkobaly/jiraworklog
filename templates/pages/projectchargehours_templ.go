@@ -185,6 +185,11 @@ func groupProjectChargeHours(data []types.ProjectChargeHours, opts GroupingOptio
 			charge.DetailRows = details
 			project.Charges = append(project.Charges, *charge)
 		}
+		// Charges were collected from a map (random iteration order), so sort
+		// them deterministically to avoid the order jumping on each refresh.
+		slices.SortFunc(project.Charges, func(a, b ChargeGroup) int {
+			return strings.Compare(a.Name, b.Name)
+		})
 		result = append(result, *project)
 	}
 
@@ -234,26 +239,26 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilte
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(filters.FromMonth)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 210, Col: 32}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 215, Col: 32}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" class=\"border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500\"></div><div class=\"flex items-center gap-2\"><label class=\"text-sm font-medium text-gray-700 whitespace-nowrap\">Through:</label> <input type=\"month\" name=\"to\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" class=\"border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500\"></div><div class=\"flex items-center gap-2\"><label class=\"text-sm font-medium text-gray-700 whitespace-nowrap\">Through:</label> <input type=\"month\" name=\"to\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(filters.ToMonth)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 219, Col: 30}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 224, Col: 30}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" class=\"border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500\"></div><div class=\"w-px h-6 bg-gray-200\"></div><!-- Grouping --><span class=\"text-sm font-medium text-gray-700\">Group by:</span> <label class=\"flex items-center cursor-pointer\"><input type=\"checkbox\" name=\"groupByDate\" value=\"true\" class=\"h-4 w-4 text-blue-600 border-gray-300 rounded\" onchange=\"this.form.submit()\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" class=\"border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500\"></div><div class=\"w-px h-6 bg-gray-200\"></div><!-- Grouping --><span class=\"text-sm font-medium text-gray-700\">Group by:</span> <label class=\"flex items-center cursor-pointer\"><input type=\"checkbox\" name=\"groupByDate\" value=\"true\" class=\"h-4 w-4 text-blue-600 border-gray-300 rounded\" onchange=\"this.form.submit()\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -328,7 +333,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilte
 				return templ_7745c5c3_Err
 			}
 			if len(filters.AllCharges) > 0 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<div class=\"col-span-2 md:col-span-3\"><p class=\"text-xs font-semibold text-gray-500 uppercase mb-1\">Project Charge</p><p class=\"text-xs text-gray-400 mb-2\">Hold Ctrl / ⌘ to select multiple</p><select name=\"charge\" multiple size=\"8\" class=\"w-full border border-gray-300 rounded-md py-1 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<div class=\"col-span-2 md:col-span-3\"><p class=\"text-xs font-semibold text-gray-500 uppercase mb-1\">Project Charge</p><p class=\"text-xs text-gray-400 mb-2\">Hold Ctrl / ⌘ to select multiple</p><select name=\"charge\" multiple size=\"8\" class=\"w-full border border-gray-300 rounded-md py-1 text-xs text-gray-700 focus:outline-hidden focus:ring-2 focus:ring-blue-500\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -340,7 +345,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilte
 					var templ_7745c5c3_Var5 string
 					templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(c)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 285, Col: 27}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 290, Col: 27}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 					if templ_7745c5c3_Err != nil {
@@ -363,7 +368,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilte
 					var templ_7745c5c3_Var6 string
 					templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(c)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 285, Col: 78}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 290, Col: 78}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 					if templ_7745c5c3_Err != nil {
@@ -416,7 +421,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilte
 					var templ_7745c5c3_Var7 string
 					templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(r)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 313, Col: 55}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 318, Col: 55}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 					if templ_7745c5c3_Err != nil {
@@ -439,7 +444,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilte
 					var templ_7745c5c3_Var8 string
 					templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(r)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 314, Col: 50}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 319, Col: 50}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 					if templ_7745c5c3_Err != nil {
@@ -472,7 +477,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilte
 					var templ_7745c5c3_Var9 string
 					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(l)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 328, Col: 59}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 333, Col: 59}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 					if templ_7745c5c3_Err != nil {
@@ -495,7 +500,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilte
 					var templ_7745c5c3_Var10 string
 					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(l)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 329, Col: 50}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 334, Col: 50}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 					if templ_7745c5c3_Err != nil {
@@ -533,7 +538,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilte
 					var templ_7745c5c3_Var11 string
 					templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(project.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 365, Col: 55}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 370, Col: 55}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 					if templ_7745c5c3_Err != nil {
@@ -546,7 +551,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilte
 					var templ_7745c5c3_Var12 string
 					templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(formatHours(project.Total))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 366, Col: 67}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 371, Col: 67}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 					if templ_7745c5c3_Err != nil {
@@ -604,7 +609,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilte
 								var templ_7745c5c3_Var13 string
 								templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(charge.DetailRows)))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 397, Col: 103}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 402, Col: 103}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 								if templ_7745c5c3_Err != nil {
@@ -617,7 +622,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilte
 								var templ_7745c5c3_Var14 string
 								templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(charge.Name)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 398, Col: 73}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 403, Col: 73}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 								if templ_7745c5c3_Err != nil {
@@ -630,7 +635,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilte
 								var templ_7745c5c3_Var15 string
 								templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(formatHours(charge.Total))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 399, Col: 85}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 404, Col: 85}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 								if templ_7745c5c3_Err != nil {
@@ -648,7 +653,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilte
 									var templ_7745c5c3_Var16 string
 									templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(charge.DetailRows)))
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 402, Col: 126}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 407, Col: 126}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 									if templ_7745c5c3_Err != nil {
@@ -661,7 +666,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilte
 									var templ_7745c5c3_Var17 string
 									templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(charge.Category)
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 402, Col: 146}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 407, Col: 146}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 									if templ_7745c5c3_Err != nil {
@@ -674,7 +679,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilte
 									var templ_7745c5c3_Var18 string
 									templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(charge.DetailRows)))
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 403, Col: 126}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 408, Col: 126}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 									if templ_7745c5c3_Err != nil {
@@ -687,7 +692,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilte
 									var templ_7745c5c3_Var19 string
 									templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(charge.Type)
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 403, Col: 142}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 408, Col: 142}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 									if templ_7745c5c3_Err != nil {
@@ -707,7 +712,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilte
 								var templ_7745c5c3_Var20 string
 								templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(detail.YearMonth)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 408, Col: 31}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 413, Col: 31}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 								if templ_7745c5c3_Err != nil {
@@ -767,7 +772,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilte
 							var templ_7745c5c3_Var21 string
 							templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(formatHours(detail.Hours))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 427, Col: 39}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 432, Col: 39}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 							if templ_7745c5c3_Err != nil {
@@ -796,7 +801,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilte
 					var templ_7745c5c3_Var22 string
 					templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(project.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 444, Col: 57}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 449, Col: 57}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 					if templ_7745c5c3_Err != nil {
@@ -809,7 +814,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilte
 					var templ_7745c5c3_Var23 string
 					templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(formatHours(project.Total))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 445, Col: 69}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 450, Col: 69}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 					if templ_7745c5c3_Err != nil {
@@ -827,7 +832,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilte
 						var templ_7745c5c3_Var24 string
 						templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(charge.Name)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 453, Col: 72}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 458, Col: 72}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 						if templ_7745c5c3_Err != nil {
@@ -845,7 +850,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilte
 							var templ_7745c5c3_Var25 string
 							templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(charge.Category)
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 455, Col: 71}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 460, Col: 71}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 							if templ_7745c5c3_Err != nil {
@@ -858,7 +863,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilte
 							var templ_7745c5c3_Var26 string
 							templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(charge.Type)
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 455, Col: 94}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 460, Col: 94}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 							if templ_7745c5c3_Err != nil {
@@ -876,7 +881,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilte
 						var templ_7745c5c3_Var27 string
 						templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(formatHours(charge.Total))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 458, Col: 87}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 463, Col: 87}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 						if templ_7745c5c3_Err != nil {
@@ -899,7 +904,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilte
 								var templ_7745c5c3_Var28 string
 								templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(detail.YearMonth)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 465, Col: 68}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 470, Col: 68}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 								if templ_7745c5c3_Err != nil {
@@ -935,7 +940,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilte
 							var templ_7745c5c3_Var29 string
 							templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(formatHours(detail.Hours))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 477, Col: 67}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 482, Col: 67}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 							if templ_7745c5c3_Err != nil {
@@ -963,7 +968,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilte
 				var templ_7745c5c3_Var30 string
 				templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", countUniqueProjects(data)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 494, Col: 98}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 499, Col: 98}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 				if templ_7745c5c3_Err != nil {
@@ -976,7 +981,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilte
 				var templ_7745c5c3_Var31 string
 				templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(formatHours(totalHours(data)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 498, Col: 84}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 503, Col: 84}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 				if templ_7745c5c3_Err != nil {
@@ -989,7 +994,7 @@ func ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilte
 				var templ_7745c5c3_Var32 string
 				templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", countUniqueCharges(data)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 502, Col: 99}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 507, Col: 99}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 				if templ_7745c5c3_Err != nil {
@@ -1060,7 +1065,7 @@ func roleBadge(role string) templ.Component {
 			var templ_7745c5c3_Var34 string
 			templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(role)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 521, Col: 80}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 526, Col: 80}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 			if templ_7745c5c3_Err != nil {
@@ -1145,7 +1150,7 @@ func locationBadge(location string) templ.Component {
 			var templ_7745c5c3_Var37 string
 			templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(location)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 537, Col: 87}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/projectchargehours.templ`, Line: 542, Col: 87}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 			if templ_7745c5c3_Err != nil {

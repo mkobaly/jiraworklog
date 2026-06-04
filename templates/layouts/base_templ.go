@@ -29,20 +29,116 @@ func Base(title string) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Var2 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+			if !templ_7745c5c3_IsBuffer {
+				defer func() {
+					templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err == nil {
+						templ_7745c5c3_Err = templ_7745c5c3_BufErr
+					}
+				}()
+			}
+			ctx = templ.InitializeContext(ctx)
+			templ_7745c5c3_Err = templ_7745c5c3_Var1.Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			return nil
+		})
+		templ_7745c5c3_Err = baseShell(title, "container mx-auto px-4 py-6 max-w-7xl grow").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+// BaseFluid is Base without the max-w-7xl cap — for pages with wide tables
+// that need the full viewport width (e.g. Project Charges).
+func BaseFluid(title string) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var3 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var3 == nil {
+			templ_7745c5c3_Var3 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Var4 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+			if !templ_7745c5c3_IsBuffer {
+				defer func() {
+					templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err == nil {
+						templ_7745c5c3_Err = templ_7745c5c3_BufErr
+					}
+				}()
+			}
+			ctx = templ.InitializeContext(ctx)
+			templ_7745c5c3_Err = templ_7745c5c3_Var3.Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			return nil
+		})
+		templ_7745c5c3_Err = baseShell(title, "w-full px-4 py-6 grow").Render(templ.WithChildren(ctx, templ_7745c5c3_Var4), templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func baseShell(title string, mainClass string) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var5 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var5 == nil {
+			templ_7745c5c3_Var5 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\" data-turbo-refresh-scroll=\"preserve\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><meta name=\"turbo-cache-control\" content=\"no-cache\"><title>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(title)
+		var templ_7745c5c3_Var6 string
+		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/layouts/base.templ`, Line: 10, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/layouts/base.templ`, Line: 24, Col: 17}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " - Jira Worklog</title><!-- Hotwire Turbo --><script type=\"module\">\r\n\t\t\t\timport hotwiredTurbo from 'https://cdn.jsdelivr.net/npm/@hotwired/turbo@8.0.4/+esm'\r\n\t\t\t</script><!-- Tailwind CSS for mobile-friendly styling --><script src=\"https://cdn.tailwindcss.com\"></script><!-- Custom CSS --><link rel=\"stylesheet\" href=\"/static/css/app.css\"><!-- Mobile optimizations --><meta name=\"apple-mobile-web-app-capable\" content=\"yes\"><meta name=\"apple-mobile-web-app-status-bar-style\" content=\"default\"></head><body class=\"bg-gray-50 min-h-screen flex flex-col\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " - Jira Worklog</title><!-- Hotwire Turbo --><script type=\"module\">\r\n\t\t\t\timport hotwiredTurbo from 'https://cdn.jsdelivr.net/npm/@hotwired/turbo@8.0.4/+esm'\r\n\t\t\t</script><!--\r\n\t\t\t\tChart.js (+ trendline plugin) must live in <head>, NOT per-page in\r\n\t\t\t\t<body>: Turbo persists <head> across visits, so Chart is already on\r\n\t\t\t\twindow when a navigation swaps the body. A body-level <script src>\r\n\t\t\t\tgets re-cloned async on every Turbo visit, and the inline chart\r\n\t\t\t\tbootstrap scripts race it (\"Uncaught ReferenceError: Chart is not\r\n\t\t\t\tdefined\"). Parser-blocking (no defer) so cold loads are safe too.\r\n\t\t\t--><script src=\"https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js\" integrity=\"sha384-9nhczxUqK87bcKHh20fSQcTGD4qq5GhayNYSYWqwBkINBhOfQLg/P5HG5lF1urn4\" crossorigin=\"anonymous\"></script><script src=\"https://cdn.jsdelivr.net/npm/chartjs-plugin-trendline@3.2.4\" integrity=\"sha384-3ybtpLdW7YXmUJ14H2gwdWfLT6lTIqMu+Avm33uFQt+RzM3qDcm+xw0erTrvdbRr\" crossorigin=\"anonymous\"></script><!-- Tailwind CSS (compiled by build.sh, embedded in binary) --><link rel=\"stylesheet\" href=\"/static/css/tailwind.css\"><!-- Custom CSS --><link rel=\"stylesheet\" href=\"/static/css/app.css\"><!-- Mobile optimizations --><meta name=\"mobile-web-app-capable\" content=\"yes\"><meta name=\"apple-mobile-web-app-capable\" content=\"yes\"><meta name=\"apple-mobile-web-app-status-bar-style\" content=\"default\"></head><body class=\"bg-gray-50 min-h-screen flex flex-col\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -50,15 +146,33 @@ func Base(title string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<main class=\"container mx-auto px-4 py-6 max-w-7xl flex-grow\">")
+		var templ_7745c5c3_Var7 = []any{mainClass}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var7...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ_7745c5c3_Var1.Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<main class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</main><footer class=\"py-6 bg-gray-800 text-white text-center mt-auto\"><p class=\"text-sm\">Jira Worklog Tracker</p></footer></body></html>")
+		var templ_7745c5c3_Var8 string
+		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var7).String())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/layouts/base.templ`, Line: 1, Col: 0}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templ_7745c5c3_Var5.Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</main><footer class=\"py-6 bg-gray-800 text-white text-center mt-auto\"><p class=\"text-sm\">Jira Worklog Tracker</p></footer></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -82,33 +196,33 @@ func BasePublic(title string) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var3 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var3 == nil {
-			templ_7745c5c3_Var3 = templ.NopComponent
+		templ_7745c5c3_Var9 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var9 == nil {
+			templ_7745c5c3_Var9 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<!doctype html><html lang=\"en\" data-turbo-refresh-scroll=\"preserve\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><meta name=\"turbo-cache-control\" content=\"no-cache\"><title>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<!doctype html><html lang=\"en\" data-turbo-refresh-scroll=\"preserve\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><meta name=\"turbo-cache-control\" content=\"no-cache\"><title>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var4 string
-		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(title)
+		var templ_7745c5c3_Var10 string
+		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/layouts/base.templ`, Line: 48, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/layouts/base.templ`, Line: 74, Col: 17}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, " - Jira Worklog</title><!-- Hotwire Turbo --><script type=\"module\">\r\n\t\t\t\timport hotwiredTurbo from 'https://cdn.jsdelivr.net/npm/@hotwired/turbo@8.0.4/+esm'\r\n\t\t\t</script><!-- Tailwind CSS for mobile-friendly styling --><script src=\"https://cdn.tailwindcss.com\"></script><!-- Custom CSS --><link rel=\"stylesheet\" href=\"/static/css/app.css\"><!-- Mobile optimizations --><meta name=\"apple-mobile-web-app-capable\" content=\"yes\"><meta name=\"apple-mobile-web-app-status-bar-style\" content=\"default\"></head><body class=\"bg-gray-50 min-h-screen flex flex-col\"><main class=\"container mx-auto px-4 py-6 max-w-7xl flex-grow\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ_7745c5c3_Var3.Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, " - Jira Worklog</title><!-- Hotwire Turbo --><script type=\"module\">\r\n\t\t\t\timport hotwiredTurbo from 'https://cdn.jsdelivr.net/npm/@hotwired/turbo@8.0.4/+esm'\r\n\t\t\t</script><!-- Tailwind CSS (compiled by build.sh, embedded in binary) --><link rel=\"stylesheet\" href=\"/static/css/tailwind.css\"><!-- Custom CSS --><link rel=\"stylesheet\" href=\"/static/css/app.css\"><!-- Mobile optimizations --><meta name=\"apple-mobile-web-app-capable\" content=\"yes\"><meta name=\"apple-mobile-web-app-status-bar-style\" content=\"default\"></head><body class=\"bg-gray-50 min-h-screen flex flex-col\"><main class=\"container mx-auto px-4 py-6 max-w-7xl grow\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</main><footer class=\"py-6 bg-gray-800 text-white text-center mt-auto\"><p class=\"text-sm\">Jira Worklog Tracker</p></footer></body></html>")
+		templ_7745c5c3_Err = templ_7745c5c3_Var9.Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</main><footer class=\"py-6 bg-gray-800 text-white text-center mt-auto\"><p class=\"text-sm\">Jira Worklog Tracker</p></footer></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -132,12 +246,12 @@ func Navigation() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var5 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var5 == nil {
-			templ_7745c5c3_Var5 = templ.NopComponent
+		templ_7745c5c3_Var11 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var11 == nil {
+			templ_7745c5c3_Var11 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<nav class=\"bg-blue-600 text-white shadow-lg\"><div class=\"container mx-auto px-4\"><div class=\"flex items-center justify-between h-16\"><div class=\"flex items-center\"><a href=\"/\" class=\"text-xl font-bold\">Jira Worklog</a></div><!-- Mobile menu button --><button id=\"mobile-menu-button\" class=\"md:hidden p-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-white\" onclick=\"document.getElementById('mobile-menu').classList.toggle('hidden')\"><svg class=\"h-6 w-6\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M4 6h16M4 12h16M4 18h16\"></path></svg></button><!-- Desktop menu --><div class=\"hidden md:flex space-x-4\"><a href=\"/\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Dashboard</a> <a href=\"/dashboard/leadership\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Leadership</a><a href=\"/reports/maintenance\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Maintenance Ratio</a> <a href=\"/reports/missing-charge\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Missing Charge</a> <a href=\"/reports/mismatched-charge\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Mismatched Charge</a> <a href=\"/reports/customer-bugs\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Stability Team</a> <a href=\"/reports/project-hours\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Project Hours</a> <a href=\"/reports/weekly-hours\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Weekly Hours</a> <a href=\"/reports/time-tracking\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Project Tracking</a> <a href=\"/reports/project-kpis\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Project KPIs</a> <a href=\"/settings/project-charges\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Project Charges</a> <a href=\"/settings/people\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">People</a></div></div><!-- Mobile menu --><div id=\"mobile-menu\" class=\"hidden md:hidden pb-4\"><div class=\"flex flex-col space-y-2\"><a href=\"/\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Dashboard</a> <a href=\"/dashboard/leadership\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Leadership</a><a href=\"/reports/maintenance\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Maintenance Ratio</a> <a href=\"/reports/missing-charge\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Missing Charge</a> <a href=\"/reports/mismatched-charge\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Mismatched Charge</a> <a href=\"/reports/customer-bugs\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Stability Team</a> <a href=\"/reports/project-hours\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Project Hours</a> <a href=\"/reports/weekly-hours\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Weekly Hours</a> <a href=\"/reports/time-tracking\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Project Tracking</a> <a href=\"/reports/project-kpis\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Project KPIs</a> <a href=\"/settings/project-charges\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Project Charges</a> <a href=\"/settings/people\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">People</a></div></div></div></nav>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<nav class=\"bg-blue-600 text-white shadow-lg\"><div class=\"container mx-auto px-4\"><div class=\"flex items-center justify-between h-16\"><div class=\"flex items-center\"><a href=\"/\" class=\"text-xl font-bold\">Jira Worklog</a></div><!-- Mobile menu button --><button id=\"mobile-menu-button\" class=\"md:hidden p-2 rounded-md hover:bg-blue-700 focus:outline-hidden focus:ring-2 focus:ring-white\" onclick=\"document.getElementById('mobile-menu').classList.toggle('hidden')\"><svg class=\"h-6 w-6\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M4 6h16M4 12h16M4 18h16\"></path></svg></button><!-- Desktop menu --><div class=\"hidden md:flex space-x-4\"><a href=\"/\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Dashboard</a> <a href=\"/dashboard/leadership\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Leadership</a><a href=\"/reports/maintenance\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Maintenance Ratio</a> <a href=\"/reports/missing-charge\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Missing Charge</a> <a href=\"/reports/mismatched-charge\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Mismatched Charge</a> <a href=\"/reports/customer-bugs\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Stability Team</a> <a href=\"/reports/project-hours\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Project Hours</a> <a href=\"/reports/weekly-hours\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Weekly Hours</a> <a href=\"/reports/time-tracking\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Project Tracking</a> <a href=\"/reports/project-kpis\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Project KPIs</a> <a href=\"/settings/project-charges\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Project Charges</a> <a href=\"/settings/people\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">People</a></div></div><!-- Mobile menu --><div id=\"mobile-menu\" class=\"hidden md:hidden pb-4\"><div class=\"flex flex-col space-y-2\"><a href=\"/\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Dashboard</a> <a href=\"/dashboard/leadership\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Leadership</a><a href=\"/reports/maintenance\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Maintenance Ratio</a> <a href=\"/reports/missing-charge\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Missing Charge</a> <a href=\"/reports/mismatched-charge\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Mismatched Charge</a> <a href=\"/reports/customer-bugs\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Stability Team</a> <a href=\"/reports/project-hours\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Project Hours</a> <a href=\"/reports/weekly-hours\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Weekly Hours</a> <a href=\"/reports/time-tracking\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Project Tracking</a> <a href=\"/reports/project-kpis\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Project KPIs</a> <a href=\"/settings/project-charges\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">Project Charges</a> <a href=\"/settings/people\" class=\"px-3 py-2 rounded-md hover:bg-blue-700 transition\">People</a></div></div></div></nav>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

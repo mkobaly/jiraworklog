@@ -95,9 +95,8 @@ func main() {
 	// Create handler
 	handler := NewHandler(repo, jira, logger, cfg, emailClient, args.Debug)
 
-	// Static files (paths relative to where binary is run)
-	e.Static("/static", "../static")
-	e.Static("/web", "../web") // Legacy web directory support
+	// Static files embedded into the binary
+	e.StaticFS("/static", echo.MustSubFS(jiraworklog.StaticFS, "static"))
 
 	e.GET("/login", handler.Login)
 	e.POST("/login", handler.LoginPost)

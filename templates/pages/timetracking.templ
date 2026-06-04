@@ -67,7 +67,7 @@ templ ProjectTimeTracking(issues []types.ProjectTimeTracking, fixedVersion strin
 		<!-- Version Input Form -->
 		<div class="bg-white rounded-lg shadow-md p-6 mb-6">
 			<form action="/reports/time-tracking" method="GET" class="flex flex-col sm:flex-row gap-4">
-				<div class="flex-grow">
+				<div class="grow">
 					<label for="version" class="block text-sm font-medium text-gray-700 mb-1">Fixed Version / Epic</label>
 					<input
 						type="text"
@@ -92,7 +92,7 @@ templ ProjectTimeTracking(issues []types.ProjectTimeTracking, fixedVersion strin
 		if fixedVersion == "" {
 			<div class="bg-blue-50 border-l-4 border-blue-400 p-4">
 				<div class="flex">
-					<div class="flex-shrink-0">
+					<div class="shrink-0">
 						<svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
 							<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
 						</svg>
@@ -105,7 +105,7 @@ templ ProjectTimeTracking(issues []types.ProjectTimeTracking, fixedVersion strin
 		} else if len(issues) == 0 {
 			<div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
 				<div class="flex">
-					<div class="flex-shrink-0">
+					<div class="shrink-0">
 						<svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
 							<path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
 						</svg>
@@ -472,7 +472,7 @@ templ aggregatedProgressBar(totals AggregatedTotals) {
 		<div class="text-xs text-gray-400">No estimate</div>
 	} else {
 		<div class="flex items-center gap-2">
-			<div class="flex-grow bg-gray-200 rounded-full h-2 overflow-hidden">
+			<div class="grow bg-gray-200 rounded-full h-2 overflow-hidden">
 				<div
 					class={ "h-2 rounded-full", progressBarColor(totals.Progress()) }
 					style={ fmt.Sprintf("width: %.0f%%", min(totals.Progress(), 100)) }
@@ -533,7 +533,7 @@ templ progressBar(issue types.ProjectTimeTracking) {
 		<div class="text-xs text-gray-400">No estimate</div>
 	} else {
 		<div class="flex items-center gap-2">
-			<div class="flex-grow bg-gray-200 rounded-full h-2 overflow-hidden">
+			<div class="grow bg-gray-200 rounded-full h-2 overflow-hidden">
 				<div
 					class={ "h-2 rounded-full", progressBarColor(issue.Progress()) }
 					style={ fmt.Sprintf("width: %.0f%%", min(issue.Progress(), 100)) }

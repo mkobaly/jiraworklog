@@ -119,7 +119,7 @@ func ProjectTimeTracking(issues []types.ProjectTimeTracking, fixedVersion string
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div><!-- Version Input Form --> <div class=\"bg-white rounded-lg shadow-md p-6 mb-6\"><form action=\"/reports/time-tracking\" method=\"GET\" class=\"flex flex-col sm:flex-row gap-4\"><div class=\"flex-grow\"><label for=\"version\" class=\"block text-sm font-medium text-gray-700 mb-1\">Fixed Version / Epic</label> <input type=\"text\" id=\"version\" name=\"version\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div><!-- Version Input Form --> <div class=\"bg-white rounded-lg shadow-md p-6 mb-6\"><form action=\"/reports/time-tracking\" method=\"GET\" class=\"flex flex-col sm:flex-row gap-4\"><div class=\"grow\"><label for=\"version\" class=\"block text-sm font-medium text-gray-700 mb-1\">Fixed Version / Epic</label> <input type=\"text\" id=\"version\" name=\"version\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -137,12 +137,12 @@ func ProjectTimeTracking(issues []types.ProjectTimeTracking, fixedVersion string
 				return templ_7745c5c3_Err
 			}
 			if fixedVersion == "" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<div class=\"bg-blue-50 border-l-4 border-blue-400 p-4\"><div class=\"flex\"><div class=\"flex-shrink-0\"><svg class=\"h-5 w-5 text-blue-400\" fill=\"currentColor\" viewBox=\"0 0 20 20\"><path fill-rule=\"evenodd\" d=\"M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z\" clip-rule=\"evenodd\"></path></svg></div><div class=\"ml-3\"><p class=\"text-blue-700\">Enter a fixed version above to view time tracking data.</p></div></div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<div class=\"bg-blue-50 border-l-4 border-blue-400 p-4\"><div class=\"flex\"><div class=\"shrink-0\"><svg class=\"h-5 w-5 text-blue-400\" fill=\"currentColor\" viewBox=\"0 0 20 20\"><path fill-rule=\"evenodd\" d=\"M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z\" clip-rule=\"evenodd\"></path></svg></div><div class=\"ml-3\"><p class=\"text-blue-700\">Enter a fixed version above to view time tracking data.</p></div></div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else if len(issues) == 0 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<div class=\"bg-yellow-50 border-l-4 border-yellow-400 p-4\"><div class=\"flex\"><div class=\"flex-shrink-0\"><svg class=\"h-5 w-5 text-yellow-400\" fill=\"currentColor\" viewBox=\"0 0 20 20\"><path fill-rule=\"evenodd\" d=\"M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z\" clip-rule=\"evenodd\"></path></svg></div><div class=\"ml-3\"><p class=\"text-yellow-700\">No issues found for version \"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<div class=\"bg-yellow-50 border-l-4 border-yellow-400 p-4\"><div class=\"flex\"><div class=\"shrink-0\"><svg class=\"h-5 w-5 text-yellow-400\" fill=\"currentColor\" viewBox=\"0 0 20 20\"><path fill-rule=\"evenodd\" d=\"M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z\" clip-rule=\"evenodd\"></path></svg></div><div class=\"ml-3\"><p class=\"text-yellow-700\">No issues found for version \"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -1266,7 +1266,7 @@ func aggregatedProgressBar(totals AggregatedTotals) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, "<div class=\"flex items-center gap-2\"><div class=\"flex-grow bg-gray-200 rounded-full h-2 overflow-hidden\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, "<div class=\"flex items-center gap-2\"><div class=\"grow bg-gray-200 rounded-full h-2 overflow-hidden\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1554,7 +1554,7 @@ func progressBar(issue types.ProjectTimeTracking) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 124, "<div class=\"flex items-center gap-2\"><div class=\"flex-grow bg-gray-200 rounded-full h-2 overflow-hidden\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 124, "<div class=\"flex items-center gap-2\"><div class=\"grow bg-gray-200 rounded-full h-2 overflow-hidden\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

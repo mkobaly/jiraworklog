@@ -87,8 +87,6 @@ templ arrowCell(cur types.MonthlyTeamMetrics, prior types.MonthlyTeamMetrics, me
 // month."
 templ LeadershipDashboard(rows []types.MonthlyTeamMetrics, teams []string, selectedMonth string, monthOptions []string) {
 	@layouts.Base("Leadership Dashboard") {
-		<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-
 		<div class="space-y-6">
 			<!-- Header -->
 			<div class="bg-white rounded-lg shadow p-6 flex items-center justify-between flex-wrap gap-3">
@@ -195,7 +193,7 @@ templ metricsHelpModal() {
 		onclick="if (event.target === this) this.classList.add('hidden')"
 	>
 		<!-- Backdrop -->
-		<div class="fixed inset-0 bg-black bg-opacity-50"></div>
+		<div class="fixed inset-0 bg-black/50"></div>
 
 		<!-- Dialog -->
 		<div class="relative bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto">

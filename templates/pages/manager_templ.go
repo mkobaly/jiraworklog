@@ -122,7 +122,7 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<script src=\"https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js\"></script> <div class=\"space-y-6\"><!-- Header --><div class=\"bg-white rounded-lg shadow p-6 flex items-center justify-between flex-wrap gap-3\"><div class=\"flex items-center gap-3\"><h1 class=\"text-2xl font-bold text-gray-800\">Manager Dashboard</h1><button type=\"button\" onclick=\"document.getElementById('mgrHelpModal').classList.remove('hidden')\" class=\"w-7 h-7 rounded-full border border-gray-300 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition flex items-center justify-center text-sm font-semibold\" aria-label=\"Help: what these metrics mean\" title=\"What do these metrics mean?\">?</button></div><!--\n\t\t\t\t\tForm targets the <turbo-frame id=\"manager-content\"> below.\n\t\t\t\t\tdata-turbo-action=advance keeps the URL in sync so the page\n\t\t\t\t\tis shareable. requestSubmit() (not submit()) is required —\n\t\t\t\t\tTurbo only intercepts the submit *event*, which .submit()\n\t\t\t\t\tdoesn't dispatch.\n\t\t\t\t--><form method=\"GET\" action=\"/dashboard/manager\" data-turbo-frame=\"manager-content\" data-turbo-action=\"advance\" class=\"flex items-center gap-2\"><label for=\"team\" class=\"text-sm font-medium text-gray-700\">Team</label> <select id=\"team\" name=\"team\" onchange=\"this.form.requestSubmit()\" class=\"border border-gray-300 rounded-md px-3 py-1.5 text-sm\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"space-y-6\"><!-- Header --><div class=\"bg-white rounded-lg shadow p-6 flex items-center justify-between flex-wrap gap-3\"><div class=\"flex items-center gap-3\"><h1 class=\"text-2xl font-bold text-gray-800\">Manager Dashboard</h1><button type=\"button\" onclick=\"document.getElementById('mgrHelpModal').classList.remove('hidden')\" class=\"w-7 h-7 rounded-full border border-gray-300 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition flex items-center justify-center text-sm font-semibold\" aria-label=\"Help: what these metrics mean\" title=\"What do these metrics mean?\">?</button></div><!--\n\t\t\t\t\tForm targets the <turbo-frame id=\"manager-content\"> below.\n\t\t\t\t\tdata-turbo-action=advance keeps the URL in sync so the page\n\t\t\t\t\tis shareable. requestSubmit() (not submit()) is required —\n\t\t\t\t\tTurbo only intercepts the submit *event*, which .submit()\n\t\t\t\t\tdoesn't dispatch.\n\t\t\t\t--><form method=\"GET\" action=\"/dashboard/manager\" data-turbo-frame=\"manager-content\" data-turbo-action=\"advance\" class=\"flex items-center gap-2\"><label for=\"team\" class=\"text-sm font-medium text-gray-700\">Team</label> <select id=\"team\" name=\"team\" onchange=\"this.form.requestSubmit()\" class=\"border border-gray-300 rounded-md px-3 py-1.5 text-sm\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -134,7 +134,7 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(t)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 57, Col: 24}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 55, Col: 24}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -157,7 +157,7 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 				var templ_7745c5c3_Var8 string
 				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(t)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 57, Col: 61}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 55, Col: 61}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 				if templ_7745c5c3_Err != nil {
@@ -175,7 +175,7 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(data.Team)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 65, Col: 119}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 63, Col: 119}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
@@ -223,7 +223,7 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 					var templ_7745c5c3_Var10 templ.SafeURL
 					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("https://amagsymmetry.atlassian.net/browse/" + item.Key))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 101, Col: 88}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 99, Col: 88}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 					if templ_7745c5c3_Err != nil {
@@ -236,7 +236,7 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 					var templ_7745c5c3_Var11 string
 					templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs("Open " + item.Key + " in Jira")
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 105, Col: 50}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 103, Col: 50}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 					if templ_7745c5c3_Err != nil {
@@ -249,7 +249,7 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 					var templ_7745c5c3_Var12 string
 					templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(item.Key)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 106, Col: 21}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 104, Col: 21}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 					if templ_7745c5c3_Err != nil {
@@ -262,7 +262,7 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 					var templ_7745c5c3_Var13 string
 					templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(item.Status)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 107, Col: 59}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 105, Col: 59}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 					if templ_7745c5c3_Err != nil {
@@ -275,7 +275,7 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 					var templ_7745c5c3_Var14 string
 					templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%dd", item.DaysInStatus))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 108, Col: 89}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 106, Col: 89}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 					if templ_7745c5c3_Err != nil {
@@ -318,7 +318,7 @@ func ManagerDashboard(data types.ManagerMetricsData, teams []string) templ.Compo
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(mgrSerialize(data))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 156, Col: 55}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 154, Col: 55}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
@@ -398,7 +398,7 @@ func mgrHelpCard(name, what, how, soWhat string) templ.Component {
 		var templ_7745c5c3_Var17 string
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 171, Col: 63}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 169, Col: 63}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
@@ -411,7 +411,7 @@ func mgrHelpCard(name, what, how, soWhat string) templ.Component {
 		var templ_7745c5c3_Var18 string
 		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(what)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 175, Col: 14}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 173, Col: 14}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 		if templ_7745c5c3_Err != nil {
@@ -424,7 +424,7 @@ func mgrHelpCard(name, what, how, soWhat string) templ.Component {
 		var templ_7745c5c3_Var19 string
 		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(how)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 179, Col: 13}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 177, Col: 13}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 		if templ_7745c5c3_Err != nil {
@@ -437,7 +437,7 @@ func mgrHelpCard(name, what, how, soWhat string) templ.Component {
 		var templ_7745c5c3_Var20 string
 		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(soWhat)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 183, Col: 16}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/manager.templ`, Line: 181, Col: 16}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 		if templ_7745c5c3_Err != nil {
@@ -473,7 +473,7 @@ func mgrHelpModal() templ.Component {
 			templ_7745c5c3_Var21 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<div id=\"mgrHelpModal\" class=\"hidden fixed inset-0 z-50 flex items-center justify-center p-4\" onclick=\"if (event.target === this) this.classList.add('hidden')\"><div class=\"fixed inset-0 bg-black bg-opacity-50\"></div><div class=\"relative bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto\"><div class=\"sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between\"><h2 class=\"text-xl font-bold text-gray-800\">What these metrics mean</h2><button type=\"button\" onclick=\"document.getElementById('mgrHelpModal').classList.add('hidden')\" class=\"text-gray-400 hover:text-gray-700 text-2xl leading-none px-2\" aria-label=\"Close\">&times;</button></div><div class=\"px-6 py-5 space-y-6 text-sm text-gray-700\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<div id=\"mgrHelpModal\" class=\"hidden fixed inset-0 z-50 flex items-center justify-center p-4\" onclick=\"if (event.target === this) this.classList.add('hidden')\"><div class=\"fixed inset-0 bg-black/50\"></div><div class=\"relative bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto\"><div class=\"sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between\"><h2 class=\"text-xl font-bold text-gray-800\">What these metrics mean</h2><button type=\"button\" onclick=\"document.getElementById('mgrHelpModal').classList.add('hidden')\" class=\"text-gray-400 hover:text-gray-700 text-2xl leading-none px-2\" aria-label=\"Close\">&times;</button></div><div class=\"px-6 py-5 space-y-6 text-sm text-gray-700\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

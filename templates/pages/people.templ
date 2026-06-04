@@ -28,7 +28,7 @@ templ People(people []types.People, roles []string) {
 					<input
 						type="text"
 						id="search-filter"
-						class="w-full md:w-96 px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+						class="w-full md:w-96 px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 						placeholder="Search by name or role..."
 						oninput="filterPeople(this.value)"
 					/>
@@ -85,7 +85,7 @@ templ People(people []types.People, roles []string) {
 										<div class="relative">
 											<input
 												type="text"
-												class="role-input w-48 px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+												class="role-input w-48 px-3 py-1 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-blue-500"
 												value={ person.GetRole() }
 												list={ fmt.Sprintf("roles-%d", person.Id) }
 												placeholder="Enter or select role"
@@ -115,7 +115,7 @@ templ People(people []types.People, roles []string) {
 													checked
 												}
 											/>
-											<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+											<div class="w-11 h-6 bg-gray-200 peer-focus:outline-hidden peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
 										</label>
 									</div>
 								</td>
@@ -126,7 +126,7 @@ templ People(people []types.People, roles []string) {
 									<div class="location-edit hidden">
 										<input
 											type="text"
-											class="location-input w-32 px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+											class="location-input w-32 px-3 py-1 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-blue-500"
 											value={ person.GetLocation() }
 											placeholder="Enter location"
 										/>
@@ -173,7 +173,7 @@ templ People(people []types.People, roles []string) {
 							<div class="role-edit hidden mt-1">
 								<input
 									type="text"
-									class="role-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+									class="role-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-blue-500"
 									value={ person.GetRole() }
 									list={ fmt.Sprintf("roles-mobile-%d", person.Id) }
 									placeholder="Enter or select role"
@@ -203,7 +203,7 @@ templ People(people []types.People, roles []string) {
 											checked
 										}
 									/>
-									<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+									<div class="w-11 h-6 bg-gray-200 peer-focus:outline-hidden peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
 									<span class="ml-2 text-sm text-gray-700">Employee</span>
 								</label>
 							</div>
@@ -216,7 +216,7 @@ templ People(people []types.People, roles []string) {
 							<div class="location-edit hidden mt-1">
 								<input
 									type="text"
-									class="location-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+									class="location-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-blue-500"
 									value={ person.GetLocation() }
 									placeholder="Enter location"
 								/>

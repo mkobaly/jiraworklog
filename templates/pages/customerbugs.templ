@@ -19,7 +19,7 @@ templ CustomerBugs(trends []types.CustomerBugTrend, projects []string, selectedP
 				<label for="project-select" class="block text-sm font-medium text-gray-700 mb-2">Select Project</label>
 				<select
 					id="project-select"
-					class="block w-64 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+					class="block w-64 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-xs focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
 					onchange="applyFilters()"
 				>
 					<option value="" if selectedProject == "" { selected }>All Projects</option>
@@ -107,9 +107,6 @@ templ CustomerBugs(trends []types.CustomerBugTrend, projects []string, selectedP
 			// </div>
 
 
-			<!-- Chart.js from CDN -->
-			<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-			<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-trendline"></script>
 			@customerBugsChartScript()
 		}
 	}

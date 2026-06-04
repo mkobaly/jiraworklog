@@ -7,7 +7,7 @@ import (
 )
 
 templ ProjectCharges(charges []types.ProjectCharge) {
-	@layouts.Base("Project Charges") {
+	@layouts.BaseFluid("Project Charges") {
 		<div class="mb-6">
 			<h1 class="text-3xl font-bold text-gray-900">Project Charges</h1>
 			<p class="text-gray-600 mt-2">Manage visibility and labels for project charges</p>
@@ -33,7 +33,7 @@ templ ProjectCharges(charges []types.ProjectCharge) {
 				<input
 					type="text"
 					id="charge-search"
-					class="w-full px-3 py-2 pl-9 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+					class="w-full px-3 py-2 pl-9 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-blue-500"
 					placeholder="Search by name, category, type or label..."
 					oninput="filterChargeRows(this.value)"
 				/>
@@ -43,7 +43,7 @@ templ ProjectCharges(charges []types.ProjectCharge) {
 			</div>
 
 			<!-- Project Charges Table -->
-			<div class="bg-white rounded-lg shadow-md overflow-hidden">
+			<div class="bg-white rounded-lg shadow-md overflow-x-auto">
 				<table class="min-w-full divide-y divide-gray-200">
 					<thead class="bg-gray-50">
 						<tr>
@@ -63,8 +63,8 @@ templ ProjectCharges(charges []types.ProjectCharge) {
 								data-charge-visible={ boolStr(charge.Visible) }
 								data-charge-label={ nullStringVal(charge.Label) }
 							>
-								<td class="px-6 py-4 whitespace-nowrap">
-									<div class="text-sm font-mono text-gray-900">{ charge.Name }</div>
+								<td class="px-6 py-4">
+									<div class="text-sm font-mono text-gray-900 break-words max-w-xl">{ charge.Name }</div>
 								</td>
 								<td class="px-6 py-4 whitespace-nowrap">
 									<div class="text-sm text-gray-700">{ charge.Category() }</div>
@@ -79,8 +79,8 @@ templ ProjectCharges(charges []types.ProjectCharge) {
 										<span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">No</span>
 									}
 								</td>
-								<td class="px-6 py-4 whitespace-nowrap">
-									<div class="text-sm text-gray-700">{ nullStringVal(charge.Label) }</div>
+								<td class="px-6 py-4">
+									<div class="text-sm text-gray-700 break-words max-w-md">{ nullStringVal(charge.Label) }</div>
 								</td>
 								<td class="px-6 py-4 whitespace-nowrap text-sm">
 									<button class="edit-charge-btn text-blue-600 hover:text-blue-800 font-medium">
@@ -95,7 +95,7 @@ templ ProjectCharges(charges []types.ProjectCharge) {
 		}
 
 		<!-- Edit Project Charge Modal -->
-		<div id="charge-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+		<div id="charge-modal" class="hidden fixed inset-0 bg-gray-600/50 overflow-y-auto h-full w-full z-50">
 			<div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-lg bg-white">
 				<div class="flex justify-between items-center mb-4">
 					<h3 class="text-lg font-semibold text-gray-900">Edit Project Charge</h3>
@@ -130,7 +130,7 @@ templ ProjectCharges(charges []types.ProjectCharge) {
 						<input
 							type="text"
 							id="charge-label"
-							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-blue-500"
 							placeholder="Optional display label"
 						/>
 					</div>

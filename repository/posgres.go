@@ -88,7 +88,7 @@ func (s *Postgres) AllRoles() ([]string, error) {
 	return result, err
 }
 
-func (s *Postgres) IssuesMissingProjectCharge() ([]types.IssueMissingCharge, error) {
+func (s *Postgres) IssuesMissingProjectCharge(excludedProjects []string) ([]types.IssueMissingCharge, error) {
 	result := []types.IssueMissingCharge{}
 	err := s.DB.Select(&result, `
 		SELECT project, key, type, summary, priority, status, updatedate
@@ -96,12 +96,12 @@ func (s *Postgres) IssuesMissingProjectCharge() ([]types.IssueMissingCharge, err
 		WHERE projectcharge = ''
 		AND id IN (SELECT worklog.issueid FROM worklog)
 		AND updatedate >= NOW() - INTERVAL '60 days'
-		AND project not in ('HT', 'AHT')
-		ORDER BY updatedate DESC;`)
+		AND project <> ALL($1::text[])
+		ORDER BY updatedate DESC;`, excludedProjects)
 	return result, err
 }
 
-func (s *Postgres) IssuesMismatchedProjectCharge() ([]types.IssueMismatchedCharge, error) {
+func (s *Postgres) IssuesMismatchedProjectCharge(excludedProjects []string) ([]types.IssueMismatchedCharge, error) {
 	result := []types.IssueMismatchedCharge{}
 	err := s.DB.Select(&result, `
 		SELECT
@@ -117,8 +117,8 @@ func (s *Postgres) IssuesMismatchedProjectCharge() ([]types.IssueMismatchedCharg
 		JOIN issue i2 ON i.parentid = i2.id
 		WHERE i2.projectcharge != i.projectcharge
 		AND i.createdate >= now() - INTERVAL '2 months'
-		AND i.project IN ('IDM', 'SYM', 'ESG')
-		ORDER BY i2.projectcharge;`)
+		AND i.project <> ALL($1::text[])
+		ORDER BY i2.projectcharge;`, excludedProjects)
 	return result, err
 }
 
@@ -233,7 +233,7 @@ func (s *Postgres) UpdateProjectCharge(name string, visible bool, label string) 
 
 // ProjectChargeHours returns hours worked per project charge and role.
 // fromMonth and toMonth are YYYY-MM strings; empty strings fall back to the last 13 months.
-func (s *Postgres) ProjectChargeHours(fromYearMonth, toYearMonth string) ([]types.ProjectChargeHours, error) {
+func (s *Postgres) ProjectChargeHours(fromYearMonth, toYearMonth string, excludedProjects []string) ([]types.ProjectChargeHours, error) {
 	result := []types.ProjectChargeHours{}
 	from, to := s.calculateDateRange(fromYearMonth, toYearMonth)
 
@@ -252,10 +252,11 @@ func (s *Postgres) ProjectChargeHours(fromYearMonth, toYearMonth string) ([]type
 			LEFT JOIN people per ON w.author = per.name
 		WHERE COALESCE(p.visible, true) = true
 			AND w.date >= $1 AND w.date < $2
+			AND j.project <> ALL($3::text[])
 		GROUP BY p.name, j.projectcharge, to_char(w.date, 'YYYY-MM'), per.role, per.isemployee, per.location
 		ORDER BY p.name, j.projectcharge`
 
-	err := s.DB.Select(&result, query, from, to)
+	err := s.DB.Select(&result, query, from, to, excludedProjects)
 	return result, err
 }
 
@@ -478,8 +479,9 @@ func (s *Postgres) SyncPeople() error {
 func (s *Postgres) SyncProjectCharges() error {
 	stmt, err := s.DB.Prepare(`
         INSERT INTO project_charge(name)
-		SELECT DISTINCT projectcharge from issue
-		WHERE createdate >= now() - INTERVAL '5 days'
+		SELECT DISTINCT projectcharge 
+		FROM issue
+		WHERE updatedate >= now() - INTERVAL '5 days'
 		and projectcharge != ''
 		ON CONFLICT (name) DO NOTHING;`)
 	if err != nil {

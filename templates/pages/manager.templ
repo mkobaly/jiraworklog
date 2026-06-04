@@ -25,8 +25,6 @@ templ mgrKpiCard(label, value, chartID string) {
 // dropdown selector.
 templ ManagerDashboard(data types.ManagerMetricsData, teams []string) {
 	@layouts.Base("Manager Dashboard") {
-		<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-
 		<div class="space-y-6">
 			<!-- Header -->
 			<div class="bg-white rounded-lg shadow p-6 flex items-center justify-between flex-wrap gap-3">
@@ -193,7 +191,7 @@ templ mgrHelpModal() {
 		class="hidden fixed inset-0 z-50 flex items-center justify-center p-4"
 		onclick="if (event.target === this) this.classList.add('hidden')"
 	>
-		<div class="fixed inset-0 bg-black bg-opacity-50"></div>
+		<div class="fixed inset-0 bg-black/50"></div>
 		<div class="relative bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto">
 			<div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
 				<h2 class="text-xl font-bold text-gray-800">What these metrics mean</h2>

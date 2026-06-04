@@ -377,7 +377,7 @@ func projectType(name string) string {
 	}
 	switch name[idx+2 : idx+3] {
 	case "0":
-		return "New"
+		return "New Product / Strategic"
 	case "1":
 		return "Enhancement"
 	case "2":
@@ -385,7 +385,7 @@ func projectType(name string) string {
 	case "3":
 		return "Customer Support / Bug Fix"
 	case "4":
-		return "Technical Debt"
+		return "Technical Debt / Platform"
 	case "5":
 		return "Research / Non-Recoverable"
 	default:
