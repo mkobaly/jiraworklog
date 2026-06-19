@@ -227,6 +227,17 @@ func applyChargeFilters(data []types.ProjectChargeHours, charges, roles, locatio
 	return out
 }
 
+// parseGroupBy validates the top-level grouping dimension query param,
+// falling back to "label" for any empty or unrecognized value.
+func parseGroupBy(v string) string {
+	switch v {
+	case "category", "type":
+		return v
+	default:
+		return "label"
+	}
+}
+
 func stringSet(vals []string) map[string]bool {
 	s := make(map[string]bool, len(vals))
 	for _, v := range vals {
@@ -713,11 +724,14 @@ func (h *Handler) GetProjectChargeHours(c echo.Context) error {
 	// Get grouping options from query params.
 	// groupByCharge and groupByRole default to true on initial load (no _f sentinel).
 	formSubmitted := c.QueryParam("_f") == "1"
-	groupByDate := c.QueryParam("groupByDate") == "true"
-	groupByCharge := !formSubmitted || c.QueryParam("groupByCharge") == "true"
-	groupByEmployee := c.QueryParam("groupByEmployee") == "true"
-	groupByRole := !formSubmitted || c.QueryParam("groupByRole") == "true"
-	groupByLocation := c.QueryParam("groupByLocation") == "true"
+	opts := pages.GroupingOptions{
+		ParentBy:   parseGroupBy(c.QueryParam("groupBy")),
+		ByDate:     c.QueryParam("groupByDate") == "true",
+		ByCharge:   !formSubmitted || c.QueryParam("groupByCharge") == "true",
+		ByEmployee: c.QueryParam("groupByEmployee") == "true",
+		ByRole:     !formSubmitted || c.QueryParam("groupByRole") == "true",
+		ByLocation: c.QueryParam("groupByLocation") == "true",
+	}
 
 	filterState := pages.ChargeFilterState{
 		FromMonth:    fromYearMonth,
@@ -732,7 +746,7 @@ func (h *Handler) GetProjectChargeHours(c echo.Context) error {
 	}
 
 	if wantsHTML(c) {
-		return pages.ProjectChargeHoursPage(filtered, filterState, groupByDate, groupByEmployee, groupByRole, groupByCharge, groupByLocation).Render(c.Request().Context(), c.Response().Writer)
+		return pages.ProjectChargeHoursPage(filtered, filterState, opts).Render(c.Request().Context(), c.Response().Writer)
 	}
 
 	return c.JSON(http.StatusOK, filtered)

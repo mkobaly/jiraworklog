@@ -38,11 +38,27 @@ type DetailRow struct {
 
 // GroupingOptions holds the current grouping settings
 type GroupingOptions struct {
+	// ParentBy selects the top-level (parent) grouping dimension:
+	// "label" (default), "category", or "type".
+	ParentBy   string
 	ByDate     bool
 	ByEmployee bool
 	ByRole     bool
 	ByCharge   bool
 	ByLocation bool
+}
+
+// parentKey returns the top-level grouping key for an item based on the
+// selected parent dimension. Defaults to the project charge Label.
+func parentKey(item types.ProjectChargeHours, by string) string {
+	switch by {
+	case "category":
+		return item.Category()
+	case "type":
+		return item.Type()
+	default:
+		return item.Label
+	}
 }
 
 // ChargeFilterState holds active filter selections and available options
@@ -66,12 +82,15 @@ func groupProjectChargeHours(data []types.ProjectChargeHours, opts GroupingOptio
 	var projectOrder []string
 
 	for _, item := range data {
-		// Initialize project if needed
-		if _, exists := projectMap[item.Label]; !exists {
-			projectMap[item.Label] = &ProjectGroup{Name: item.Label}
-			chargeMap[item.Label] = make(map[string]*ChargeGroup)
-			detailMap[item.Label] = make(map[string]map[string]*DetailRow)
-			projectOrder = append(projectOrder, item.Label)
+		// Parent (top-level) group key — Label, Category, or Type per opts.
+		pkey := parentKey(item, opts.ParentBy)
+
+		// Initialize parent group if needed
+		if _, exists := projectMap[pkey]; !exists {
+			projectMap[pkey] = &ProjectGroup{Name: pkey}
+			chargeMap[pkey] = make(map[string]*ChargeGroup)
+			detailMap[pkey] = make(map[string]map[string]*DetailRow)
+			projectOrder = append(projectOrder, pkey)
 		}
 
 		// Determine charge group name based on ByCharge option
@@ -81,14 +100,14 @@ func groupProjectChargeHours(data []types.ProjectChargeHours, opts GroupingOptio
 		}
 
 		// Initialize charge if needed
-		if _, exists := chargeMap[item.Label][chargeGroupName]; !exists {
+		if _, exists := chargeMap[pkey][chargeGroupName]; !exists {
 			category, chargeType := "", ""
 			if opts.ByCharge {
 				category = item.Category()
 				chargeType = item.Type()
 			}
-			chargeMap[item.Label][chargeGroupName] = &ChargeGroup{Name: chargeGroupName, Category: category, Type: chargeType}
-			detailMap[item.Label][chargeGroupName] = make(map[string]*DetailRow)
+			chargeMap[pkey][chargeGroupName] = &ChargeGroup{Name: chargeGroupName, Category: category, Type: chargeType}
+			detailMap[pkey][chargeGroupName] = make(map[string]*DetailRow)
 		}
 
 		// Build grouping key based on options
@@ -130,10 +149,10 @@ func groupProjectChargeHours(data []types.ProjectChargeHours, opts GroupingOptio
 		}
 
 		// Aggregate hours for this key
-		if existing, exists := detailMap[item.Label][chargeGroupName][key]; exists {
+		if existing, exists := detailMap[pkey][chargeGroupName][key]; exists {
 			existing.Hours += item.Hours
 		} else {
-			detailMap[item.Label][chargeGroupName][key] = &DetailRow{
+			detailMap[pkey][chargeGroupName][key] = &DetailRow{
 				YearMonth:     yearMonth,
 				IsEmployee:    isEmployee,
 				Role:          role,
@@ -143,8 +162,8 @@ func groupProjectChargeHours(data []types.ProjectChargeHours, opts GroupingOptio
 			}
 		}
 
-		chargeMap[item.Label][chargeGroupName].Total += item.Hours
-		projectMap[item.Label].Total += item.Hours
+		chargeMap[pkey][chargeGroupName].Total += item.Hours
+		projectMap[pkey].Total += item.Hours
 	}
 
 	// Build final result maintaining order
@@ -191,7 +210,7 @@ func groupProjectChargeHours(data []types.ProjectChargeHours, opts GroupingOptio
 	return result
 }
 
-templ ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilterState, groupByDate bool, groupByEmployee bool, groupByRole bool, groupByCharge bool, groupByLocation bool) {
+templ ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilterState, opts GroupingOptions) {
 	@layouts.Base("Project Charge Hours") {
 		<div class="mb-6">
 			<h1 class="text-3xl font-bold text-gray-900">Project Charge Hours</h1>
@@ -204,7 +223,8 @@ templ ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilt
 			<input type="hidden" name="_f" value="1"/>
 
 			<!-- Date range + grouping row -->
-			<div class="bg-white rounded-lg shadow-md p-4">
+			<div class="bg-white rounded-lg shadow-md p-4 space-y-4">
+				<!-- Row 1: date range + top-level grouping -->
 				<div class="flex flex-wrap items-center gap-6">
 					<!-- Date range -->
 					<div class="flex items-center gap-2">
@@ -228,26 +248,38 @@ templ ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilt
 
 					<div class="w-px h-6 bg-gray-200"></div>
 
-					<!-- Grouping -->
-					<span class="text-sm font-medium text-gray-700">Group by:</span>
+					<!-- Top-level (parent) grouping -->
+					<div class="flex items-center gap-2">
+						<label class="text-sm font-medium text-gray-700 whitespace-nowrap">Group by:</label>
+						<select name="groupBy" onchange="this.form.submit()" class="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500">
+							<option value="label" if opts.ParentBy == "label" { selected }>Project</option>
+							<option value="category" if opts.ParentBy == "category" { selected }>Category</option>
+							<option value="type" if opts.ParentBy == "type" { selected }>Type</option>
+						</select>
+					</div>
+				</div>
+
+				<!-- Row 2: detail breakdowns + actions -->
+				<div class="flex flex-wrap items-center gap-x-6 gap-y-2">
+					<span class="text-sm font-medium text-gray-700">Break down by:</span>
 					<label class="flex items-center cursor-pointer">
-						<input type="checkbox" name="groupByDate" value="true" class="h-4 w-4 text-blue-600 border-gray-300 rounded" onchange="this.form.submit()" if groupByDate { checked }/>
+						<input type="checkbox" name="groupByDate" value="true" class="h-4 w-4 text-blue-600 border-gray-300 rounded" onchange="this.form.submit()" if opts.ByDate { checked }/>
 						<span class="ml-2 text-sm text-gray-700">Month</span>
 					</label>
 					<label class="flex items-center cursor-pointer">
-						<input type="checkbox" name="groupByCharge" value="true" class="h-4 w-4 text-blue-600 border-gray-300 rounded" onchange="this.form.submit()" if groupByCharge { checked }/>
+						<input type="checkbox" name="groupByCharge" value="true" class="h-4 w-4 text-blue-600 border-gray-300 rounded" onchange="this.form.submit()" if opts.ByCharge { checked }/>
 						<span class="ml-2 text-sm text-gray-700">Project Charge</span>
 					</label>
 					<label class="flex items-center cursor-pointer">
-						<input type="checkbox" name="groupByEmployee" value="true" class="h-4 w-4 text-blue-600 border-gray-300 rounded" onchange="this.form.submit()" if groupByEmployee { checked }/>
+						<input type="checkbox" name="groupByEmployee" value="true" class="h-4 w-4 text-blue-600 border-gray-300 rounded" onchange="this.form.submit()" if opts.ByEmployee { checked }/>
 						<span class="ml-2 text-sm text-gray-700">Employee Type</span>
 					</label>
 					<label class="flex items-center cursor-pointer">
-						<input type="checkbox" name="groupByRole" value="true" class="h-4 w-4 text-blue-600 border-gray-300 rounded" onchange="this.form.submit()" if groupByRole { checked }/>
+						<input type="checkbox" name="groupByRole" value="true" class="h-4 w-4 text-blue-600 border-gray-300 rounded" onchange="this.form.submit()" if opts.ByRole { checked }/>
 						<span class="ml-2 text-sm text-gray-700">Role</span>
 					</label>
 					<label class="flex items-center cursor-pointer">
-						<input type="checkbox" name="groupByLocation" value="true" class="h-4 w-4 text-blue-600 border-gray-300 rounded" onchange="this.form.submit()" if groupByLocation { checked }/>
+						<input type="checkbox" name="groupByLocation" value="true" class="h-4 w-4 text-blue-600 border-gray-300 rounded" onchange="this.form.submit()" if opts.ByLocation { checked }/>
 						<span class="ml-2 text-sm text-gray-700">Location</span>
 					</label>
 
@@ -363,7 +395,7 @@ templ ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilt
 		} else {
 			<!-- Desktop view -->
 			<div class="hidden md:block space-y-6">
-				for _, project := range groupProjectChargeHours(data, GroupingOptions{ByDate: groupByDate, ByEmployee: groupByEmployee, ByRole: groupByRole, ByCharge: groupByCharge, ByLocation: groupByLocation}) {
+				for _, project := range groupProjectChargeHours(data, opts) {
 					<div class="bg-white rounded-lg shadow-md overflow-hidden">
 						<!-- Project header -->
 						<div class="bg-blue-600 text-white px-6 py-3 flex justify-between items-center">
@@ -375,20 +407,22 @@ templ ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilt
 							<thead class="bg-gray-50">
 								<tr>
 									<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project Charge</th>
-									if groupByCharge {
+									if opts.ByCharge && opts.ParentBy != "category" {
 										<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+									}
+									if opts.ByCharge && opts.ParentBy != "type" {
 										<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
 									}
-									if groupByDate {
+									if opts.ByDate {
 										<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Month</th>
 									}
-									if groupByEmployee {
+									if opts.ByEmployee {
 										<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
 									}
-									if groupByRole {
+									if opts.ByRole {
 										<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
 									}
-									if groupByLocation {
+									if opts.ByLocation {
 										<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
 									}
 									<th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Hours</th>
@@ -403,27 +437,29 @@ templ ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilt
 													<div class="text-sm font-medium text-gray-900">{ charge.Name }</div>
 													<div class="text-xs text-gray-500">Subtotal: { formatHours(charge.Total) } hrs</div>
 												</td>
-												if groupByCharge {
+												if opts.ByCharge && opts.ParentBy != "category" {
 													<td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700" rowspan={ fmt.Sprintf("%d", len(charge.DetailRows)) }>{ charge.Category }</td>
+												}
+												if opts.ByCharge && opts.ParentBy != "type" {
 													<td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700" rowspan={ fmt.Sprintf("%d", len(charge.DetailRows)) }>{ charge.Type }</td>
 												}
 											}
-											if groupByDate {
+											if opts.ByDate {
 												<td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">
 													{ detail.YearMonth }
 												</td>
 											}
-											if groupByEmployee {
+											if opts.ByEmployee {
 												<td class="px-6 py-3 whitespace-nowrap">
 													@employeeBadge(detail.IsEmployee)
 												</td>
 											}
-											if groupByRole {
+											if opts.ByRole {
 												<td class="px-6 py-3 whitespace-nowrap">
 													@roleBadge(detail.Role)
 												</td>
 											}
-											if groupByLocation {
+											if opts.ByLocation {
 												<td class="px-6 py-3 whitespace-nowrap">
 													@locationBadge(detail.Location)
 												</td>
@@ -442,7 +478,7 @@ templ ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilt
 
 			<!-- Mobile view -->
 			<div class="md:hidden space-y-4">
-				for _, project := range groupProjectChargeHours(data, GroupingOptions{ByDate: groupByDate, ByEmployee: groupByEmployee, ByRole: groupByRole, ByCharge: groupByCharge, ByLocation: groupByLocation}) {
+				for _, project := range groupProjectChargeHours(data, opts) {
 					<div class="bg-white rounded-lg shadow-md overflow-hidden">
 						<!-- Project header -->
 						<div class="bg-blue-600 text-white px-4 py-3 flex justify-between items-center">
@@ -456,8 +492,15 @@ templ ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilt
 									<div class="flex justify-between items-start mb-2">
 										<div>
 											<span class="text-sm font-medium text-gray-900">{ charge.Name }</span>
-											if groupByCharge {
-												<div class="text-xs text-gray-500 mt-0.5">{ charge.Category } &bull; { charge.Type }</div>
+											if opts.ByCharge {
+												switch opts.ParentBy {
+													case "category":
+														<div class="text-xs text-gray-500 mt-0.5">{ charge.Type }</div>
+													case "type":
+														<div class="text-xs text-gray-500 mt-0.5">{ charge.Category }</div>
+													default:
+														<div class="text-xs text-gray-500 mt-0.5">{ charge.Category } &bull; { charge.Type }</div>
+												}
 											}
 										</div>
 										<span class="text-sm font-semibold text-blue-600">{ formatHours(charge.Total) } hrs</span>
@@ -466,16 +509,16 @@ templ ProjectChargeHoursPage(data []types.ProjectChargeHours, filters ChargeFilt
 										for _, detail := range charge.DetailRows {
 											<div class="flex flex-wrap justify-between items-center text-sm gap-1">
 												<div class="flex flex-wrap items-center gap-2">
-													if groupByDate {
+													if opts.ByDate {
 														<span class="text-xs text-gray-500">{ detail.YearMonth }</span>
 													}
-													if groupByEmployee {
+													if opts.ByEmployee {
 														@employeeBadge(detail.IsEmployee)
 													}
-													if groupByRole {
+													if opts.ByRole {
 														@roleBadge(detail.Role)
 													}
-													if groupByLocation {
+													if opts.ByLocation {
 														@locationBadge(detail.Location)
 													}
 												</div>
