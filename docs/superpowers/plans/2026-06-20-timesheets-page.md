@@ -62,14 +62,19 @@ func TestTimesheetHours(t *testing.T) {
 	require.NoError(t, err)
 	require.Greater(t, len(rows), 0)
 
+	// Per-charge/month aggregates can legitimately round to 0 hours, so assert
+	// non-negativity per row and require the dataset as a whole to have real hours.
+	var totalHours float64
 	for _, r := range rows {
 		require.NotEmpty(t, r.Author)
 		require.NotEmpty(t, r.ProjectCharge)
 		// YearMonth must fall inside the requested inclusive month range.
 		require.GreaterOrEqual(t, r.YearMonth, "2026-01")
 		require.LessOrEqual(t, r.YearMonth, "2026-03")
-		require.Greater(t, r.Hours, 0.0)
+		require.GreaterOrEqual(t, r.Hours, 0.0)
+		totalHours += r.Hours
 	}
+	require.Greater(t, totalHours, 0.0, "expected some real hours in the window")
 }
 ```
 
