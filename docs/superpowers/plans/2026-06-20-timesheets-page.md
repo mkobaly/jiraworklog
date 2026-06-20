@@ -371,7 +371,7 @@ git commit -m "feat(timesheets): add month range helpers with tests"
   - `type TimesheetChargeRow struct { ProjectCharge string; MonthHours map[string]float64; Total float64 }`
   - `type TimesheetAuthor struct { Author string; Role string; Charges []TimesheetChargeRow; MonthTotals map[string]float64; GrandTotal float64 }`
   - `pivotTimesheet(data []types.TimesheetHours, months []string) []TimesheetAuthor` — authors sorted alphabetically; charges sorted alphabetically within each author; `MonthTotals` keyed by every month in `months`.
-  - `trendClass(cur, prev float64, isFirst bool) string` — `""` when `isFirst` or `prev == 0`; `"bg-green-50"` when `(cur-prev)/prev > 0.10`; `"bg-red-50"` when `< -0.10`; else `""`.
+  - `trendClass(cur, prev float64, isFirst bool) string` — `""` when `isFirst`, `prev == 0`, or `cur == 0` (a blank/no-hours cell is neutral, never tinted); `"bg-green-50"` when `(cur-prev)/prev > 0.10`; `"bg-red-50"` when `< -0.10`; else `""`.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -426,6 +426,8 @@ func TestTrendClass(t *testing.T) {
 	require.Equal(t, "", trendClass(100, 0, true))
 	// No baseline (prev == 0) is neutral even when not first.
 	require.Equal(t, "", trendClass(100, 0, false))
+	// A blank/no-hours cell (cur == 0) is neutral, never tinted.
+	require.Equal(t, "", trendClass(0, 100, false))
 	// Within ±10% is neutral.
 	require.Equal(t, "", trendClass(105, 100, false))
 	require.Equal(t, "", trendClass(95, 100, false))
@@ -541,10 +543,11 @@ func pivotTimesheet(data []types.TimesheetHours, months []string) []TimesheetAut
 
 // trendClass returns the Tailwind background class for a month cell based on its
 // percent change from the previous month. Neutral (empty string) on the first
-// column or when there is no prior-month baseline (prev == 0). Green when up
+// column, when there is no prior-month baseline (prev == 0), or when this cell
+// has no hours (cur == 0) — a blank cell must never be tinted. Green when up
 // more than 10%, red when down more than 10%.
 func trendClass(cur, prev float64, isFirst bool) string {
-	if isFirst || prev == 0 {
+	if isFirst || prev == 0 || cur == 0 {
 		return ""
 	}
 	pct := (cur - prev) / prev
