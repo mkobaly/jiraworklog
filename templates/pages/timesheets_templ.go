@@ -355,7 +355,7 @@ func Timesheets(data []types.TimesheetHours, months []string, allRoles []string,
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, " <!-- Author subtotal row --> <tr class=\"bg-gray-100 font-semibold border-t-2 border-gray-300\"><td class=\"px-4 py-2 sticky left-0 bg-gray-100 text-sm text-gray-900\">Total</td>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, " <!-- Author subtotal row --> <tr class=\"bg-gray-100 font-semibold border-t-2 border-gray-300\"><td colspan=\"2\" class=\"px-4 py-2 sticky left-0 bg-gray-100 text-sm text-gray-900\">Total</td>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
