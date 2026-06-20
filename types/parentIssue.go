@@ -458,6 +458,16 @@ func (d DailyHours) ProductiveRatio() float64 {
 	return d.Project / (d.AfterMarket + d.Project)
 }
 
+// TimesheetHours represents hours an author logged to a single raw project
+// charge in a single year-month. Used by the Timesheets report.
+type TimesheetHours struct {
+	Role          string  `db:"role"`
+	Author        string  `db:"author"`
+	ProjectCharge string  `db:"projectcharge"`
+	YearMonth     string  `db:"yearmonth"`
+	Hours         float64 `db:"hours"`
+}
+
 // WeekOption represents a week choice for dropdown selection
 type WeekOption struct {
 	Offset int

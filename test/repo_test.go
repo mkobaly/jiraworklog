@@ -425,3 +425,31 @@ func TestMonthlyTeamMetricsStability(t *testing.T) {
 	}
 	require.Greater(t, totalOpen, 0, "expected non-zero customer bug open count somewhere")
 }
+
+func TestTimesheetHours(t *testing.T) {
+	cfg, err := GetTestConfig()
+	if err != nil {
+		t.Fatal()
+	}
+	repo, err := repository.NewPostgresRepo(cfg)
+	if err != nil {
+		t.Fatal()
+	}
+
+	// A recent, completed 3-month window: Jan–Mar 2026.
+	from := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	to := time.Date(2026, 4, 1, 0, 0, 0, 0, time.UTC) // exclusive upper bound
+
+	rows, err := repo.TimesheetHours([]string{"dev"}, from, to)
+	require.NoError(t, err)
+	require.Greater(t, len(rows), 0)
+
+	for _, r := range rows {
+		require.NotEmpty(t, r.Author)
+		require.NotEmpty(t, r.ProjectCharge)
+		// YearMonth must fall inside the requested inclusive month range.
+		require.GreaterOrEqual(t, r.YearMonth, "2026-01")
+		require.LessOrEqual(t, r.YearMonth, "2026-03")
+		require.Greater(t, r.Hours, 0.0)
+	}
+}

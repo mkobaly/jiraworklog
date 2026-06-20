@@ -329,6 +329,32 @@ func (s *Postgres) DailyHoursByRole(roles []string, startDate, endDate time.Time
 	return result, err
 }
 
+// TimesheetHours returns hours per author grouped by raw project charge and
+// year-month for the given role set and date range. startDate is inclusive,
+// endDate is exclusive.
+func (s *Postgres) TimesheetHours(roles []string, startDate, endDate time.Time) ([]types.TimesheetHours, error) {
+	result := []types.TimesheetHours{}
+
+	query := `
+		SELECT
+			p.role,
+			w.author,
+			i.projectcharge,
+			to_char((w.date AT TIME ZONE 'America/New_York'), 'YYYY-MM') AS yearmonth,
+			SUM(w.timespenthours) AS hours
+		FROM worklog w
+		JOIN issue i ON w.issueid = i.id
+		JOIN people p ON w.author = p.name
+		WHERE w.date >= ($2 AT TIME ZONE 'UTC')
+		AND w.date < ($3 AT TIME ZONE 'UTC')
+		AND p.role = ANY($1)
+		GROUP BY p.role, w.author, i.projectcharge, yearmonth
+		ORDER BY w.author, i.projectcharge, yearmonth;`
+
+	err := s.DB.Select(&result, query, roles, startDate, endDate)
+	return result, err
+}
+
 // ProjectName returns the summary of the epic or fixed version for display purposes.
 func (s *Postgres) ProjectName(epicOrVersion string) (string, error) {
 	var name string

@@ -55,6 +55,11 @@ type Repo interface {
 	// Weekly hours by author
 	DailyHoursByRole(roles []string, startDate, endDate time.Time) ([]types.DailyHours, error)
 
+	// Timesheet hours by author, grouped by raw project charge and year-month.
+	// from is inclusive, to is exclusive (first day of the month after the last
+	// month to include).
+	TimesheetHours(roles []string, from, to time.Time) ([]types.TimesheetHours, error)
+
 	// Project charge hours reporting (fromMonth/toMonth are YYYY-MM, empty = default range)
 	ProjectChargeHours(fromMonth, toMonth string, excludedProjects []string) ([]types.ProjectChargeHours, error)
 
