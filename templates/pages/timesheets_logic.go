@@ -2,6 +2,7 @@ package pages
 
 import (
 	"sort"
+	"time"
 
 	"github.com/mkobaly/jiraworklog/types"
 )
@@ -107,4 +108,20 @@ func trendClass(cur, prev float64, isFirst bool) string {
 		return "bg-red-50"
 	}
 	return ""
+}
+
+// timeParseMonth parses a YYYY-MM string. Wrapper kept here so the .templ file
+// does not need to import the time package directly.
+func timeParseMonth(ym string) (time.Time, error) {
+	return time.Parse("2006-01", ym)
+}
+
+// prevMonthHours returns the hours for the month immediately before index i in
+// months for the given charge row (0 when i == 0). Used to feed trendClass from
+// the template.
+func prevMonthHours(charge TimesheetChargeRow, months []string, i int) float64 {
+	if i == 0 {
+		return 0
+	}
+	return charge.MonthHours[months[i-1]]
 }
