@@ -129,6 +129,7 @@ func main() {
 	reports.GET("/project-hours/csv", handler.GetProjectChargeHoursCSV)
 	reports.GET("/weekly-hours", handler.GetWeeklyHours)
 	reports.GET("/timesheets", handler.GetTimesheets)
+	reports.GET("/timesheets/csv", handler.GetTimesheetsCSV)
 	reports.GET("/time-tracking", handler.GetProjectTimeTracking)
 	reports.GET("/project-kpis", handler.GetProjectKPIs)
 

@@ -16,7 +16,7 @@ func TestPivotTimesheet(t *testing.T) {
 		{Author: "amy.jones", Role: "qa", ProjectCharge: "TD-100", YearMonth: "2026-02", Hours: 8},
 	}
 
-	authors := pivotTimesheet(data, months)
+	authors := PivotTimesheet(data, months)
 	require.Len(t, authors, 2)
 
 	// Authors sorted alphabetically: amy before bob.

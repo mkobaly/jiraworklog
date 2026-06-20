@@ -40,7 +40,7 @@ templ Timesheets(data []types.TimesheetHours, months []string, allRoles []string
 			<p class="text-gray-600 mt-2">Monthly hours by author, grouped by project charge. Cells turn subtly green or red when a month is more than 10% above or below the prior month.</p>
 		</div>
 		<!-- Filters -->
-		<form method="GET" action="/reports/timesheets" class="mb-6 bg-white rounded-lg shadow-md p-4">
+		<form id="timesheetFilterForm" method="GET" action="/reports/timesheets" class="mb-6 bg-white rounded-lg shadow-md p-4">
 			<div class="flex flex-wrap items-end gap-6">
 				<div class="flex items-center gap-2">
 					<label class="text-sm font-medium text-gray-700 whitespace-nowrap">From:</label>
@@ -112,8 +112,14 @@ templ Timesheets(data []types.TimesheetHours, months []string, allRoles []string
 						</div>
 					</div>
 				</div>
-				<div>
+				<div class="flex gap-2">
 					<button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-hidden focus:ring-2 focus:ring-blue-500">Apply</button>
+					<button type="button" onclick="exportTimesheetCSV()" class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-hidden focus:ring-2 focus:ring-green-500">
+						<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+						</svg>
+						Export CSV
+					</button>
 				</div>
 			</div>
 		</form>
@@ -147,7 +153,7 @@ templ Timesheets(data []types.TimesheetHours, months []string, allRoles []string
 							</tr>
 						</thead>
 						<tbody class="bg-white divide-y divide-gray-200">
-							for _, author := range pivotTimesheet(data, months) {
+							for _, author := range PivotTimesheet(data, months) {
 								for ci, charge := range author.Charges {
 									<tr class="hover:bg-gray-50">
 										if ci == 0 {
@@ -205,5 +211,10 @@ templ timesheetsScript() {
 			if (countEl) countEl.textContent = checked.length;
 		}
 		document.querySelectorAll('.role-checkbox').forEach(cb => cb.addEventListener('change', updateSelectedCount));
+			function exportTimesheetCSV() {
+				const form = document.getElementById('timesheetFilterForm');
+				const params = new URLSearchParams(new FormData(form));
+				window.location.href = '/reports/timesheets/csv?' + params.toString();
+			}
 	</script>
 }

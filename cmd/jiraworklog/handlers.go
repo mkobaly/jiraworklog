@@ -1000,6 +1000,57 @@ func (h *Handler) GetTimesheets(c echo.Context) error {
 	return c.JSON(http.StatusOK, data)
 }
 
+// GetTimesheetsCSV exports the timesheet as CSV: one row per author + project
+// charge, with a column per month in the selected range. No summary rows.
+func (h *Handler) GetTimesheetsCSV(c echo.Context) error {
+	allRoles, err := h.repo.AllRoles()
+	if err != nil {
+		h.logger.Error("error fetching roles", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch roles")
+	}
+
+	selectedRoles := c.QueryParams()["roles"]
+	if len(selectedRoles) == 0 {
+		selectedRoles = allRoles
+	}
+
+	now := time.Now()
+	fromMonth, toMonth := defaultAndClampRange(c.QueryParam("from"), c.QueryParam("to"), now)
+	months := enumerateMonths(fromMonth, toMonth)
+
+	start, end := monthRangeToTimes(fromMonth, toMonth)
+	data, err := h.repo.TimesheetHours(selectedRoles, start, end)
+	if err != nil {
+		h.logger.Error("error fetching timesheet hours", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch timesheet hours")
+	}
+
+	// Reuse the same pivot the page uses so CSV rows match the table (minus the
+	// summary rows the user asked to omit).
+	authors := pages.PivotTimesheet(data, months)
+
+	var csv strings.Builder
+	csv.WriteString("Author,Project Charge")
+	for _, m := range months {
+		fmt.Fprintf(&csv, ",%q", m)
+	}
+	csv.WriteString("\n")
+
+	for _, author := range authors {
+		for _, charge := range author.Charges {
+			fmt.Fprintf(&csv, "%q,%q", author.Author, charge.ProjectCharge)
+			for _, m := range months {
+				fmt.Fprintf(&csv, ",%.2f", charge.MonthHours[m])
+			}
+			csv.WriteString("\n")
+		}
+	}
+
+	c.Response().Header().Set("Content-Type", "text/csv")
+	c.Response().Header().Set("Content-Disposition", "attachment; filename=timesheets.csv")
+	return c.String(http.StatusOK, csv.String())
+}
+
 func (h *Handler) GetProjectTimeTracking(c echo.Context) error {
 	// Get fixed version from query param
 	fixedVersion := c.QueryParam("version")

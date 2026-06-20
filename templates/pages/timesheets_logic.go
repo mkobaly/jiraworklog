@@ -25,11 +25,11 @@ type TimesheetAuthor struct {
 	GrandTotal  float64
 }
 
-// pivotTimesheet transforms flat TimesheetHours rows into author-centric data.
+// PivotTimesheet transforms flat TimesheetHours rows into author-centric data.
 // months is the ordered list of columns to populate (so months with no hours
 // still get a zero entry). Authors are sorted alphabetically and each author's
 // charges are sorted alphabetically.
-func pivotTimesheet(data []types.TimesheetHours, months []string) []TimesheetAuthor {
+func PivotTimesheet(data []types.TimesheetHours, months []string) []TimesheetAuthor {
 	type acc struct {
 		role    string
 		charges map[string]*TimesheetChargeRow

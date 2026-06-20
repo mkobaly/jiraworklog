@@ -74,7 +74,7 @@ func Timesheets(data []types.TimesheetHours, months []string, allRoles []string,
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"mb-6\"><h1 class=\"text-3xl font-bold text-gray-900\">Timesheets</h1><p class=\"text-gray-600 mt-2\">Monthly hours by author, grouped by project charge. Cells turn subtly green or red when a month is more than 10% above or below the prior month.</p></div><!-- Filters --> <form method=\"GET\" action=\"/reports/timesheets\" class=\"mb-6 bg-white rounded-lg shadow-md p-4\"><div class=\"flex flex-wrap items-end gap-6\"><div class=\"flex items-center gap-2\"><label class=\"text-sm font-medium text-gray-700 whitespace-nowrap\">From:</label> <input type=\"month\" name=\"from\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"mb-6\"><h1 class=\"text-3xl font-bold text-gray-900\">Timesheets</h1><p class=\"text-gray-600 mt-2\">Monthly hours by author, grouped by project charge. Cells turn subtly green or red when a month is more than 10% above or below the prior month.</p></div><!-- Filters --> <form id=\"timesheetFilterForm\" method=\"GET\" action=\"/reports/timesheets\" class=\"mb-6 bg-white rounded-lg shadow-md p-4\"><div class=\"flex flex-wrap items-end gap-6\"><div class=\"flex items-center gap-2\"><label class=\"text-sm font-medium text-gray-700 whitespace-nowrap\">From:</label> <input type=\"month\" name=\"from\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -195,7 +195,7 @@ func Timesheets(data []types.TimesheetHours, months []string, allRoles []string,
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</div></div></div></div><div><button type=\"submit\" class=\"px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-hidden focus:ring-2 focus:ring-blue-500\">Apply</button></div></div></form><!-- Legend --> <div class=\"mb-4 flex flex-wrap gap-4 text-sm\"><div class=\"flex items-center\"><span class=\"w-3 h-3 bg-green-50 border border-green-200 rounded mr-2\"></span> <span>More than 10% above prior month</span></div><div class=\"flex items-center\"><span class=\"w-3 h-3 bg-red-50 border border-red-200 rounded mr-2\"></span> <span>More than 10% below prior month</span></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</div></div></div></div><div class=\"flex gap-2\"><button type=\"submit\" class=\"px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-hidden focus:ring-2 focus:ring-blue-500\">Apply</button> <button type=\"button\" onclick=\"exportTimesheetCSV()\" class=\"inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-hidden focus:ring-2 focus:ring-green-500\"><svg class=\"w-4 h-4 mr-1\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z\"></path></svg> Export CSV</button></div></div></form><!-- Legend --> <div class=\"mb-4 flex flex-wrap gap-4 text-sm\"><div class=\"flex items-center\"><span class=\"w-3 h-3 bg-green-50 border border-green-200 rounded mr-2\"></span> <span>More than 10% above prior month</span></div><div class=\"flex items-center\"><span class=\"w-3 h-3 bg-red-50 border border-red-200 rounded mr-2\"></span> <span>More than 10% below prior month</span></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -217,7 +217,7 @@ func Timesheets(data []types.TimesheetHours, months []string, allRoles []string,
 					var templ_7745c5c3_Var10 string
 					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(formatMonthLabel(m))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timesheets.templ`, Line: 144, Col: 136}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timesheets.templ`, Line: 150, Col: 136}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 					if templ_7745c5c3_Err != nil {
@@ -232,7 +232,7 @@ func Timesheets(data []types.TimesheetHours, months []string, allRoles []string,
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				for _, author := range pivotTimesheet(data, months) {
+				for _, author := range PivotTimesheet(data, months) {
 					for ci, charge := range author.Charges {
 						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<tr class=\"hover:bg-gray-50\">")
 						if templ_7745c5c3_Err != nil {
@@ -246,7 +246,7 @@ func Timesheets(data []types.TimesheetHours, months []string, allRoles []string,
 							var templ_7745c5c3_Var11 string
 							templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(author.Charges)))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timesheets.templ`, Line: 154, Col: 166}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timesheets.templ`, Line: 160, Col: 166}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 							if templ_7745c5c3_Err != nil {
@@ -259,7 +259,7 @@ func Timesheets(data []types.TimesheetHours, months []string, allRoles []string,
 							var templ_7745c5c3_Var12 string
 							templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(author.Author)
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timesheets.templ`, Line: 155, Col: 27}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timesheets.templ`, Line: 161, Col: 27}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 							if templ_7745c5c3_Err != nil {
@@ -272,7 +272,7 @@ func Timesheets(data []types.TimesheetHours, months []string, allRoles []string,
 							var templ_7745c5c3_Var13 string
 							templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(author.Role)
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timesheets.templ`, Line: 156, Col: 72}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timesheets.templ`, Line: 162, Col: 72}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 							if templ_7745c5c3_Err != nil {
@@ -290,7 +290,7 @@ func Timesheets(data []types.TimesheetHours, months []string, allRoles []string,
 						var templ_7745c5c3_Var14 string
 						templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(charge.ProjectCharge)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timesheets.templ`, Line: 159, Col: 94}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timesheets.templ`, Line: 165, Col: 94}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 						if templ_7745c5c3_Err != nil {
@@ -326,7 +326,7 @@ func Timesheets(data []types.TimesheetHours, months []string, allRoles []string,
 							var templ_7745c5c3_Var17 string
 							templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(fmtHours(charge.MonthHours[m]))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timesheets.templ`, Line: 162, Col: 44}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timesheets.templ`, Line: 168, Col: 44}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 							if templ_7745c5c3_Err != nil {
@@ -344,7 +344,7 @@ func Timesheets(data []types.TimesheetHours, months []string, allRoles []string,
 						var templ_7745c5c3_Var18 string
 						templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.1f", charge.Total))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timesheets.templ`, Line: 165, Col: 124}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timesheets.templ`, Line: 171, Col: 124}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 						if templ_7745c5c3_Err != nil {
@@ -367,7 +367,7 @@ func Timesheets(data []types.TimesheetHours, months []string, allRoles []string,
 						var templ_7745c5c3_Var19 string
 						templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.1f", author.MonthTotals[m]))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timesheets.templ`, Line: 172, Col: 110}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timesheets.templ`, Line: 178, Col: 110}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 						if templ_7745c5c3_Err != nil {
@@ -385,7 +385,7 @@ func Timesheets(data []types.TimesheetHours, months []string, allRoles []string,
 					var templ_7745c5c3_Var20 string
 					templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.1f", author.GrandTotal))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timesheets.templ`, Line: 174, Col: 117}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/timesheets.templ`, Line: 180, Col: 117}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 					if templ_7745c5c3_Err != nil {
@@ -440,7 +440,7 @@ func timesheetsScript() templ.Component {
 			templ_7745c5c3_Var21 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<script>\n\t\tfunction toggleRoleDropdown() {\n\t\t\tdocument.getElementById('role-dropdown').classList.toggle('hidden');\n\t\t}\n\t\tdocument.addEventListener('click', function(event) {\n\t\t\tconst dropdown = document.getElementById('role-dropdown');\n\t\t\tconst btn = document.getElementById('role-dropdown-btn');\n\t\t\tif (dropdown && btn && !dropdown.contains(event.target) && !btn.contains(event.target)) {\n\t\t\t\tdropdown.classList.add('hidden');\n\t\t\t}\n\t\t});\n\t\tfunction toggleAllRoles(selectAllCheckbox) {\n\t\t\tdocument.querySelectorAll('.role-checkbox').forEach(cb => { cb.checked = selectAllCheckbox.checked; });\n\t\t\tupdateSelectedCount();\n\t\t}\n\t\tfunction updateSelectedCount() {\n\t\t\tconst checked = document.querySelectorAll('.role-checkbox:checked');\n\t\t\tconst countEl = document.getElementById('selected-count');\n\t\t\tif (countEl) countEl.textContent = checked.length;\n\t\t}\n\t\tdocument.querySelectorAll('.role-checkbox').forEach(cb => cb.addEventListener('change', updateSelectedCount));\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<script>\n\t\tfunction toggleRoleDropdown() {\n\t\t\tdocument.getElementById('role-dropdown').classList.toggle('hidden');\n\t\t}\n\t\tdocument.addEventListener('click', function(event) {\n\t\t\tconst dropdown = document.getElementById('role-dropdown');\n\t\t\tconst btn = document.getElementById('role-dropdown-btn');\n\t\t\tif (dropdown && btn && !dropdown.contains(event.target) && !btn.contains(event.target)) {\n\t\t\t\tdropdown.classList.add('hidden');\n\t\t\t}\n\t\t});\n\t\tfunction toggleAllRoles(selectAllCheckbox) {\n\t\t\tdocument.querySelectorAll('.role-checkbox').forEach(cb => { cb.checked = selectAllCheckbox.checked; });\n\t\t\tupdateSelectedCount();\n\t\t}\n\t\tfunction updateSelectedCount() {\n\t\t\tconst checked = document.querySelectorAll('.role-checkbox:checked');\n\t\t\tconst countEl = document.getElementById('selected-count');\n\t\t\tif (countEl) countEl.textContent = checked.length;\n\t\t}\n\t\tdocument.querySelectorAll('.role-checkbox').forEach(cb => cb.addEventListener('change', updateSelectedCount));\n\t\t\tfunction exportTimesheetCSV() {\n\t\t\t\tconst form = document.getElementById('timesheetFilterForm');\n\t\t\t\tconst params = new URLSearchParams(new FormData(form));\n\t\t\t\twindow.location.href = '/reports/timesheets/csv?' + params.toString();\n\t\t\t}\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
