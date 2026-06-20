@@ -345,8 +345,8 @@ func (s *Postgres) TimesheetHours(roles []string, startDate, endDate time.Time) 
 		FROM worklog w
 		JOIN issue i ON w.issueid = i.id
 		JOIN people p ON w.author = p.name
-		WHERE w.date >= ($2 AT TIME ZONE 'UTC')
-		AND w.date < ($3 AT TIME ZONE 'UTC')
+		WHERE w.date >= $2
+		AND w.date < $3
 		AND p.role = ANY($1)
 		GROUP BY p.role, w.author, i.projectcharge, yearmonth
 		ORDER BY w.author, i.projectcharge, yearmonth;`
