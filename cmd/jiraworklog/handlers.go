@@ -965,6 +965,41 @@ func (h *Handler) GetWeeklyHours(c echo.Context) error {
 	return c.JSON(http.StatusOK, data)
 }
 
+func (h *Handler) GetTimesheets(c echo.Context) error {
+	// Available roles for the filter.
+	allRoles, err := h.repo.AllRoles()
+	if err != nil {
+		h.logger.Error("error fetching roles", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch roles")
+	}
+
+	// Selected roles default to all.
+	selectedRoles := c.QueryParams()["roles"]
+	if len(selectedRoles) == 0 {
+		selectedRoles = allRoles
+	}
+
+	// Normalize the month range: default blanks to the previous completed month
+	// and clamp out the current/future months.
+	now := time.Now()
+	fromMonth, toMonth := defaultAndClampRange(c.QueryParam("from"), c.QueryParam("to"), now)
+	maxMonth := previousMonth(now)
+	months := enumerateMonths(fromMonth, toMonth)
+
+	start, end := monthRangeToTimes(fromMonth, toMonth)
+	data, err := h.repo.TimesheetHours(selectedRoles, start, end)
+	if err != nil {
+		h.logger.Error("error fetching timesheet hours", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch timesheet hours")
+	}
+
+	if wantsHTML(c) {
+		return pages.Timesheets(data, months, allRoles, selectedRoles, fromMonth, toMonth, maxMonth).Render(c.Request().Context(), c.Response().Writer)
+	}
+
+	return c.JSON(http.StatusOK, data)
+}
+
 func (h *Handler) GetProjectTimeTracking(c echo.Context) error {
 	// Get fixed version from query param
 	fixedVersion := c.QueryParam("version")
