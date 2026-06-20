@@ -1,0 +1,535 @@
+package pages
+
+import (
+	"encoding/json"
+	"fmt"
+	"time"
+
+	"github.com/mkobaly/jiraworklog/templates/layouts"
+	"github.com/mkobaly/jiraworklog/types"
+)
+
+// kpiRow renders one metric row across all teams. metricKey controls
+// formatting (e.g. "cycle" → days, others → %/count). lowerIsBetter is
+// passed to directionArrow.
+templ kpiRow(label string, current []types.MonthlyTeamMetrics, prior []types.MonthlyTeamMetrics, metricKey string, lowerIsBetter bool) {
+	<tr>
+		<td class="py-3 pr-4 font-medium text-gray-700">{ label }</td>
+		for i, cur := range current {
+			<td class="py-3 px-4 text-center align-top">
+				if !cur.HasClosedIssues() && (metricKey == "cycle" || metricKey == "throughput" || metricKey == "flow" || metricKey == "failedqa") {
+					<span class="text-gray-300">—</span>
+				} else if metricKey == "escape" && !cur.HasDefectData() {
+					<span class="text-gray-300">—</span>
+				} else {
+					<div class="flex items-center justify-center gap-1.5">
+						<span class="text-lg font-semibold text-gray-800">
+							switch metricKey {
+								case "cycle":
+									{ fmtDays(cur.MedianCycleTimeSecs) }
+								case "throughput":
+									{ fmtCount(cur.ClosedIssueCount) }
+								case "flow":
+									{ fmtPct(cur.FlowEfficiencyPct) }
+								case "failedqa":
+									{ fmtPct(cur.FailedQARatioPct) }
+								case "escape":
+									{ fmtPct(cur.DefectEscapeRatePct) }
+							}
+						</span>
+						@arrowCell(cur, priorOrEmpty(prior, i), metricKey, lowerIsBetter)
+					</div>
+					<canvas
+						data-spark-team={ teamFor(current, i) }
+						data-spark-metric={ metricKey }
+						class="mt-1 block mx-auto"
+						width="80"
+						height="20"
+					></canvas>
+					if metricKey == "cycle" {
+						<div class="text-[10px] text-gray-400">{ sparsenessNote(cur) }</div>
+					}
+				}
+			</td>
+		}
+	</tr>
+}
+
+templ arrowCell(cur types.MonthlyTeamMetrics, prior types.MonthlyTeamMetrics, metricKey string, lowerIsBetter bool) {
+	{{
+		var c, p float64
+		switch metricKey {
+		case "cycle":
+			c, p = cur.MedianCycleTimeSecs, prior.MedianCycleTimeSecs
+		case "throughput":
+			c, p = float64(cur.ClosedIssueCount), float64(prior.ClosedIssueCount)
+		case "flow":
+			c, p = cur.FlowEfficiencyPct, prior.FlowEfficiencyPct
+		case "failedqa":
+			c, p = cur.FailedQARatioPct, prior.FailedQARatioPct
+		case "escape":
+			c, p = cur.DefectEscapeRatePct, prior.DefectEscapeRatePct
+		}
+		// priorOrEmpty returns a zero-value struct (Team == "") when no row
+		// exists for the prior month (e.g., user selected the oldest month
+		// in the window). Pass that signal through so the arrow renders as
+		// flat (▬) instead of a misleading green/red direction off zero.
+		hasPrior := prior.Team != ""
+		arrow, color := directionArrow(c, p, lowerIsBetter, hasPrior)
+	}}
+	<span class={ "text-sm font-bold", color }>{ arrow }</span>
+}
+
+// LeadershipDashboard renders the all-teams monthly KPI comparison grid.
+// `rows` is expected to contain (team × year_month) rows for a 13-month
+// window, ordered by (team, year_month). `selectedMonth` is the YYYY-MM the
+// user picked in the dropdown; empty string means "default to last complete
+// month."
+templ LeadershipDashboard(rows []types.MonthlyTeamMetrics, teams []string, selectedMonth string, monthOptions []string) {
+	@layouts.Base("Leadership Dashboard") {
+		<div class="space-y-6">
+			<!-- Header -->
+			<div class="bg-white rounded-lg shadow p-6 flex items-center justify-between flex-wrap gap-3">
+				<div class="flex items-center gap-3">
+					<h1 class="text-2xl font-bold text-gray-800">Leadership Dashboard</h1>
+					<button
+						type="button"
+						onclick="document.getElementById('metricsHelpModal').classList.remove('hidden')"
+						class="w-7 h-7 rounded-full border border-gray-300 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition flex items-center justify-center text-sm font-semibold"
+						aria-label="Help: what these metrics mean"
+						title="What do these metrics mean?"
+					>?</button>
+				</div>
+				<!--
+					data-turbo-frame=leadership-content makes the form submission
+					target the <turbo-frame> below — Turbo swaps just its contents
+					instead of the whole <body>. data-turbo-action=advance pushes
+					the new URL onto history so the page is shareable / bookmarkable.
+					requestSubmit() (vs submit()) is mandatory because Turbo only
+					intercepts the submit *event*; plain .submit() bypasses it.
+				-->
+				<form method="GET" action="/dashboard/leadership"
+					data-turbo-frame="leadership-content"
+					data-turbo-action="advance"
+					class="flex items-center gap-2">
+					<label for="month" class="text-sm font-medium text-gray-700">Month</label>
+					<select id="month" name="month" onchange="this.form.requestSubmit()" class="border border-gray-300 rounded-md px-3 py-1.5 text-sm">
+						for _, opt := range monthOptions {
+							<option value={ opt } if opt == selectedMonth { selected }>{ formatMonthOption(opt) }</option>
+						}
+					</select>
+				</form>
+			</div>
+
+			<turbo-frame id="leadership-content" class="block space-y-6">
+				if len(rows) == 0 {
+					<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center text-yellow-700">
+						No monthly data yet. Sync must have run at least once.
+					</div>
+				} else {
+					<!-- KPI grid -->
+					<div class="bg-white rounded-lg shadow p-6 overflow-x-auto">
+						<table class="min-w-full text-sm">
+							<thead>
+								<tr class="text-left text-gray-500 uppercase tracking-wide text-xs">
+									<th class="py-2 pr-4">Metric</th>
+									for _, t := range teams {
+										<th class="py-2 px-4 text-center">
+											<!-- data-turbo-frame=_top escapes the current frame so clicking goes to the manager page fully -->
+											<a href={ templ.SafeURL("/dashboard/manager?team=" + t) } data-turbo-frame="_top" class="text-blue-600 hover:underline" title={ t }>{ teamFriendlyName(t) }</a>
+										</th>
+									}
+								</tr>
+							</thead>
+							<tbody class="divide-y divide-gray-100">
+								@kpiRow("Cycle Time (median)", pickMonthRows(rows, teams, selectedMonth), priorMonthRows(rows, teams, selectedMonth), "cycle", true)
+								@kpiRow("Throughput", pickMonthRows(rows, teams, selectedMonth), priorMonthRows(rows, teams, selectedMonth), "throughput", false)
+								@kpiRow("Flow Efficiency", pickMonthRows(rows, teams, selectedMonth), priorMonthRows(rows, teams, selectedMonth), "flow", false)
+								@kpiRow("Failed QA Ratio", pickMonthRows(rows, teams, selectedMonth), priorMonthRows(rows, teams, selectedMonth), "failedqa", true)
+								@kpiRow("Defect Escape Rate", pickMonthRows(rows, teams, selectedMonth), priorMonthRows(rows, teams, selectedMonth), "escape", true)
+							</tbody>
+						</table>
+					</div>
+
+					<div class="bg-white rounded-lg shadow p-6">
+						<h2 class="text-lg font-semibold text-gray-700 mb-1">Stability (Customer Bugs)</h2>
+						<p class="text-xs text-gray-400 mb-4">New bugs opened, bugs closed, total open bugs per month.</p>
+						<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+							for _, t := range teams {
+								<div>
+									<p class="text-sm font-medium text-gray-700 text-center mb-2" title={ t }>{ teamFriendlyName(t) }</p>
+									<div class="h-48">
+										<canvas data-stability-team={ t }></canvas>
+									</div>
+								</div>
+							}
+						</div>
+						<div id="stabilityData" data-series={ stabilitySeries(rows, teams) } style="display:none;"></div>
+					</div>
+
+					<div id="sparklineData" data-series={ sparklineSeries(rows, teams) } style="display:none;"></div>
+					@sparklineBootstrapScript()
+					@stabilityBootstrapScript()
+				}
+
+				<!-- Footer caveat -->
+				<p class="text-xs text-gray-400 italic text-center">
+					Each project includes both project-team and stability-team work; v2 will split these.
+				</p>
+			</turbo-frame>
+
+			@metricsHelpModal()
+		</div>
+	}
+}
+
+// metricsHelpModal renders the help dialog explaining each KPI. Hidden by
+// default; toggled by the "?" button in the header. Clicking the backdrop or
+// the close button hides it again.
+templ metricsHelpModal() {
+	<div
+		id="metricsHelpModal"
+		class="hidden fixed inset-0 z-50 flex items-center justify-center p-4"
+		onclick="if (event.target === this) this.classList.add('hidden')"
+	>
+		<!-- Backdrop -->
+		<div class="fixed inset-0 bg-black/50"></div>
+
+		<!-- Dialog -->
+		<div class="relative bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto">
+			<div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+				<h2 class="text-xl font-bold text-gray-800">What these metrics mean</h2>
+				<button
+					type="button"
+					onclick="document.getElementById('metricsHelpModal').classList.add('hidden')"
+					class="text-gray-400 hover:text-gray-700 text-2xl leading-none px-2"
+					aria-label="Close"
+				>&times;</button>
+			</div>
+
+			<div class="px-6 py-5 space-y-6 text-sm text-gray-700">
+				@helpCard(
+					"Cycle Time (median)",
+					"Median time issues spend actively moving through Development and QA — the \"typical\" elapsed time from dev start to QA done.",
+					"Sum of time in Dev statuses (In Development, In Progress, Code Complete, Code Merged, In Review) plus QA statuses (In QA, Failed QA), per issue. Median across all issues closed in the month.",
+					"Lower cycle time = faster delivery. A rising trend is an early warning of bottlenecks — more bugs, more rework, harder problems, or distractions. Use it to ask \"what changed?\" when it spikes.",
+				)
+				@helpCard(
+					"Throughput",
+					"Count of issues closed in the month, per team.",
+					"Issues of type Story, Bug, Hardware Bug, Customer Bug, or HW / FW Customer Bug that entered Done / Closed / Cancelled / Awaiting Release for the first time in the month.",
+					"Combined with cycle time, this is the predictability signal: steady throughput + steady cycle time = predictable team. Erratic throughput = lumpy delivery, hard to plan around.",
+				)
+				@helpCard(
+					"Flow Efficiency",
+					"What percentage of an issue's elapsed time was spent actively progressing vs waiting in a queue or blocked.",
+					"Active (Dev + QA) seconds divided by total (Dev + QA + Waiting + Done) seconds, summed across all issues closed in the month, expressed as a percentage.",
+					"A team can have OK cycle time AND terrible flow efficiency — they're just slogging through inefficient process. Low flow efficiency points to handoff delays, blocker queues, or scheduling problems, not effort.",
+				)
+				@helpCard(
+					"Failed QA Ratio",
+					"Percent of Stories closed this month that failed QA at least once (the \"not first-time-right\" rate).",
+					"Numerator = stories closed in month that hit \"Failed QA\" status at any point. Denominator = all stories closed in month. Bugs are excluded (rework on bug fixes is expected). Tasks are excluded (they don't go through QA).",
+					"High Failed-QA Ratio means stories aren't actually ready when devs hand them off — points to unclear requirements, insufficient dev testing, or weak dev-QA collaboration. This is your upstream quality signal.",
+				)
+				@helpCard(
+					"Defect Escape Rate",
+					"Percent of bugs found this month that came from customers (escaped to production) vs were found internally.",
+					"Customer bugs (Customer Bug + HW / FW Customer Bug) divided by all bugs (customer + internal Bug + Hardware Bug), bucketed by the month the bug was created.",
+					"Lower is better. This is the metric customers feel most directly. High escape rate often correlates with weak test coverage, rushed releases, or missing edge-case testing — leadership-visible because it impacts customer trust.",
+				)
+				@helpCard(
+					"Stability (Customer Bugs)",
+					"Trend of new customer-reported bugs vs ones we've closed, plus the running total open.",
+					"New = customer bugs filed in the month. Closed = customer bugs resolved (or moved to Awaiting Release) in the month. Open = baseline + cumulative (new - closed) carried forward month over month.",
+					"This is the direct customer-pain signal. New > Closed = backlog growing, customers filing faster than we fix. Closed > New = team catching up. The Open trend answers \"are we getting better or worse?\"",
+				)
+
+				<p class="text-xs text-gray-400 italic pt-2 border-t border-gray-100">
+					Direction arrows compare the current month to the prior month. Green ▲ / ▼ = improving for that metric; red = regressing; gray ▬ = within ±5% (treated as flat).
+				</p>
+			</div>
+		</div>
+	</div>
+}
+
+// helpCard is one metric's explanation block inside the help modal.
+templ helpCard(name, what, how, soWhat string) {
+	<div>
+		<h3 class="text-base font-semibold text-gray-800 mb-2">{ name }</h3>
+		<dl class="space-y-1.5">
+			<div class="flex gap-2">
+				<dt class="font-medium text-gray-600 whitespace-nowrap">What:</dt>
+				<dd>{ what }</dd>
+			</div>
+			<div class="flex gap-2">
+				<dt class="font-medium text-gray-600 whitespace-nowrap">How:</dt>
+				<dd>{ how }</dd>
+			</div>
+			<div class="flex gap-2">
+				<dt class="font-medium text-gray-600 whitespace-nowrap">So what:</dt>
+				<dd>{ soWhat }</dd>
+			</div>
+		</dl>
+	</div>
+}
+
+// teamFriendlyName maps a Jira project key to the friendly label shown on
+// the leadership dashboard. The underlying data (sparkline lookup keys,
+// stability canvas data attributes, manager-page URLs) still uses the raw
+// project key; only what humans see is translated. Unknown keys fall
+// through to themselves so adding a new team without updating this map
+// degrades gracefully.
+func teamFriendlyName(projectKey string) string {
+	switch projectKey {
+	case "IDM":
+		return "Cloud"
+	case "SYM":
+		return "Symmetry"
+	case "ESG":
+		return "Hardware / Firmware"
+	default:
+		return projectKey
+	}
+}
+
+// formatMonthOption turns "2026-04" into "April 2026" for the dropdown.
+func formatMonthOption(yyyymm string) string {
+	t, err := time.Parse("2006-01", yyyymm)
+	if err != nil {
+		return yyyymm
+	}
+	return t.Format("January 2006")
+}
+
+// pickMonthRows returns the rows whose YearMonth equals selectedMonth, in the
+// same team order as `teams`.
+func pickMonthRows(rows []types.MonthlyTeamMetrics, teams []string, selectedMonth string) []types.MonthlyTeamMetrics {
+	byTeam := map[string]types.MonthlyTeamMetrics{}
+	for _, r := range rows {
+		if r.YearMonth == selectedMonth {
+			byTeam[r.Team] = r
+		}
+	}
+	out := make([]types.MonthlyTeamMetrics, 0, len(teams))
+	for _, t := range teams {
+		out = append(out, byTeam[t])
+	}
+	return out
+}
+
+// priorMonthRows returns the rows for the month immediately preceding
+// selectedMonth, ordered by `teams`. Used for direction-arrow comparison.
+func priorMonthRows(rows []types.MonthlyTeamMetrics, teams []string, selectedMonth string) []types.MonthlyTeamMetrics {
+	prior := priorYearMonth(selectedMonth)
+	byTeam := map[string]types.MonthlyTeamMetrics{}
+	for _, r := range rows {
+		if r.YearMonth == prior {
+			byTeam[r.Team] = r
+		}
+	}
+	out := make([]types.MonthlyTeamMetrics, 0, len(teams))
+	for _, t := range teams {
+		out = append(out, byTeam[t])
+	}
+	return out
+}
+
+func priorYearMonth(yyyymm string) string {
+	t, err := time.Parse("2006-01", yyyymm)
+	if err != nil {
+		return yyyymm
+	}
+	return t.AddDate(0, -1, 0).Format("2006-01")
+}
+
+// directionArrow returns (arrow_glyph, tailwind-class) comparing current vs
+// prior, where `lowerIsBetter` indicates whether a decrease is good (e.g.
+// cycle time). Threshold of 5% relative change is treated as flat. When
+// `hasPrior` is false (no prior-month row exists for this team), the arrow
+// is flat regardless of the current value — avoids implying improvement or
+// regression off a phantom zero.
+func directionArrow(current, prior float64, lowerIsBetter, hasPrior bool) (string, string) {
+	if !hasPrior {
+		return "▬", "text-gray-400"
+	}
+	if prior == 0 && current == 0 {
+		return "▬", "text-gray-400"
+	}
+	var rel float64
+	if prior == 0 {
+		rel = 1.0
+	} else {
+		rel = (current - prior) / prior
+	}
+	if rel > -0.05 && rel < 0.05 {
+		return "▬", "text-gray-400"
+	}
+	improving := (rel < 0 && lowerIsBetter) || (rel > 0 && !lowerIsBetter)
+	if rel > 0 {
+		if improving {
+			return "▲", "text-green-600"
+		}
+		return "▲", "text-red-600"
+	}
+	if improving {
+		return "▼", "text-green-600"
+	}
+	return "▼", "text-red-600"
+}
+
+func fmtDays(secs float64) string {
+	if secs <= 0 {
+		return "—"
+	}
+	days := secs / 86400
+	return fmt.Sprintf("%.1fd", days)
+}
+
+func fmtPct(pct float64) string {
+	return fmt.Sprintf("%.0f%%", pct)
+}
+
+func fmtCount(n int) string {
+	if n == 0 {
+		return "—"
+	}
+	return fmt.Sprintf("%d", n)
+}
+
+// sparsenessNote returns a "* n=3" caveat when the closed-issue count is sparse.
+func sparsenessNote(r types.MonthlyTeamMetrics) string {
+	if r.IsSparseSample() {
+		return fmt.Sprintf("* n=%d", r.ClosedIssueCount)
+	}
+	return ""
+}
+
+func priorOrEmpty(prior []types.MonthlyTeamMetrics, i int) types.MonthlyTeamMetrics {
+	if i < len(prior) {
+		return prior[i]
+	}
+	return types.MonthlyTeamMetrics{}
+}
+
+// sparklineSeries pivots all 13-month rows into per-(team,metric) numeric
+// series for client-side rendering. Returns a JSON blob.
+func sparklineSeries(rows []types.MonthlyTeamMetrics, teams []string) string {
+	metrics := []string{"cycle", "throughput", "flow", "failedqa", "escape"}
+	out := map[string]map[string][]float64{}
+	for _, m := range metrics {
+		out[m] = map[string][]float64{}
+		for _, t := range teams {
+			out[m][t] = []float64{}
+		}
+	}
+	// rows are ordered (team, year_month asc). Walk and append.
+	for _, r := range rows {
+		out["cycle"][r.Team]      = append(out["cycle"][r.Team], r.MedianCycleTimeSecs/86400.0)
+		out["throughput"][r.Team] = append(out["throughput"][r.Team], float64(r.ClosedIssueCount))
+		out["flow"][r.Team]       = append(out["flow"][r.Team], r.FlowEfficiencyPct)
+		out["failedqa"][r.Team]   = append(out["failedqa"][r.Team], r.FailedQARatioPct)
+		out["escape"][r.Team]     = append(out["escape"][r.Team], r.DefectEscapeRatePct)
+	}
+	b, _ := json.Marshal(out)
+	return string(b)
+}
+
+func teamFor(current []types.MonthlyTeamMetrics, i int) string {
+	if i < len(current) {
+		return current[i].Team
+	}
+	return ""
+}
+
+// stabilitySeries returns a JSON blob keyed by team → {labels, new, closed, open}
+// for client-side stability chart rendering.
+func stabilitySeries(rows []types.MonthlyTeamMetrics, teams []string) string {
+	type teamSeries struct {
+		Labels []string `json:"labels"`
+		New    []int    `json:"new"`
+		Closed []int    `json:"closed"`
+		Open   []int    `json:"open"`
+	}
+	out := map[string]*teamSeries{}
+	for _, t := range teams {
+		out[t] = &teamSeries{}
+	}
+	for _, r := range rows {
+		s := out[r.Team]
+		if s == nil {
+			continue
+		}
+		s.Labels = append(s.Labels, r.YearMonth)
+		s.New    = append(s.New, r.StabilityNewCount)
+		s.Closed = append(s.Closed, r.StabilityClosedCount)
+		s.Open   = append(s.Open, r.StabilityOpenCount)
+	}
+	b, _ := json.Marshal(out)
+	return string(b)
+}
+
+templ stabilityBootstrapScript() {
+	<script>
+		(function() {
+			const blob = JSON.parse(document.getElementById('stabilityData').dataset.series || '{}');
+			document.querySelectorAll('canvas[data-stability-team]').forEach(function(canvas) {
+				const team = canvas.dataset.stabilityTeam;
+				const s = blob[team] || { labels: [], new: [], closed: [], open: [] };
+				new Chart(canvas, {
+					type: 'line',
+					data: {
+						labels: s.labels,
+						datasets: [
+							{ label: 'New',    data: s.new,    borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', tension: 0.3 },
+							{ label: 'Closed', data: s.closed, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', tension: 0.3 },
+							{ label: 'Open',   data: s.open,   borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', tension: 0.3 },
+						],
+					},
+					options: {
+						responsive: true,
+						maintainAspectRatio: false,
+						plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } },
+						scales: {
+							x: { ticks: { font: { size: 9 }, maxRotation: 45, minRotation: 45 } },
+							y: { beginAtZero: true, ticks: { font: { size: 10 } } },
+						},
+					},
+				});
+			});
+		})();
+	</script>
+}
+
+templ sparklineBootstrapScript() {
+	<script>
+		(function() {
+			const blob = JSON.parse(document.getElementById('sparklineData').dataset.series || '{}');
+			document.querySelectorAll('canvas[data-spark-team]').forEach(function(canvas) {
+				const team = canvas.dataset.sparkTeam;
+				const metric = canvas.dataset.sparkMetric;
+				const series = (blob[metric] || {})[team] || [];
+				new Chart(canvas, {
+					type: 'line',
+					data: {
+						labels: series.map(function(_, i) { return i; }),
+						datasets: [{
+							data: series,
+							borderColor: '#3b82f6',
+							borderWidth: 1.5,
+							pointRadius: 0,
+							tension: 0.35,
+							fill: false,
+						}],
+					},
+					options: {
+						responsive: false,
+						animation: false,
+						plugins: { legend: { display: false }, tooltip: { enabled: false } },
+						scales: { x: { display: false }, y: { display: false } },
+					},
+				});
+			});
+		})();
+	</script>
+}

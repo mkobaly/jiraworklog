@@ -1,0 +1,168 @@
+package pages
+
+import (
+	"fmt"
+	"github.com/mkobaly/jiraworklog/templates/layouts"
+	"github.com/mkobaly/jiraworklog/types"
+)
+
+templ MissingProjectCharge(issues []types.IssueMissingCharge) {
+	@layouts.Base("Missing Project Charge") {
+		<div class="mb-6">
+			<h1 class="text-3xl font-bold text-gray-900">Issues Missing Project Charge</h1>
+			<p class="text-gray-600 mt-2">Jira issues updated in the last 60 days with worklogs but no project charge assigned</p>
+		</div>
+
+		if len(issues) == 0 {
+			<div class="bg-green-50 border-l-4 border-green-400 p-4">
+				<div class="flex">
+					<div class="shrink-0">
+						<svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+							<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+						</svg>
+					</div>
+					<div class="ml-3">
+						<p class="text-green-700">All issues have a project charge assigned.</p>
+					</div>
+				</div>
+			</div>
+		} else {
+			<div class="px-4 py-3 bg-gray-50 border-b flex items-center justify-between rounded-t-lg">
+				<h2 class="text-lg font-semibold text-gray-900">
+					{ fmt.Sprintf("%d", len(issues)) } Issues Found
+				</h2>
+			</div>
+
+			<!-- Desktop table view -->
+			<div class="hidden md:block bg-white rounded-b-lg shadow-md overflow-hidden">
+				<div class="overflow-x-auto">
+					<table class="min-w-full divide-y divide-gray-200">
+						<thead class="bg-gray-50">
+							<tr>
+								<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
+								<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Key</th>
+								<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+								<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Summary</th>
+								<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
+								<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+								<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Updated</th>
+							</tr>
+						</thead>
+						<tbody class="bg-white divide-y divide-gray-200">
+							for _, issue := range issues {
+								<tr class="hover:bg-gray-50">
+									<td class="px-4 py-3 text-sm text-gray-900">
+										<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+											{ issue.Project }
+										</span>
+									</td>
+									<td class="px-4 py-3 text-sm">
+										<a
+											href={ templ.SafeURL("https://amagsymmetry.atlassian.net/browse/" + issue.Key) }
+											target="_blank"
+											class="text-blue-600 hover:text-blue-800 hover:underline font-medium"
+										>
+											{ issue.Key }
+										</a>
+									</td>
+									<td class="px-4 py-3 text-sm text-gray-900">{ issue.Type }</td>
+									<td class="px-4 py-3 text-sm text-gray-900 max-w-md truncate" title={ issue.Summary }>
+										{ issue.Summary }
+									</td>
+									<td class="px-4 py-3 text-sm">
+										@priorityBadge(issue.Priority)
+									</td>
+									<td class="px-4 py-3 text-sm">
+										@statusBadge(issue.Status)
+									</td>
+									<td class="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
+										{ issue.UpdateDate.Format("2006-01-02") }
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			</div>
+
+			<!-- Mobile card view -->
+			<div class="md:hidden space-y-4">
+				for _, issue := range issues {
+					<div class="bg-white rounded-lg shadow-md overflow-hidden">
+						<div class="bg-red-50 px-4 py-3 flex items-center justify-between border-b border-red-100">
+							<a
+								href={ templ.SafeURL("https://amagsymmetry.atlassian.net/browse/" + issue.Key) }
+								target="_blank"
+								class="text-blue-600 hover:text-blue-800 hover:underline font-semibold text-lg"
+							>
+								{ issue.Key }
+							</a>
+							<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+								{ issue.Project }
+							</span>
+						</div>
+						<div class="px-4 py-3">
+							<p class="text-sm text-gray-900 mb-3">{ issue.Summary }</p>
+							<div class="flex flex-wrap gap-2 items-center">
+								<span class="text-xs text-gray-500">{ issue.Type }</span>
+								<span class="text-gray-300">|</span>
+								@priorityBadge(issue.Priority)
+								<span class="text-gray-300">|</span>
+								@statusBadge(issue.Status)
+							</div>
+							<div class="mt-2 text-xs text-gray-500">
+								Updated: { issue.UpdateDate.Format("2006-01-02") }
+							</div>
+						</div>
+					</div>
+				}
+			</div>
+		}
+	}
+}
+
+templ priorityBadge(priority string) {
+	switch priority {
+		case "Highest", "Critical":
+			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+				{ priority }
+			</span>
+		case "High":
+			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+				{ priority }
+			</span>
+		case "Medium":
+			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+				{ priority }
+			</span>
+		case "Low":
+			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+				{ priority }
+			</span>
+		default:
+			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+				{ priority }
+			</span>
+	}
+}
+
+templ statusBadge(status string) {
+	switch status {
+		case "Done", "Closed", "Resolved":
+			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+				{ status }
+			</span>
+		case "In Progress", "In Review":
+			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+				{ status }
+			</span>
+		case "To Do", "Open", "Backlog":
+			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+				{ status }
+			</span>
+		default:
+			<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+				{ status }
+			</span>
+	}
+}

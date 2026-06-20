@@ -1,0 +1,26 @@
+/* Tailwind CSS input file — compiled by build.sh via the standalone
+   tailwindcss CLI into static/css/tailwind.css (embedded in the binary).
+   source(none) disables auto-detection; only the @source globs are scanned
+   for class names, so class names must appear as literal strings in
+   templates/ (never build them by string concatenation in Go). */
+@import "tailwindcss" source(none);
+@source "./templates";
+
+/* Tailwind v3 compatibility (templates were authored against the v3 Play
+   CDN). v4 changed these Preflight defaults; keep the v3 behavior. */
+@layer base {
+	/* v3 default border color was gray-200; v4 uses currentColor */
+	*,
+	::after,
+	::before,
+	::backdrop,
+	::file-selector-button {
+		border-color: var(--color-gray-200, currentColor);
+	}
+
+	/* v3 buttons used cursor: pointer; v4 uses cursor: default */
+	button:not(:disabled),
+	[role="button"]:not(:disabled) {
+		cursor: pointer;
+	}
+}

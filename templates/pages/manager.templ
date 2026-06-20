@@ -1,0 +1,618 @@
+package pages
+
+import (
+	"encoding/json"
+	"fmt"
+
+	"github.com/mkobaly/jiraworklog/templates/layouts"
+	"github.com/mkobaly/jiraworklog/types"
+)
+
+// mgrKpiCard renders a single KPI card with a current value and a 13-month
+// chart canvas. chartID is the DOM id the bootstrap script looks for.
+templ mgrKpiCard(label, value, chartID string) {
+	<div class="bg-white rounded-lg shadow p-5">
+		<p class="text-xs text-gray-500 uppercase tracking-wide">{ label }</p>
+		<p class="text-2xl font-bold text-gray-800 mt-1">{ value }</p>
+		<div class="h-20 mt-3">
+			<canvas id={ chartID }></canvas>
+		</div>
+	</div>
+}
+
+// ManagerDashboard renders the single-team detail page. `data.Team` is the
+// currently selected team; `teams` is the list of all teams for the
+// dropdown selector.
+templ ManagerDashboard(data types.ManagerMetricsData, teams []string) {
+	@layouts.Base("Manager Dashboard") {
+		<div class="space-y-6">
+			<!-- Header -->
+			<div class="bg-white rounded-lg shadow p-6 flex items-center justify-between flex-wrap gap-3">
+				<div class="flex items-center gap-3">
+					<h1 class="text-2xl font-bold text-gray-800">Manager Dashboard</h1>
+					<button
+						type="button"
+						onclick="document.getElementById('mgrHelpModal').classList.remove('hidden')"
+						class="w-7 h-7 rounded-full border border-gray-300 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition flex items-center justify-center text-sm font-semibold"
+						aria-label="Help: what these metrics mean"
+						title="What do these metrics mean?"
+					>?</button>
+				</div>
+				<!--
+					Form targets the <turbo-frame id="manager-content"> below.
+					data-turbo-action=advance keeps the URL in sync so the page
+					is shareable. requestSubmit() (not submit()) is required —
+					Turbo only intercepts the submit *event*, which .submit()
+					doesn't dispatch.
+				-->
+				<form method="GET" action="/dashboard/manager"
+					data-turbo-frame="manager-content"
+					data-turbo-action="advance"
+					class="flex items-center gap-2">
+					<label for="team" class="text-sm font-medium text-gray-700">Team</label>
+					<select id="team" name="team" onchange="this.form.requestSubmit()" class="border border-gray-300 rounded-md px-3 py-1.5 text-sm">
+						for _, t := range teams {
+							<option value={ t } if t == data.Team { selected }>{ t }</option>
+						}
+					</select>
+				</form>
+			</div>
+
+			<turbo-frame id="manager-content" class="block space-y-6">
+				<!-- Team banner — inside the frame so it updates when the dropdown changes -->
+				<p class="text-sm text-gray-500 italic">Showing data for team <span class="font-semibold text-gray-700">{ data.Team }</span></p>
+
+				<!-- Delivery Predictability section (KPI cards + Time-in-Status + WIP + Aging WIP) -->
+				<section>
+				<h2 class="text-lg font-bold text-gray-800 mb-3">Delivery Predictability</h2>
+				<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+					@mgrKpiCard("Cycle Time (median)", mgrFmtDays(currentMgrCycle(data)), "mgr-cycle")
+					@mgrKpiCard("Throughput", mgrFmtCount(currentMgrThroughput(data)), "mgr-throughput")
+					@mgrKpiCard("Flow Efficiency", mgrFmtPct(currentMgrFlow(data)), "mgr-flow")
+					@mgrKpiCard("Failed QA Ratio", mgrFmtPct(currentMgrFailedQA(data)), "mgr-failedqa")
+				</div>
+				<div class="bg-white rounded-lg shadow p-6 mt-4">
+					<h3 class="text-base font-semibold text-gray-700 mb-1">Time in Status</h3>
+					<p class="text-xs text-gray-400 mb-3">Average time issues spent in each bucket per month (Dev / QA / Waiting).</p>
+					<div class="h-72">
+						<canvas id="mgr-tis"></canvas>
+					</div>
+				</div>
+				<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
+					<div class="bg-white rounded-lg shadow p-6 lg:col-span-2">
+						<h3 class="text-base font-semibold text-gray-700 mb-1">WIP Trend</h3>
+						<p class="text-xs text-gray-400 mb-3">Open issues in Dev or QA on each day, last 13 months.</p>
+						<div class="h-56">
+							<canvas id="mgr-wip"></canvas>
+						</div>
+					</div>
+					<div class="bg-white rounded-lg shadow p-6">
+						<h3 class="text-base font-semibold text-gray-700 mb-1">Aging WIP</h3>
+						<p class="text-xs text-gray-400 mb-3">Currently open issues exceeding the team's 85th-percentile cycle time. Top 20.</p>
+						if len(data.AgingWIPItems) == 0 {
+							<p class="text-sm text-gray-400 italic">No aging items — team is healthy.</p>
+						} else {
+							<ul class="divide-y divide-gray-100 text-sm">
+								for _, item := range data.AgingWIPItems {
+									<li class="py-2 flex items-center justify-between gap-2">
+										<a
+											href={ templ.SafeURL("https://amagsymmetry.atlassian.net/browse/" + item.Key) }
+											target="_blank"
+											rel="noopener noreferrer"
+											class="font-mono text-blue-600 hover:text-blue-800 hover:underline"
+											title={ "Open " + item.Key + " in Jira" }
+										>{ item.Key }</a>
+										<span class="text-gray-500 text-xs">{ item.Status }</span>
+										<span class="font-medium text-gray-700">{ fmt.Sprintf("%dd", item.DaysInStatus) }</span>
+									</li>
+								}
+							</ul>
+						}
+					</div>
+				</div>
+			</section>
+
+			<!-- Quality section (Rework, Bounce, QA/Eng, Bug/Fwd cards) -->
+			<section>
+				<h2 class="text-lg font-bold text-gray-800 mb-3">Quality</h2>
+				<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+					@mgrKpiCard("Rework Cycles", mgrFmtRatio(currentMgrRework(data)), "mgr-rework")
+					@mgrKpiCard("Status Bounce", mgrFmtPct(currentMgrBounce(data)), "mgr-bounce")
+					@mgrKpiCard("QA hrs / Eng hrs", mgrFmtRatio(currentMgrQAvsEng(data)), "mgr-qaeng")
+					@mgrKpiCard("Bug hrs / Fwd-work hrs", mgrFmtRatio(currentMgrBugFwd(data)), "mgr-bugfwd")
+				</div>
+			</section>
+
+			<!-- Stability section -->
+			<section>
+				<h2 class="text-lg font-bold text-gray-800 mb-3">Stability</h2>
+				<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+					<div class="bg-white rounded-lg shadow p-6">
+						<h3 class="text-base font-semibold text-gray-700 mb-1">Customer Bugs</h3>
+						<p class="text-xs text-gray-400 mb-3">New bugs opened, bugs closed, total open bugs per month.</p>
+						<div class="h-72">
+							<canvas id="mgr-stability"></canvas>
+						</div>
+					</div>
+					<div class="bg-white rounded-lg shadow p-6">
+						<h3 class="text-base font-semibold text-gray-700 mb-1">Defect Escape Rate</h3>
+						<p class="text-xs text-gray-400 mb-3">% of bugs found this month that came from customers vs were found internally.</p>
+						<div class="h-72">
+							<canvas id="mgr-escape"></canvas>
+						</div>
+					</div>
+				</div>
+			</section>
+
+				<!-- Back link — data-turbo-frame="_top" escapes the frame so the
+				     leadership page loads at the document level, not into a
+				     manager-content frame (which the leadership page doesn't have). -->
+				<div>
+					<a href="/dashboard/leadership" data-turbo-frame="_top" class="text-sm text-blue-600 hover:underline">← Back to Leadership Dashboard</a>
+				</div>
+
+				<div id="mgrData" data-payload={ mgrSerialize(data) } style="display:none;"></div>
+				@mgrLeadershipChartsScript()
+				@mgrTimeInStatusScript()
+				@mgrWIPScript()
+				@mgrQualityChartsScript()
+				@mgrStabilityChartsScript()
+			</turbo-frame>
+
+			@mgrHelpModal()
+		</div>
+	}
+}
+
+templ mgrHelpCard(name, what, how, soWhat string) {
+	<div>
+		<h3 class="text-base font-semibold text-gray-800 mb-2">{ name }</h3>
+		<dl class="space-y-1.5">
+			<div class="flex gap-2">
+				<dt class="font-medium text-gray-600 whitespace-nowrap">What:</dt>
+				<dd>{ what }</dd>
+			</div>
+			<div class="flex gap-2">
+				<dt class="font-medium text-gray-600 whitespace-nowrap">How:</dt>
+				<dd>{ how }</dd>
+			</div>
+			<div class="flex gap-2">
+				<dt class="font-medium text-gray-600 whitespace-nowrap">So what:</dt>
+				<dd>{ soWhat }</dd>
+			</div>
+		</dl>
+	</div>
+}
+
+// mgrHelpModal is the manager-page help glossary.
+templ mgrHelpModal() {
+	<div
+		id="mgrHelpModal"
+		class="hidden fixed inset-0 z-50 flex items-center justify-center p-4"
+		onclick="if (event.target === this) this.classList.add('hidden')"
+	>
+		<div class="fixed inset-0 bg-black/50"></div>
+		<div class="relative bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto">
+			<div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+				<h2 class="text-xl font-bold text-gray-800">What these metrics mean</h2>
+				<button type="button" onclick="document.getElementById('mgrHelpModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-700 text-2xl leading-none px-2" aria-label="Close">&times;</button>
+			</div>
+			<div class="px-6 py-5 space-y-6 text-sm text-gray-700">
+				@mgrHelpCard(
+					"Cycle Time (median)",
+					"Median time issues spend actively moving through Development and QA — the \"typical\" elapsed time from dev start to QA done.",
+					"Sum of time in Dev statuses plus QA statuses, per issue. Median across all issues closed in the month.",
+					"Lower = faster delivery. A rising trend is an early warning of bottlenecks (more bugs, more rework, harder problems, distractions).",
+				)
+				@mgrHelpCard(
+					"Throughput",
+					"Count of issues closed in the month for this team.",
+					"Issues of type Story / Bug / Hardware Bug / Customer Bug / HW-FW Customer Bug that entered Done / Closed / Cancelled / Awaiting Release for the first time in the month.",
+					"Steady throughput + steady cycle time = predictable team. Erratic throughput = lumpy delivery, hard to plan around.",
+				)
+				@mgrHelpCard(
+					"Flow Efficiency",
+					"Percent of an issue's elapsed time spent actively progressing vs waiting.",
+					"Active (Dev + QA) seconds / total (Dev + QA + Waiting + Done) seconds, summed across closed issues in the month.",
+					"Low flow efficiency means most cycle time is waiting in queues. High = clean handoffs and low queue time.",
+				)
+				@mgrHelpCard(
+					"Failed QA Ratio",
+					"Percent of Stories closed this month that failed QA at least once.",
+					"Numerator = stories closed in month that hit Failed QA status. Denominator = all stories closed in month. Bugs and Tasks excluded.",
+					"Your \"first-time-right\" rate. High = stories aren't actually ready when devs hand them off.",
+				)
+				@mgrHelpCard(
+					"Time in Status",
+					"Average time issues spent in each flow bucket (Dev / QA / Waiting) per month.",
+					"Avg of status_stints.durationseconds, grouped by the month the stint ended and the bucket. Stacked bars show the composition over time.",
+					"Surfaces where the team's time is actually going. Big QA stack = QA bottleneck. Big Waiting stack = handoff or blocker problem.",
+				)
+				@mgrHelpCard(
+					"WIP & Aging WIP",
+					"WIP = count of open issues currently in Dev or QA. Aging WIP = the subset that have been stuck longer than the team's typical cycle time.",
+					"WIP series sampled daily. Aging WIP threshold = team's 85th-percentile cycle time over the last 13 months. List capped at 20.",
+					"Rising WIP without rising throughput = work piling up. Aging WIP items are the specific tickets stuck — usually the place to start digging when delivery slows.",
+				)
+				@mgrHelpCard(
+					"Rework Cycles",
+					"Average QA→Dev transitions per closed issue in the month.",
+					"For issues closed in the month, count the number of times the issue transitioned from a QA/test status back to a dev status. Average across those issues.",
+					"When stuff fails QA, how badly does it thrash? Rising rework cycles is the deeper-dive signal behind Failed QA Ratio.",
+				)
+				@mgrHelpCard(
+					"Status Bounce Rate",
+					"How often issues re-enter the same status (status thrash).",
+					"Re-entries = times an issue's status was entered more than once. Bounce rate = re-entries / total transitions per closed issue, averaged for the month.",
+					"High bounce = unclear workflow, requirement churn, or thrash. Useful for catching process problems separately from QA-specific rework.",
+				)
+				@mgrHelpCard(
+					"QA hrs / Eng hrs",
+					"Ratio of hours logged by people with role=qa to hours logged by people with role=dev, per month.",
+					"Sum of worklog.timespenthours where author has role 'qa', divided by the same sum for role 'dev'. Bucketed by worklog date.",
+					"Indicates QA capacity relative to dev capacity. A persistent low ratio (e.g. <0.2) may mean QA is undersized and creates a downstream bottleneck.",
+				)
+				@mgrHelpCard(
+					"Bug hrs / Forward-work hrs",
+					"Ratio of hours spent fixing internal bugs to hours spent on Story + Task work, per month.",
+					"Sum of hours on type Bug + Hardware Bug, divided by sum of hours on type Story + Task. Bucketed by worklog date.",
+					"High = team is firefighting more than delivering. Rising trend is an early warning of accumulating quality debt.",
+				)
+				@mgrHelpCard(
+					"Stability (Customer Bugs) & Defect Escape Rate",
+					"Customer-reported bug volume over time, plus the % of bugs found this month that came from customers vs internally.",
+					"Customer Bug + HW/FW Customer Bug counts (new, closed, running open) per month. Escape Rate = customer bugs / (customer + internal bugs), by createdate month.",
+					"The customer-pain signal. Open trend rising = customers filing faster than the team fixes. High escape rate = team isn't catching defects before release.",
+				)
+
+				<p class="text-xs text-gray-400 italic pt-2 border-t border-gray-100">
+					"Forward work" = Story + Task. Tasks don't go through QA, so they're excluded from Failed QA Ratio but counted in throughput and the hours ratio.
+				</p>
+			</div>
+		</div>
+	</div>
+}
+
+// mgrFmtDays / mgrFmtPct / mgrFmtCount are local formatters mirroring the
+// leadership-page helpers but renamed to avoid collisions across .templ files
+// in the same package.
+func mgrFmtDays(secs float64) string {
+	if secs <= 0 {
+		return "—"
+	}
+	return fmt.Sprintf("%.1fd", secs/86400)
+}
+
+func mgrFmtPct(pct float64) string {
+	return fmt.Sprintf("%.0f%%", pct)
+}
+
+func mgrFmtCount(n int) string {
+	if n == 0 {
+		return "—"
+	}
+	return fmt.Sprintf("%d", n)
+}
+
+func mgrFmtRatio(r float64) string {
+	return fmt.Sprintf("%.2f", r)
+}
+
+// mgrSerialize returns a JSON blob of the full ManagerMetricsData for client-
+// side chart bootstrapping. Charts pick out the slices they need.
+func mgrSerialize(data types.ManagerMetricsData) string {
+	b, _ := json.Marshal(data)
+	return string(b)
+}
+
+// currentMgrCycle returns the median cycle time (seconds) for the most
+// recent month in the LeadershipMonthly slice.
+func currentMgrCycle(data types.ManagerMetricsData) float64 {
+	if len(data.LeadershipMonthly) == 0 {
+		return 0
+	}
+	return data.LeadershipMonthly[len(data.LeadershipMonthly)-1].MedianCycleTimeSecs
+}
+
+func currentMgrThroughput(data types.ManagerMetricsData) int {
+	if len(data.LeadershipMonthly) == 0 {
+		return 0
+	}
+	return data.LeadershipMonthly[len(data.LeadershipMonthly)-1].ClosedIssueCount
+}
+
+func currentMgrFlow(data types.ManagerMetricsData) float64 {
+	if len(data.LeadershipMonthly) == 0 {
+		return 0
+	}
+	return data.LeadershipMonthly[len(data.LeadershipMonthly)-1].FlowEfficiencyPct
+}
+
+func currentMgrFailedQA(data types.ManagerMetricsData) float64 {
+	if len(data.LeadershipMonthly) == 0 {
+		return 0
+	}
+	return data.LeadershipMonthly[len(data.LeadershipMonthly)-1].FailedQARatioPct
+}
+
+templ mgrLeadershipChartsScript() {
+	<script>
+		(function() {
+			// Parse the payload fresh each time — caching on `window` would
+			// survive Turbo frame swaps and return stale data after a team
+			// change. The 5x re-parse of a ~25-40KB blob is a few ms on
+			// modern browsers; correctness trumps the micro-optimization.
+			const data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');
+			const lm = data.LeadershipMonthly || [];
+			const labels = lm.map(function(r) { return r.YearMonth; });
+			const series = {
+				'mgr-cycle':      lm.map(function(r) { return r.MedianCycleTimeSecs / 86400; }),
+				'mgr-throughput': lm.map(function(r) { return r.ClosedIssueCount; }),
+				'mgr-flow':       lm.map(function(r) { return r.FlowEfficiencyPct; }),
+				'mgr-failedqa':   lm.map(function(r) { return r.FailedQARatioPct; }),
+			};
+			Object.keys(series).forEach(function(id) {
+				const canvas = document.getElementById(id);
+				if (!canvas) return;
+				new Chart(canvas, {
+					type: 'bar',
+					data: {
+						labels: labels,
+						datasets: [{
+							data: series[id],
+							backgroundColor: '#3b82f6',
+							borderColor: '#1d4ed8',
+							borderWidth: 1,
+						}],
+					},
+					options: {
+						responsive: true,
+						maintainAspectRatio: false,
+						plugins: { legend: { display: false }, tooltip: { enabled: true } },
+						scales: {
+							x: { ticks: { font: { size: 8 }, maxRotation: 45, minRotation: 45 } },
+							y: { beginAtZero: true, ticks: { font: { size: 9 } } },
+						},
+					},
+				});
+			});
+		})();
+	</script>
+}
+
+templ mgrTimeInStatusScript() {
+	<script>
+		(function() {
+			// Parse the payload fresh each time — caching on `window` would
+			// survive Turbo frame swaps and return stale data after a team
+			// change. The 5x re-parse of a ~25-40KB blob is a few ms on
+			// modern browsers; correctness trumps the micro-optimization.
+			const data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');
+			const tis = data.TimeInStatus || [];
+			// Pivot tis into { months: [...], Dev: [...], QA: [...], Waiting: [...] }
+			const monthSet = new Set();
+			tis.forEach(function(p) { monthSet.add(p.YearMonth); });
+			const months = Array.from(monthSet).sort();
+			const buckets = { Dev: {}, QA: {}, Waiting: {} };
+			tis.forEach(function(p) { (buckets[p.Bucket] || {})[p.YearMonth] = p.AvgSecs / 86400; });
+			const dataFor = function(bucket) {
+				return months.map(function(m) { return buckets[bucket][m] || 0; });
+			};
+			const canvas = document.getElementById('mgr-tis');
+			if (!canvas) return;
+			new Chart(canvas, {
+				type: 'bar',
+				data: {
+					labels: months,
+					datasets: [
+						{ label: 'Dev',     data: dataFor('Dev'),     backgroundColor: '#3b82f6' },
+						{ label: 'QA',      data: dataFor('QA'),      backgroundColor: '#10b981' },
+						{ label: 'Waiting', data: dataFor('Waiting'), backgroundColor: '#f59e0b' },
+					],
+				},
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					plugins: {
+						legend: { position: 'bottom', labels: { font: { size: 11 } } },
+						tooltip: { callbacks: { label: function(ctx) { return ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + 'd'; } } },
+					},
+					scales: {
+						x: { stacked: true, ticks: { font: { size: 10 } } },
+						y: { stacked: true, beginAtZero: true, ticks: { font: { size: 10 }, callback: function(v) { return v + 'd'; } } },
+					},
+				},
+			});
+		})();
+	</script>
+}
+
+templ mgrWIPScript() {
+	<script>
+		(function() {
+			// Parse the payload fresh each time — caching on `window` would
+			// survive Turbo frame swaps and return stale data after a team
+			// change. The 5x re-parse of a ~25-40KB blob is a few ms on
+			// modern browsers; correctness trumps the micro-optimization.
+			const data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');
+			const wip = data.WIPSeries || [];
+			const canvas = document.getElementById('mgr-wip');
+			if (!canvas) return;
+			new Chart(canvas, {
+				type: 'line',
+				data: {
+					labels: wip.map(function(p) { return p.Day; }),
+					datasets: [{
+						data: wip.map(function(p) { return p.WIPCount; }),
+						borderColor: '#6366f1',
+						backgroundColor: 'rgba(99,102,241,0.1)',
+						fill: true,
+						pointRadius: 0,
+						tension: 0.25,
+						borderWidth: 1.5,
+					}],
+				},
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					plugins: { legend: { display: false }, tooltip: { enabled: true } },
+					scales: {
+						x: { ticks: { font: { size: 9 }, maxTicksLimit: 13 } },
+						y: { beginAtZero: true, ticks: { font: { size: 10 } } },
+					},
+				},
+			});
+		})();
+	</script>
+}
+
+func currentMgrRework(data types.ManagerMetricsData) float64 {
+	if len(data.ReworkCycles) == 0 {
+		return 0
+	}
+	return data.ReworkCycles[len(data.ReworkCycles)-1].AvgCycles
+}
+
+func currentMgrBounce(data types.ManagerMetricsData) float64 {
+	if len(data.StatusBounce) == 0 {
+		return 0
+	}
+	return data.StatusBounce[len(data.StatusBounce)-1].BouncePct
+}
+
+func currentMgrQAvsEng(data types.ManagerMetricsData) float64 {
+	if len(data.QAvsEngHours) == 0 {
+		return 0
+	}
+	return data.QAvsEngHours[len(data.QAvsEngHours)-1].Ratio
+}
+
+func currentMgrBugFwd(data types.ManagerMetricsData) float64 {
+	if len(data.BugvsForwardHours) == 0 {
+		return 0
+	}
+	return data.BugvsForwardHours[len(data.BugvsForwardHours)-1].Ratio
+}
+
+templ mgrQualityChartsScript() {
+	<script>
+		(function() {
+			// Parse the payload fresh each time — caching on `window` would
+			// survive Turbo frame swaps and return stale data after a team
+			// change. The 5x re-parse of a ~25-40KB blob is a few ms on
+			// modern browsers; correctness trumps the micro-optimization.
+			const data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');
+			const series = {
+				'mgr-rework': {
+					labels: (data.ReworkCycles || []).map(function(p) { return p.YearMonth; }),
+					values: (data.ReworkCycles || []).map(function(p) { return p.AvgCycles; }),
+				},
+				'mgr-bounce': {
+					labels: (data.StatusBounce || []).map(function(p) { return p.YearMonth; }),
+					values: (data.StatusBounce || []).map(function(p) { return p.BouncePct; }),
+				},
+				'mgr-qaeng': {
+					labels: (data.QAvsEngHours || []).map(function(p) { return p.YearMonth; }),
+					values: (data.QAvsEngHours || []).map(function(p) { return p.Ratio; }),
+				},
+				'mgr-bugfwd': {
+					labels: (data.BugvsForwardHours || []).map(function(p) { return p.YearMonth; }),
+					values: (data.BugvsForwardHours || []).map(function(p) { return p.Ratio; }),
+				},
+			};
+			Object.keys(series).forEach(function(id) {
+				const canvas = document.getElementById(id);
+				if (!canvas) return;
+				new Chart(canvas, {
+					type: 'line',
+					data: {
+						labels: series[id].labels,
+						datasets: [{
+							data: series[id].values,
+							borderColor: '#8b5cf6',
+							backgroundColor: 'rgba(139,92,246,0.1)',
+							fill: true,
+							pointRadius: 0,
+							tension: 0.3,
+							borderWidth: 1.5,
+						}],
+					},
+					options: {
+						responsive: true,
+						maintainAspectRatio: false,
+						plugins: { legend: { display: false }, tooltip: { enabled: true } },
+						scales: {
+							x: { ticks: { font: { size: 8 }, maxRotation: 45, minRotation: 45 } },
+							y: { beginAtZero: true, ticks: { font: { size: 9 } } },
+						},
+					},
+				});
+			});
+		})();
+	</script>
+}
+
+templ mgrStabilityChartsScript() {
+	<script>
+		(function() {
+			// Parse the payload fresh each time — caching on `window` would
+			// survive Turbo frame swaps and return stale data after a team
+			// change. The 5x re-parse of a ~25-40KB blob is a few ms on
+			// modern browsers; correctness trumps the micro-optimization.
+			const data = JSON.parse(document.getElementById('mgrData').dataset.payload || '{}');
+			const lm = data.LeadershipMonthly || [];
+			const labels = lm.map(function(r) { return r.YearMonth; });
+
+			// Customer bug trend
+			const stab = document.getElementById('mgr-stability');
+			if (stab) {
+				new Chart(stab, {
+					type: 'line',
+					data: {
+						labels: labels,
+						datasets: [
+							{ label: 'New',    data: lm.map(function(r) { return r.StabilityNewCount; }),    borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', tension: 0.3 },
+							{ label: 'Closed', data: lm.map(function(r) { return r.StabilityClosedCount; }), borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', tension: 0.3 },
+							{ label: 'Open',   data: lm.map(function(r) { return r.StabilityOpenCount; }),   borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', tension: 0.3 },
+						],
+					},
+					options: {
+						responsive: true,
+						maintainAspectRatio: false,
+						plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+						scales: {
+							x: { ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 45 } },
+							y: { beginAtZero: true, ticks: { font: { size: 10 } } },
+						},
+					},
+				});
+			}
+
+			// Defect Escape Rate trend
+			const esc = document.getElementById('mgr-escape');
+			if (esc) {
+				new Chart(esc, {
+					type: 'bar',
+					data: {
+						labels: labels,
+						datasets: [{
+							data: lm.map(function(r) { return r.DefectEscapeRatePct; }),
+							backgroundColor: '#ef4444',
+							borderColor: '#b91c1c',
+							borderWidth: 1,
+						}],
+					},
+					options: {
+						responsive: true,
+						maintainAspectRatio: false,
+						plugins: { legend: { display: false }, tooltip: { enabled: true } },
+						scales: {
+							x: { ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 45 } },
+							y: { beginAtZero: true, max: 100, ticks: { font: { size: 10 }, callback: function(v) { return v + '%'; } } },
+						},
+					},
+				});
+			}
+		})();
+	</script>
+}

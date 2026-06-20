@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(go run:*)",
+      "Bash(go build:*)",
+      "Bash(go mod tidy:*)",
+      "Bash(./build.sh:*)",
+      "Bash(if grep -qi logrus go.mod go.sum)",
+      "Bash(then echo \"logrus still present\")",
+      "Bash(else echo \"✓ logrus completely removed from dependencies\")",
+      "Bash(fi)",
+      "Bash(go get:*)",
+      "Bash(curl:*)",
+      "Bash(pkill:*)",
+      "Bash(templ generate:*)",
+      "Bash(bash:*)",
+      "Bash(grep:*)",
+      "Bash(head:*)",
+      "Bash(git -C /home/developer/code/github/jiraworklog log --oneline --graph -20)",
+      "Bash(git -C /home/developer/code/github/jiraworklog diff HEAD~5..HEAD -- repository/posgres.go types/parentIssue.go)",
+      "Bash(python3:*)",
+      "Bash(go test:*)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(sed -n '388,398p')",
+      "Bash(sed -n '388,398p' /home/developer/code/github/jiraworklog/repository/posgres.go)",
+      "Bash(git log *)",
+      "Bash(go vet *)",
+      "Bash(git config *)",
+      "Read(//home/developer/.claude/plugins/cache/amag-claude-skills/amag-usage-report/0.2.0/skills/amag-usage-report/**)",
+      "Bash(node -e \"import\\('./lib/local-config.mjs'\\).then\\(m=>m.saveConfig\\({email:process.argv[1]}\\)\\)\" \"michael.kobaly@amag.com\")",
+      "Bash(node scripts/collect-upload.mjs --today)"
+    ]
+  }
+}

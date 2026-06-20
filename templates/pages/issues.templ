@@ -1,0 +1,66 @@
+package pages
+
+import (
+	"github.com/mkobaly/jiraworklog/templates/layouts"
+	"github.com/mkobaly/jiraworklog/templates/components"
+	"github.com/mkobaly/jiraworklog/types"
+)
+
+templ Issues(issues []types.ParentIssue) {
+	@layouts.Base("Issues") {
+		<div class="mb-6">
+			<h1 class="text-3xl font-bold text-gray-900">Issues</h1>
+			<p class="text-gray-600 mt-2">All tracked Jira issues</p>
+		</div>
+
+		if len(issues) == 0 {
+			<div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+				<p class="text-yellow-700">No issues found.</p>
+			</div>
+		} else {
+			@components.IssueMobileList(issues)
+		}
+	}
+}
+
+templ IssuesGroupBy(groupBy string, data []types.IssueChartData) {
+	@layouts.Base("Issues by " + groupBy) {
+		<div class="mb-6">
+			<h1 class="text-3xl font-bold text-gray-900">Issues by { groupBy }</h1>
+			<p class="text-gray-600 mt-2">Aggregated issue data</p>
+		</div>
+
+		if len(data) == 0 {
+			<div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+				<p class="text-yellow-700">No data found.</p>
+			</div>
+		} else {
+			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+				for _, item := range data {
+					@components.IssueChartDataCard(&item)
+				}
+			</div>
+		}
+	}
+}
+
+templ IssueAccuracy(data []types.IssueAccuracy) {
+	@layouts.Base("Issue Accuracy") {
+		<div class="mb-6">
+			<h1 class="text-3xl font-bold text-gray-900">Issue Accuracy</h1>
+			<p class="text-gray-600 mt-2">How accurate are developer estimates vs actual time logged</p>
+		</div>
+
+		if len(data) == 0 {
+			<div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+				<p class="text-yellow-700">No data found.</p>
+			</div>
+		} else {
+			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+				for _, item := range data {
+					@components.IssueAccuracyCard(&item)
+				}
+			</div>
+		}
+	}
+}

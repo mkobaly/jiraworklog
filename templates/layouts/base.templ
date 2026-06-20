@@ -1,0 +1,165 @@
+package layouts
+
+templ Base(title string) {
+	@baseShell(title, "container mx-auto px-4 py-6 max-w-7xl grow") {
+		{ children... }
+	}
+}
+
+// BaseFluid is Base without the max-w-7xl cap — for pages with wide tables
+// that need the full viewport width (e.g. Project Charges).
+templ BaseFluid(title string) {
+	@baseShell(title, "w-full px-4 py-6 grow") {
+		{ children... }
+	}
+}
+
+templ baseShell(title string, mainClass string) {
+	<!DOCTYPE html>
+	<html lang="en" data-turbo-refresh-scroll="preserve">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<meta name="turbo-cache-control" content="no-cache"/>
+			<title>{ title } - Jira Worklog</title>
+
+			<!-- Hotwire Turbo -->
+			<script type="module">
+				import hotwiredTurbo from 'https://cdn.jsdelivr.net/npm/@hotwired/turbo@8.0.4/+esm'
+			</script>
+
+			<!--
+				Chart.js (+ trendline plugin) must live in <head>, NOT per-page in
+				<body>: Turbo persists <head> across visits, so Chart is already on
+				window when a navigation swaps the body. A body-level <script src>
+				gets re-cloned async on every Turbo visit, and the inline chart
+				bootstrap scripts race it ("Uncaught ReferenceError: Chart is not
+				defined"). Parser-blocking (no defer) so cold loads are safe too.
+			-->
+			<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" integrity="sha384-9nhczxUqK87bcKHh20fSQcTGD4qq5GhayNYSYWqwBkINBhOfQLg/P5HG5lF1urn4" crossorigin="anonymous"></script>
+			<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-trendline@3.2.4" integrity="sha384-3ybtpLdW7YXmUJ14H2gwdWfLT6lTIqMu+Avm33uFQt+RzM3qDcm+xw0erTrvdbRr" crossorigin="anonymous"></script>
+
+			<!-- Tailwind CSS (compiled by build.sh, embedded in binary) -->
+			<link rel="stylesheet" href="/static/css/tailwind.css"/>
+
+			<!-- Custom CSS -->
+			<link rel="stylesheet" href="/static/css/app.css"/>
+
+			<!-- Mobile optimizations -->
+			<meta name="mobile-web-app-capable" content="yes"/>
+			<meta name="apple-mobile-web-app-capable" content="yes"/>
+			<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+		</head>
+		<body class="bg-gray-50 min-h-screen flex flex-col">
+			@Navigation()
+
+			<main class={ mainClass }>
+				{ children... }
+			</main>
+
+			<footer class="py-6 bg-gray-800 text-white text-center mt-auto">
+				<p class="text-sm">Jira Worklog Tracker</p>
+			</footer>
+		</body>
+	</html>
+}
+
+templ BasePublic(title string) {
+	<!DOCTYPE html>
+	<html lang="en" data-turbo-refresh-scroll="preserve">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<meta name="turbo-cache-control" content="no-cache"/>
+			<title>{ title } - Jira Worklog</title>
+
+			<!-- Hotwire Turbo -->
+			<script type="module">
+				import hotwiredTurbo from 'https://cdn.jsdelivr.net/npm/@hotwired/turbo@8.0.4/+esm'
+			</script>
+
+			<!-- Tailwind CSS (compiled by build.sh, embedded in binary) -->
+			<link rel="stylesheet" href="/static/css/tailwind.css"/>
+
+			<!-- Custom CSS -->
+			<link rel="stylesheet" href="/static/css/app.css"/>
+
+			<!-- Mobile optimizations -->
+			<meta name="apple-mobile-web-app-capable" content="yes"/>
+			<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+		</head>
+		<body class="bg-gray-50 min-h-screen flex flex-col">
+			<main class="container mx-auto px-4 py-6 max-w-7xl grow">
+				{ children... }
+			</main>
+
+			<footer class="py-6 bg-gray-800 text-white text-center mt-auto">
+				<p class="text-sm">Jira Worklog Tracker</p>
+			</footer>
+		</body>
+	</html>
+}
+
+templ Navigation() {
+	<nav class="bg-blue-600 text-white shadow-lg">
+		<div class="container mx-auto px-4">
+			<div class="flex items-center justify-between h-16">
+				<div class="flex items-center">
+					<a href="/" class="text-xl font-bold">Jira Worklog</a>
+				</div>
+
+				<!-- Mobile menu button -->
+				<button
+					id="mobile-menu-button"
+					class="md:hidden p-2 rounded-md hover:bg-blue-700 focus:outline-hidden focus:ring-2 focus:ring-white"
+					onclick="document.getElementById('mobile-menu').classList.toggle('hidden')"
+				>
+					<svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+					</svg>
+				</button>
+
+				<!-- Desktop menu -->
+				<div class="hidden md:flex space-x-4">
+					<a href="/" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Dashboard</a>
+					<a href="/dashboard/leadership" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Leadership</a>
+					// <a href="/worklogs" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Worklogs</a>
+					// <a href="/issues" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Issues</a>
+					<a href="/reports/maintenance" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Maintenance Ratio</a>
+					<a href="/reports/missing-charge" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Missing Charge</a>
+					<a href="/reports/mismatched-charge" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Mismatched Charge</a>
+					<a href="/reports/customer-bugs" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Stability Team</a>
+					<a href="/reports/project-hours" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Project Hours</a>
+					<a href="/reports/weekly-hours" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Weekly Hours</a>
+					<a href="/reports/timesheets" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Timesheets</a>
+					<a href="/reports/time-tracking" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Project Tracking</a>
+					<a href="/reports/project-kpis" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Project KPIs</a>
+					<a href="/settings/project-charges" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Project Charges</a>
+					<a href="/settings/people" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">People</a>
+				</div>
+			</div>
+
+			<!-- Mobile menu -->
+			<div id="mobile-menu" class="hidden md:hidden pb-4">
+				<div class="flex flex-col space-y-2">
+					<a href="/" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Dashboard</a>
+					<a href="/dashboard/leadership" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Leadership</a>
+					// <a href="/worklogs" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Worklogs</a>
+					// <a href="/issues" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Issues</a>
+					<a href="/reports/maintenance" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Maintenance Ratio</a>
+					<a href="/reports/missing-charge" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Missing Charge</a>
+					<a href="/reports/mismatched-charge" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Mismatched Charge</a>
+					<a href="/reports/customer-bugs" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Stability Team</a>
+					<a href="/reports/project-hours" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Project Hours</a>
+					<a href="/reports/weekly-hours" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Weekly Hours</a>
+					<a href="/reports/timesheets" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Timesheets</a>
+					<a href="/reports/time-tracking" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Project Tracking</a>
+					<a href="/reports/project-kpis" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Project KPIs</a>
+					<a href="/settings/project-charges" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">Project Charges</a>
+					<a href="/settings/people" class="px-3 py-2 rounded-md hover:bg-blue-700 transition">People</a>
+
+				</div>
+			</div>
+		</div>
+	</nav>
+}

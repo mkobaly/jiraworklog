@@ -1,0 +1,569 @@
+package pages
+
+import (
+	"encoding/json"
+	"fmt"
+	"math"
+	"github.com/mkobaly/jiraworklog/templates/layouts"
+	"github.com/mkobaly/jiraworklog/types"
+)
+
+templ ProjectKPIs(data types.ProjectKPIData, project string, projectName string) {
+	@layouts.Base("Project KPIs") {
+		<div class="space-y-6">
+			<!-- Header + search form -->
+			<div class="bg-white rounded-lg shadow p-6">
+				<h1 class="text-2xl font-bold text-gray-800 mb-1">Project KPIs</h1>
+				if projectName != "" {
+					<p class="text-lg font-medium text-blue-700 mb-3">{ projectName }</p>
+				}
+				<form method="GET" action="/reports/project-kpis" class="flex gap-3 items-end flex-wrap">
+					<div class="flex-1 min-w-48">
+						<label for="project" class="block text-sm font-medium text-gray-700 mb-1">Epic Key or Fixed Version</label>
+						<input
+							type="text"
+							id="project"
+							name="project"
+							value={ project }
+							placeholder="e.g. PROJ-123 or 2024.1"
+							class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+						/>
+					</div>
+					<button id="loadKpisBtn" type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition flex items-center gap-2">
+						<svg id="loadKpisSpinner" class="hidden animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+							<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+							<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+						</svg>
+						<span id="loadKpisBtnText">Load KPIs</span>
+					</button>
+				</form>
+			</div>
+
+			if project == "" {
+				<div class="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center text-blue-700">
+					Enter an epic key or fixed version above to load KPI data.
+				</div>
+			} else if data.IssueCount == 0 {
+				<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center text-yellow-700">
+					No issues found for <strong>{ project }</strong>. Check that the transition data has been synced.
+				</div>
+			} else {
+				<!-- Row 1: Summary table + Delivery Predictability chart -->
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+					<!-- Flow Health Summary -->
+					<div class="bg-white rounded-lg shadow p-6">
+						<h2 class="text-lg font-semibold text-gray-700 mb-4">Flow Health Summary</h2>
+						<table class="w-full text-sm">
+							<tbody class="divide-y divide-gray-100">
+								@summaryRow("Issues", fmt.Sprintf("%d", data.IssueCount), "")
+								@summaryRow("Median Cycle Time", kpiFmtDuration(data.MedianCycleTimeSecs), "")
+								@summaryRowWithSub(
+									"Flow Efficiency",
+									fmt.Sprintf("%.1f%%", data.FlowEfficiencyPct),
+									"Measures how much time is spent actively progressing work vs waiting in queues or blocked. A higher percentage means smoother delivery.",
+									flowEfficiencyColor(data.FlowEfficiencyPct),
+								)
+								@summaryRowWithSub(
+									"Avg Blocked Time",
+									kpiFmtDuration(data.AvgBlockedTimeSecs),
+									"Measures how long issues are stalled due to blockers. Helps identify systemic delays and ownership gaps.",
+									"",
+								)
+								@summaryRowWithSub(
+									"Status Bounce Rate",
+									fmt.Sprintf("%.0f%% (%d bounces, %d issues)", kpiBounceRate(data), data.TotalBounces, data.BounceIssueCount),
+									"Tracks how often issues re-enter the same status. High bounce rate may indicate requirement churn or process instability.",
+									"",
+								)
+								if data.IssuesReturnedFromQA > 0 {
+									@summaryRow("QA Returns", fmt.Sprintf("%d issues (avg %.1f cycles)", data.IssuesReturnedFromQA, data.AvgQACycles), "text-orange-600")
+								}
+							</tbody>
+						</table>
+					</div>
+
+					<!-- Delivery Predictability -->
+					<div class="bg-white rounded-lg shadow p-6">
+						<h2 class="text-lg font-semibold text-gray-700 mb-1">Delivery Predictability</h2>
+						<p class="text-xs text-gray-400 mb-4">Shows how long issues take to complete. P50 = typical case, P85 = most cases, P95 = worst-case. Helps forecast delivery timelines.</p>
+						<!-- Percentile summary -->
+						<div class="grid grid-cols-3 gap-3 mb-4">
+							<div class="text-center p-3 bg-purple-50 rounded-lg">
+								<p class="text-xs text-gray-500 uppercase tracking-wide">P50</p>
+								<p class="text-base font-bold text-purple-700">{ kpiFmtDuration(data.MedianCycleTimeSecs) }</p>
+							</div>
+							<div class="text-center p-3 bg-violet-50 rounded-lg">
+								<p class="text-xs text-gray-500 uppercase tracking-wide">P85</p>
+								<p class="text-base font-bold text-violet-700">{ kpiFmtDuration(data.P85CycleTimeSecs) }</p>
+							</div>
+							<div class="text-center p-3 bg-indigo-50 rounded-lg">
+								<p class="text-xs text-gray-500 uppercase tracking-wide">P95</p>
+								<p class="text-base font-bold text-indigo-700">{ kpiFmtDuration(data.P95CycleTimeSecs) }</p>
+							</div>
+						</div>
+						<canvas
+							id="cycleDistChart"
+							data-labels='["P50 (Median)","P85","P95"]'
+							data-values={ kpyCycleDistValues(data) }
+							height="180"
+						></canvas>
+					</div>
+				</div>
+
+				<!-- Row 2: Bottleneck Breakdown + Flow Stability -->
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+					<div class="bg-white rounded-lg shadow p-6">
+						<h2 class="text-lg font-semibold text-gray-700 mb-1">Bottleneck Breakdown</h2>
+						<p class="text-xs text-gray-400 mb-4">Average time per issue spent in each phase</p>
+						<canvas
+							id="bucketChart"
+							data-labels={ kpiBucketLabels(data.FlowBuckets) }
+							data-values={ kpiBucketValues(data.FlowBuckets) }
+							height="220"
+						></canvas>
+					</div>
+
+					if len(data.WIPHistory) > 0 {
+						<div class="bg-white rounded-lg shadow p-6">
+							<h2 class="text-lg font-semibold text-gray-700 mb-1">Flow Stability</h2>
+							<p class="text-xs text-gray-400 mb-4">Active issues in-flight over time</p>
+							<canvas
+								id="wipChart"
+								data-labels={ kpiTimeLabels(wipDays(data.WIPHistory)) }
+								data-values={ kpiWIPValues(data.WIPHistory) }
+								height="220"
+							></canvas>
+						</div>
+					}
+				</div>
+
+				<!-- Row 3: Burdown chart -->
+				if len(data.BurndownHistory) > 0 {
+					<div class="bg-white rounded-lg shadow p-6">
+						<h2 class="text-lg font-semibold text-gray-700 mb-1">Burdown</h2>
+						<p class="text-xs text-gray-400 mb-4">Remaining issues over time</p>
+						<canvas
+							id="burndownChart"
+							data-labels={ kpiTimeLabels(burndownDays(data.BurndownHistory)) }
+							data-remaining={ kpiBurndownRemaining(data) }
+							data-dev-remaining={ kpiBurndownDevRemaining(data) }
+							height="180"
+						></canvas>
+					</div>
+				}
+
+				<!-- Row 4: Burn-up chart -->
+			if len(data.BurnupHistory) > 0 {
+				<div class="bg-white rounded-lg shadow p-6">
+					<h2 class="text-lg font-semibold text-gray-700 mb-1">Burn-up Chart</h2>
+					<p class="text-xs text-gray-400 mb-4">Cumulative hours logged vs scope. Orange dashed = total scope (incl. bugs found in QA). Blue dashed = planned scope (excludes bugs).</p>
+					<canvas
+						id="burnupChart"
+						data-labels={ kpiTimeLabels(burnupDays(data.BurnupHistory)) }
+						data-completed={ kpiBurnupCompleted(data.BurnupHistory) }
+						data-scope={ kpiBurnupScope(data.BurnupHistory) }
+						data-planned-scope={ kpiBurnupPlannedScope(data.BurnupHistory) }
+						height="180"
+					></canvas>
+				</div>
+			}
+
+			<!-- Row 5: Time Spent per Status detail table -->
+				if len(data.CycleTimeByStatus) > 0 {
+					<div class="bg-white rounded-lg shadow overflow-hidden">
+						<div class="px-6 py-4 border-b border-gray-200">
+							<h2 class="text-lg font-semibold text-gray-700">Time Spent per Status</h2>
+						</div>
+						<table class="min-w-full divide-y divide-gray-200 text-sm">
+							<thead class="bg-gray-50">
+								<tr>
+									<th class="px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Status</th>
+									<th class="px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Phase</th>
+									<th class="px-6 py-3 text-right font-medium text-gray-500 uppercase tracking-wider">Avg Time</th>
+									<th class="px-6 py-3 text-right font-medium text-gray-500 uppercase tracking-wider">Issues</th>
+								</tr>
+							</thead>
+							<tbody class="bg-white divide-y divide-gray-100">
+								for _, s := range data.CycleTimeByStatus {
+									<tr class="hover:bg-gray-50">
+										<td class="px-6 py-3 text-gray-800">{ s.Status }</td>
+										<td class="px-6 py-3">
+											<span class={ "px-2 py-0.5 rounded text-xs font-medium " + bucketBadgeClass(s.Bucket) }>{ s.Bucket }</span>
+										</td>
+										<td class="px-6 py-3 text-right text-gray-600">{ kpiFmtDuration(s.AvgSecs) }</td>
+										<td class="px-6 py-3 text-right text-gray-600">{ fmt.Sprintf("%d", s.IssueCount) }</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				}
+			}
+		</div>
+
+		<script>
+			(function () {
+				function load(id) {
+					const el = document.getElementById(id);
+					if (!el) return null;
+					try {
+						return {
+							el: el,
+							labels: JSON.parse(el.dataset.labels || '[]'),
+							values: JSON.parse(el.dataset.values || '[]'),
+						};
+					} catch(e) { return null; }
+				}
+
+				function secsToHours(v) {
+					return Math.round(v / 3600 * 10) / 10;
+				}
+
+				// Delivery Predictability — P50/P85/P95 bar
+				(function() {
+					const d = load('cycleDistChart');
+					if (!d || !d.values.length) return;
+					new Chart(d.el, {
+						type: 'bar',
+						data: {
+							labels: d.labels,
+							datasets: [{
+								label: 'Hours',
+								data: d.values.map(secsToHours),
+								backgroundColor: ['rgba(139,92,246,0.7)','rgba(109,40,217,0.7)','rgba(76,29,149,0.7)'],
+							}]
+						},
+						options: {
+							responsive: true,
+							plugins: { legend: { display: false } },
+							scales: { y: { beginAtZero: true, title: { display: true, text: 'Hours' } } }
+						}
+					});
+				})();
+
+				// Bottleneck Breakdown — horizontal bar by bucket
+				(function() {
+					const d = load('bucketChart');
+					if (!d || !d.values.length) return;
+					const colors = {
+						'Dev':     'rgba(59,130,246,0.75)',
+						'QA':      'rgba(139,92,246,0.75)',
+						'Waiting': 'rgba(249,115,22,0.75)',
+						'Done':    'rgba(34,197,94,0.75)',
+						'Other':   'rgba(156,163,175,0.75)',
+					};
+					const bgColors = d.labels.map(function(l) { return colors[l] || colors['Other']; });
+					new Chart(d.el, {
+						type: 'bar',
+						data: {
+							labels: d.labels,
+							datasets: [{
+								label: 'Avg Hours per Issue',
+								data: d.values.map(secsToHours),
+								backgroundColor: bgColors,
+							}]
+						},
+						options: {
+							indexAxis: 'y',
+							responsive: true,
+							plugins: { legend: { display: false } },
+							scales: { x: { beginAtZero: true, title: { display: true, text: 'Hours' } } }
+						}
+					});
+				})();
+
+				// Flow Stability — WIP line
+				(function() {
+					const d = load('wipChart');
+					if (!d || !d.values.length) return;
+					new Chart(d.el, {
+						type: 'line',
+						data: {
+							labels: d.labels,
+							datasets: [{ label: 'WIP Count', data: d.values,
+								borderColor: 'rgba(59,130,246,1)', backgroundColor: 'rgba(59,130,246,0.1)',
+								borderWidth: 2, fill: true, tension: 0.3, pointRadius: 2 }]
+						},
+						options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+					});
+				})();
+
+				// Burn-up — completed hours vs total scope
+				(function() {
+					const el = document.getElementById('burnupChart');
+					if (!el) return;
+					try {
+						const labels       = JSON.parse(el.dataset.labels       || '[]');
+						const completed    = JSON.parse(el.dataset.completed    || '[]');
+						const scope        = JSON.parse(el.dataset.scope        || '[]');
+						const plannedScope = JSON.parse(el.dataset.plannedScope || '[]');
+						if (!labels.length) return;
+						new Chart(el, {
+							type: 'line',
+							data: {
+								labels: labels,
+								datasets: [
+									{ label: 'Completed Work', data: completed,
+									  borderColor: 'rgba(34,197,94,1)', backgroundColor: 'rgba(34,197,94,0.1)',
+									  borderWidth: 2, fill: true, tension: 0.3, pointRadius: 0 },
+									{ label: 'Total Scope', data: scope,
+									  borderColor: 'rgba(249,115,22,1)', backgroundColor: 'transparent',
+									  borderWidth: 2, borderDash: [6,3], fill: false, tension: 0, pointRadius: 0 },
+									{ label: 'Planned Scope', data: plannedScope,
+									  borderColor: 'rgba(59,130,246,1)', backgroundColor: 'transparent',
+									  borderWidth: 2, borderDash: [4,4], fill: false, tension: 0, pointRadius: 0 },
+								]
+							},
+							options: {
+								responsive: true,
+								plugins: { legend: { display: true, position: 'top' } },
+								scales: {
+									x: { ticks: { maxTicksLimit: 10 } },
+									y: { beginAtZero: true, title: { display: true, text: 'Hours' } }
+								}
+							}
+						});
+					} catch(e) {}
+				})();
+
+				// Sprint Progress — 2-line burndown
+				(function() {
+					const el = document.getElementById('burndownChart');
+					if (!el) return;
+					try {
+						const labels       = JSON.parse(el.dataset.labels        || '[]');
+						const remaining    = JSON.parse(el.dataset.remaining      || '[]');
+						const devRemaining = JSON.parse(el.dataset.devRemaining   || '[]');
+						if (!labels.length) return;
+						new Chart(el, {
+							type: 'line',
+							data: {
+								labels: labels,
+								datasets: [
+									{ label: 'Remaining (overall)', data: remaining,
+									  borderColor: 'rgba(239,68,68,1)', backgroundColor: 'rgba(239,68,68,0.08)',
+									  borderWidth: 2, fill: true, tension: 0.3, pointRadius: 0 },
+									{ label: 'Remaining in Dev', data: devRemaining,
+									  borderColor: 'rgba(59,130,246,1)', backgroundColor: 'rgba(59,130,246,0.08)',
+									  borderWidth: 2, fill: true, tension: 0.3, pointRadius: 0 },
+								]
+							},
+							options: {
+								responsive: true,
+								plugins: { legend: { display: true, position: 'top' } },
+								scales: { y: { beginAtZero: true } }
+							}
+						});
+					} catch(e) {}
+				})();
+			})();
+
+			// Spinner: show on submit, hide on page load
+			(function() {
+				const form    = document.querySelector('form[action="/reports/project-kpis"]');
+				const spinner = document.getElementById('loadKpisSpinner');
+				const btnText = document.getElementById('loadKpisBtnText');
+				const btn     = document.getElementById('loadKpisBtn');
+				if (!form || !spinner) return;
+				form.addEventListener('submit', function() {
+					spinner.classList.remove('hidden');
+					btnText.textContent = 'Loading…';
+					btn.disabled = true;
+				});
+				document.addEventListener('turbo:load', function() {
+					spinner.classList.add('hidden');
+					if (btnText) btnText.textContent = 'Load KPIs';
+					if (btn) btn.disabled = false;
+				}, { once: true });
+			})();
+		</script>
+	}
+}
+
+templ summaryRow(label, value, valueClass string) {
+	<tr>
+		<td class="py-2.5 pr-4 text-gray-500 w-1/2">{ label }</td>
+		if valueClass != "" {
+			<td class={ "py-2.5 font-semibold " + valueClass }>{ value }</td>
+		} else {
+			<td class="py-2.5 font-semibold text-gray-800">{ value }</td>
+		}
+	</tr>
+}
+
+templ summaryRowWithSub(label, value, subtitle, valueClass string) {
+	<tr>
+		<td class="py-2.5 pr-4 w-1/2">
+			<span class="text-gray-500">{ label }</span>
+			<p class="text-xs text-gray-400 mt-0.5">{ subtitle }</p>
+		</td>
+		if valueClass != "" {
+			<td class={ "py-2.5 font-semibold align-top " + valueClass }>{ value }</td>
+		} else {
+			<td class="py-2.5 font-semibold text-gray-800 align-top">{ value }</td>
+		}
+	</tr>
+}
+
+// ── Helper functions ──────────────────────────────────────────────────────────
+
+func kpiFmtDuration(secs float64) string {
+	if secs <= 0 {
+		return "—"
+	}
+	total := int(secs)
+	days := total / 86400
+	total %= 86400
+	hours := total / 3600
+	total %= 3600
+	mins := total / 60
+	switch {
+	case days > 0:
+		return fmt.Sprintf("%dd %dh", days, hours)
+	case hours > 0:
+		return fmt.Sprintf("%dh %dm", hours, mins)
+	default:
+		return fmt.Sprintf("%dm", mins)
+	}
+}
+
+func kpiBounceRate(data types.ProjectKPIData) float64 {
+	if data.IssueCount == 0 {
+		return 0
+	}
+	return float64(data.BounceIssueCount) / float64(data.IssueCount) * 100
+}
+
+func flowEfficiencyColor(pct float64) string {
+	switch {
+	case pct >= 40:
+		return "text-green-600"
+	case pct >= 20:
+		return "text-yellow-600"
+	default:
+		return "text-red-600"
+	}
+}
+
+func bucketBadgeClass(bucket string) string {
+	switch bucket {
+	case "Dev":
+		return "bg-blue-100 text-blue-700"
+	case "QA":
+		return "bg-purple-100 text-purple-700"
+	case "Waiting":
+		return "bg-orange-100 text-orange-700"
+	case "Done":
+		return "bg-green-100 text-green-700"
+	default:
+		return "bg-gray-100 text-gray-600"
+	}
+}
+
+func kpiBucketLabels(rows []types.FlowBucket) string {
+	labels := make([]string, len(rows))
+	for i, r := range rows {
+		labels[i] = r.Bucket
+	}
+	b, _ := json.Marshal(labels)
+	return string(b)
+}
+
+func kpiBucketValues(rows []types.FlowBucket) string {
+	vals := make([]float64, len(rows))
+	for i, r := range rows {
+		vals[i] = r.AvgSecs
+	}
+	b, _ := json.Marshal(vals)
+	return string(b)
+}
+
+func kpyCycleDistValues(data types.ProjectKPIData) string {
+	b, _ := json.Marshal([]float64{data.MedianCycleTimeSecs, data.P85CycleTimeSecs, data.P95CycleTimeSecs})
+	return string(b)
+}
+
+func wipDays(pts []types.WIPDataPoint) []string {
+	labels := make([]string, len(pts))
+	for i, p := range pts {
+		labels[i] = p.Day.Format("Jan 2")
+	}
+	return labels
+}
+
+func burndownDays(pts []types.BurndownDataPoint) []string {
+	labels := make([]string, len(pts))
+	for i, p := range pts {
+		labels[i] = p.Day.Format("Jan 2")
+	}
+	return labels
+}
+
+func kpiTimeLabels(labels []string) string {
+	b, _ := json.Marshal(labels)
+	return string(b)
+}
+
+func kpiWIPValues(pts []types.WIPDataPoint) string {
+	vals := make([]int, len(pts))
+	for i, p := range pts {
+		vals[i] = p.WIPCount
+	}
+	b, _ := json.Marshal(vals)
+	return string(b)
+}
+
+// kpiBurndownRemaining: issues not yet fully done (top/slower line)
+func kpiBurndownRemaining(data types.ProjectKPIData) string {
+	vals := make([]int, len(data.BurndownHistory))
+	for i, p := range data.BurndownHistory {
+		vals[i] = data.IssueCount - p.FullyDoneCount
+	}
+	b, _ := json.Marshal(vals)
+	return string(b)
+}
+
+// kpiBurndownDevRemaining: issues dev is still working on (lower/faster line)
+func kpiBurndownDevRemaining(data types.ProjectKPIData) string {
+	vals := make([]int, len(data.BurndownHistory))
+	for i, p := range data.BurndownHistory {
+		vals[i] = data.IssueCount - p.DevCompleteCount
+	}
+	b, _ := json.Marshal(vals)
+	return string(b)
+}
+
+func burnupDays(pts []types.BurnupDataPoint) []string {
+	labels := make([]string, len(pts))
+	for i, p := range pts {
+		labels[i] = p.Day.Format("2006-01-02")
+	}
+	return labels
+}
+
+func kpiBurnupCompleted(pts []types.BurnupDataPoint) string {
+	vals := make([]float64, len(pts))
+	for i, p := range pts {
+		vals[i] = math.Round(p.CompletedSeconds/3600*10) / 10
+	}
+	b, _ := json.Marshal(vals)
+	return string(b)
+}
+
+func kpiBurnupScope(pts []types.BurnupDataPoint) string {
+	vals := make([]float64, len(pts))
+	for i, p := range pts {
+		vals[i] = math.Round(p.TotalScopeSeconds/3600*10) / 10
+	}
+	b, _ := json.Marshal(vals)
+	return string(b)
+}
+
+func kpiBurnupPlannedScope(pts []types.BurnupDataPoint) string {
+	vals := make([]float64, len(pts))
+	for i, p := range pts {
+		vals[i] = math.Round(p.PlannedScopeSeconds/3600*10) / 10
+	}
+	b, _ := json.Marshal(vals)
+	return string(b)
+}

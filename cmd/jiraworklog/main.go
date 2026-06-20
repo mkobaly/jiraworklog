@@ -1,66 +1,51 @@
 package main
 
 import (
+	"context"
 	"errors"
-	"strconv"
-
-	"github.com/mkobaly/jiraworklog/job"
-
-	//"github.com/mkobaly/jiraworklog/test"
 	"net/http"
 	"os"
 	"os/signal"
-
-	//"strings"
+	"strconv"
 	"time"
 
+	"github.com/alexflint/go-arg"
 	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/fatih/color"
-	cmdline "github.com/galdor/go-cmdline"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
-
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"github.com/mkobaly/jiraworklog"
-	//wl "github.com/mkobaly/jiraworklog"
-	//"github.com/mkobaly/jiraworklog/workers"
+	"github.com/mkobaly/jiraworklog/internal/config"
+	"github.com/mkobaly/jiraworklog/internal/email"
+	"github.com/mkobaly/jiraworklog/job"
 	"github.com/mkobaly/jiraworklog/repository"
-	//log "github.com/sirupsen/logrus"
 )
 
 var db *sqlx.DB
 
-//ErrUnknownRepo is error for unknown repository
+var Version string
+
+// ErrUnknownRepo is error for unknown repository
 var ErrUnknownRepo = errors.New("unkown repo")
 
 func main() {
 
-	c := make(chan os.Signal)
+	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 
-	//Define command line params and parse input
-	cmdline := cmdline.New()
-	cmdline.AddOption("c", "config", "config.yaml", "path to configuration file")
-	cmdline.AddOption("r", "repo", "BOLTDB", "specific repo to use (MSSQL, BOLTDB)")
-	cmdline.SetOptionDefault("r", "BOLTDB")
-	cmdline.AddOption("p", "port", "8180", "default port to serve rest API from")
-	cmdline.SetOptionDefault("p", "8180")
-	cmdline.AddFlag("k", "ask", "Ask for username and password from the STDIN")
-	cmdline.AddFlag("v", "verbose", "verbose logging")
-	cmdline.Parse(os.Args)
+	args := config.NewArgs(Version)
+	_ = arg.MustParse(&args)
 
 	//Logger setup
 	logLevel := "warn"
-	if cmdline.IsOptionSet("v") {
+	if args.Debug {
 		logLevel = "info"
 	}
 	logger := jiraworklog.NewLogger(jiraworklog.LoggerOptions{Application: "jiraWorklog", Level: logLevel})
 
-	//Load up configuration. This holds Jira and SQL connection information
-	cfgPath := "config.yaml"
-	if cmdline.IsOptionSet("c") {
-		cfgPath = cmdline.OptionValue("c")
-	}
-
-	cfg, err := jiraworklog.LoadConfig(cfgPath)
+	cfg, err := jiraworklog.LoadConfig(args.Config)
 	if err != nil {
 		switch err {
 		case jiraworklog.ErrNoConfigFile:
@@ -69,75 +54,119 @@ func main() {
 			color.Yellow("============================================================================================================")
 			os.Exit(0)
 		default:
-			logger.WithError(err).Fatal("failed to load config file")
+			logger.Error("failed to load config file", "error", err)
+			os.Exit(1)
 		}
 	}
 
-	//Port
-	port := 8180
-	if cmdline.IsOptionSet("p") {
-		port, err = strconv.Atoi(cmdline.OptionValue("p"))
-		if err != nil {
-			logger.WithError(err).Fatal("port must be numeric")
-		}
-	}
-
-	//Repo Settings
-	repoType := "BOLTDB"
-	if cmdline.IsOptionSet("r") {
-		repoType = cmdline.OptionValue("r")
-	}
+	// //Repo Settings
+	repoType := "POSTGRES"
+	// if cmdline.IsOptionSet("r") {
+	// 	repoType = cmdline.OptionValue("r")
+	//}
 
 	//load repo
 	repo, err := loadRepo(repoType, cfg)
 	if err != nil {
-		logger.Fatal(err)
+		logger.Error("failed to load repository", "error", err, "type", repoType)
+		os.Exit(1)
 	}
 
-	//jira := &test.FakeJira{}
 	jira := jiraworklog.NewJira(cfg)
 	//List out all jobs we need here to run
-	j1 := job.NewJiraDownloadWorklogs(cfg, jira, repo, logger)
-	j2 := job.NewJiraCheckResolution(cfg, jira, repo, logger)
-	worker := jiraworklog.NewWorker(logger, j1, j2)
+	j1 := job.NewJiraSyncWorklogsJob(cfg, jira, repo)
+	j2 := job.NewJJiraSyncIssuesJob(cfg, jira, repo)
+	j3 := job.NewStatusStintsBackfillJob(cfg, jira, repo)
+	worker := jiraworklog.NewWorker(logger, j1, j2, j3)
 	go worker.Start()
 
-	//HTTP server stuff
-	fileServer := http.FileServer(FileSystem{http.Dir("./web")})
-	server := NewHttpServer(repo, logger)
-	mux := http.NewServeMux()
-	mux.Handle("/worklogs", http.HandlerFunc(server.GetWorkLogs))
-	mux.Handle("/worklogs/groupby", http.HandlerFunc(server.GetWorklogsGroupBy))
-	//mux.Handle("/worklogs/perday", http.HandlerFunc(server.GetWorklogsPerDay))
-	mux.Handle("/worklogs/perdev", http.HandlerFunc(server.GetWorklogsPerDev))
-	//mux.Handle("/worklogs/perdevday", http.HandlerFunc(server.GetWorklogsPerDevDay))
-	mux.Handle("/worklogs/perdevweek", http.HandlerFunc(server.GetWorklogsPerDevWeek))
+	// Initialize Echo
+	e := echo.New()
+	e.HideBanner = true
 
-	mux.Handle("/issues", http.HandlerFunc(server.GetIssues))
-	mux.Handle("/issues/groupby", http.HandlerFunc(server.GetIssuesGroupedBy))
-	mux.Handle("/issues/accuracy", http.HandlerFunc(server.GetIssueAccuracy))
-	//mux.Handle("/", http.StripPrefix(strings.TrimRight("/dashboard/", "/"), fileServer))
-	mux.Handle("/", fileServer)
-	logger.Info("Starting HTTP server at *:" + strconv.Itoa(port))
-	go http.ListenAndServe(":"+strconv.Itoa(port), mux)
+	// Middleware
+	e.Use(middleware.Recover())
+	e.Use(middleware.RequestID())
 
-	select {
-	case sig := <-c:
-		logger.WithField("signal", sig).Warn("Shutting down due to signal")
-		worker.Shutdown()
-		repo.Close()
-		time.Sleep(1 * time.Second)
+	emailClient := email.NewSmtpClient(cfg)
+	if args.Debug {
+		emailClient = email.FakeEmailClient{}
 	}
+	// Create handler
+	handler := NewHandler(repo, jira, logger, cfg, emailClient, args.Debug)
+
+	// Static files embedded into the binary
+	e.StaticFS("/static", echo.MustSubFS(jiraworklog.StaticFS, "static"))
+
+	e.GET("/login", handler.Login)
+	e.POST("/login", handler.LoginPost)
+	e.GET("/login/confirm", handler.LoginConfirmGet)
+	e.POST("/login/confirm", handler.LoginConfirm)
+
+	// Dashboard routes
+	e.GET("/", handler.Dashboard, handler.AuthMiddleware)
+	e.GET("/dashboard", handler.Dashboard, handler.AuthMiddleware)
+	e.GET("/dashboard/leadership", handler.GetLeadershipDashboard, handler.AuthMiddleware)
+	e.GET("/dashboard/manager", handler.GetManagerDashboard, handler.AuthMiddleware)
+
+	// Worklog routes
+	// worklogs := e.Group("/worklogs", handler.AuthMiddleware)
+	// worklogs.GET("/groupby", handler.GetWorklogsGroupBy)
+	// worklogs.GET("/perdev", handler.GetWorklogsPerDev)
+	// worklogs.GET("/perdevweek", handler.GetWorklogsPerDevWeek)
+
+	// // Issue routes
+	// e.GET("/issues/groupby", handler.GetIssuesGroupedBy)
+	// e.GET("/issues/accuracy", handler.GetIssueAccuracy)
+
+	// Reports routes
+	reports := e.Group("/reports", handler.AuthMiddleware)
+	reports.GET("/maintenance", handler.GetMaintenanceRatio)
+	reports.GET("/missing-charge", handler.GetIssuesMissingProjectCharge)
+	reports.GET("/mismatched-charge", handler.GetIssuesMismatchedProjectCharge)
+	reports.GET("/customer-bugs", handler.GetCustomerBugs)
+	reports.GET("/project-hours", handler.GetProjectChargeHours)
+	reports.GET("/project-hours/csv", handler.GetProjectChargeHoursCSV)
+	reports.GET("/weekly-hours", handler.GetWeeklyHours)
+	reports.GET("/timesheets", handler.GetTimesheets)
+	reports.GET("/time-tracking", handler.GetProjectTimeTracking)
+	reports.GET("/project-kpis", handler.GetProjectKPIs)
+
+	// Settings routes
+	settings := e.Group("/settings", handler.AuthMiddleware)
+	settings.GET("/people", handler.GetPeople)
+	settings.PUT("/people/:id", handler.UpdatePerson)
+	settings.GET("/project-charges", handler.GetProjectCharges)
+	settings.PUT("/project-charges", handler.UpdateProjectCharge)
+
+	// Start server in background
+	go func() {
+		logger.Info("Starting HTTP server", "port", args.Port)
+		if err := e.Start(":" + strconv.Itoa(args.Port)); err != nil && err != http.ErrServerClosed {
+			logger.Error("failed to start server", "error", err)
+		}
+	}()
+
+	// Wait for interrupt signal
+	sig := <-c
+	logger.Warn("Shutting down due to signal", "signal", sig.String())
+
+	// Graceful shutdown
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := e.Shutdown(ctx); err != nil {
+		logger.Error("failed to shutdown server gracefully", "error", err)
+	}
+
+	worker.Shutdown()
+	repo.Close()
+	time.Sleep(1 * time.Second)
 }
 
 func loadRepo(repoType string, cfg *jiraworklog.Config) (repository.Repo, error) {
 	switch repoType {
-	case "MSSQL":
-		return repository.NewSQLRepo(cfg)
-	case "BOLTDB":
-		return repository.NewBoltDBRepo("jira.db")
-	case "GOOGLESHEET":
-		return nil, ErrUnknownRepo
+	case "POSTGRES":
+		return repository.NewPostgresRepo(cfg)
 	default:
 		return nil, ErrUnknownRepo
 	}

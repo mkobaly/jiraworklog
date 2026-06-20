@@ -1,9 +1,8 @@
 package jiraworklog
 
 import (
+	"log/slog"
 	"time"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // Worker will do its Action once every interval, making up for lost time that
@@ -11,7 +10,7 @@ import (
 type Worker struct {
 	Stopped  bool // A flag determining the state of the worker
 	Jobs     []Job
-	logger   *log.Entry
+	logger   *slog.Logger
 	stopChan chan struct{}
 }
 
@@ -23,19 +22,17 @@ type Job interface {
 }
 
 // NewWorker creates a new worker and instantiates all the data structures required.
-func NewWorker(logger *log.Entry, jobs ...Job) *Worker {
+func NewWorker(logger *slog.Logger, jobs ...Job) *Worker {
 	return &Worker{
 		Stopped:  false,
 		stopChan: make(chan struct{}),
-		//ShutdownChannel: make(chan string),
-		logger: logger,
-		Jobs:   jobs,
+		logger:   logger,
+		Jobs:     jobs,
 	}
 }
 
 //Start will start the worker and listens for a shutdown call.
 func (w *Worker) Start() {
-
 	for _, job := range w.Jobs {
 		go w.Run(job)
 	}
@@ -48,18 +45,18 @@ func (w *Worker) Run(job Job) {
 		started := time.Now()
 		err := job.Run()
 		if err != nil {
-			w.logger.WithError(err).WithField("job", job.GetName()).Error("job run failed")
+			w.logger.Error("job run failed", "error", err, "job", job.GetName())
 			hasError = true
 		}
 		if !hasError {
 			finished := time.Now()
 			duration := finished.Sub(started)
-			w.logger.WithField("duration", duration).WithField("job", job.GetName()).Info("job run complete")
+			w.logger.Info("job run complete", "duration", duration.String(), "job", job.GetName())
 		}
 
 		select {
 		case <-w.stopChan:
-			w.logger.WithField("job", job.GetName()).Warn("Shutting down")
+			w.logger.Warn("Shutting down", "job", job.GetName())
 			return
 		case <-time.After(job.GetInterval()):
 			// This breaks out of the select, not the for loop.

@@ -1,0 +1,458 @@
+package pages
+
+import (
+	"encoding/json"
+	"fmt"
+	"github.com/mkobaly/jiraworklog/templates/layouts"
+	"github.com/mkobaly/jiraworklog/types"
+)
+
+templ People(people []types.People, roles []string) {
+	@layouts.Base("People Management") {
+		<div class="mb-6">
+			<h1 class="text-3xl font-bold text-gray-900">People Management</h1>
+			<p class="text-gray-600 mt-2">Manage team members and their roles</p>
+		</div>
+
+		if len(people) == 0 {
+			<div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+				<p class="text-yellow-700">No people found.</p>
+			</div>
+		} else {
+			<!-- Hidden element with roles data for JavaScript -->
+			<div id="rolesData" data-roles={ toRolesJSON(roles) } style="display:none;"></div>
+
+			<!-- Search filter -->
+			<div class="mb-4">
+				<div class="relative">
+					<input
+						type="text"
+						id="search-filter"
+						class="w-full md:w-96 px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+						placeholder="Search by name or role..."
+						oninput="filterPeople(this.value)"
+					/>
+					<svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+					</svg>
+					<button
+						type="button"
+						id="clear-search"
+						class="hidden absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+						onclick="clearSearch()"
+					>
+						<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+						</svg>
+					</button>
+				</div>
+				<p id="filter-count" class="text-sm text-gray-500 mt-1"></p>
+			</div>
+
+			<!-- Success/Error message container -->
+			<div id="message-container" class="hidden mb-4">
+				<div id="success-message" class="hidden bg-green-50 border-l-4 border-green-400 p-4">
+					<p class="text-green-700">Role updated successfully!</p>
+				</div>
+				<div id="error-message" class="hidden bg-red-50 border-l-4 border-red-400 p-4">
+					<p class="text-red-700">Failed to update role. Please try again.</p>
+				</div>
+			</div>
+
+			<!-- Desktop table view -->
+			<div class="hidden md:block bg-white rounded-lg shadow-md overflow-hidden">
+				<table class="min-w-full divide-y divide-gray-200">
+					<thead class="bg-gray-50">
+						<tr>
+							<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+							<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+							<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
+							<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+							<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+						</tr>
+					</thead>
+					<tbody class="bg-white divide-y divide-gray-200" id="people-table-body">
+						for _, person := range people {
+							<tr class="hover:bg-gray-50 person-row" data-person-id={ fmt.Sprintf("%d", person.Id) } data-name={ person.Name } data-role={ person.GetRole() } data-employee={ fmt.Sprintf("%t", person.IsEmployee) } data-location={ person.GetLocation() }>
+								<td class="px-6 py-4 whitespace-nowrap">
+									<div class="text-sm font-medium text-gray-900">{ person.Name }</div>
+								</td>
+								<td class="px-6 py-4 whitespace-nowrap">
+									<div class="role-display">
+										<span class="role-text px-2 py-1 text-sm rounded-full bg-blue-100 text-blue-800">{ person.GetRole() }</span>
+									</div>
+									<div class="role-edit hidden">
+										<div class="relative">
+											<input
+												type="text"
+												class="role-input w-48 px-3 py-1 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+												value={ person.GetRole() }
+												list={ fmt.Sprintf("roles-%d", person.Id) }
+												placeholder="Enter or select role"
+											/>
+											<datalist id={ fmt.Sprintf("roles-%d", person.Id) }>
+												for _, role := range roles {
+													<option value={ role }></option>
+												}
+											</datalist>
+										</div>
+									</div>
+								</td>
+								<td class="px-6 py-4 whitespace-nowrap">
+									<div class="employee-display">
+										if person.IsEmployee {
+											<span class="employee-badge px-2 py-1 text-sm rounded-full bg-green-100 text-green-800">Yes</span>
+										} else {
+											<span class="employee-badge px-2 py-1 text-sm rounded-full bg-gray-100 text-gray-800">No</span>
+										}
+									</div>
+									<div class="employee-edit hidden">
+										<label class="relative inline-flex items-center cursor-pointer">
+											<input
+												type="checkbox"
+												class="employee-checkbox sr-only peer"
+												if person.IsEmployee {
+													checked
+												}
+											/>
+											<div class="w-11 h-6 bg-gray-200 peer-focus:outline-hidden peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+										</label>
+									</div>
+								</td>
+								<td class="px-6 py-4 whitespace-nowrap">
+									<div class="location-display">
+										<span class="location-text text-sm text-gray-900">{ person.GetLocation() }</span>
+									</div>
+									<div class="location-edit hidden">
+										<input
+											type="text"
+											class="location-input w-32 px-3 py-1 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+											value={ person.GetLocation() }
+											placeholder="Enter location"
+										/>
+									</div>
+								</td>
+								<td class="px-6 py-4 whitespace-nowrap text-sm">
+									<button
+										class="edit-btn text-blue-600 hover:text-blue-800 font-medium mr-3"
+										onclick="startEdit(this)"
+									>
+										Edit
+									</button>
+									<button
+										class="save-btn hidden text-green-600 hover:text-green-800 font-medium mr-3"
+										onclick="saveRole(this)"
+									>
+										Save
+									</button>
+									<button
+										class="cancel-btn hidden text-gray-600 hover:text-gray-800 font-medium"
+										onclick="cancelEdit(this)"
+									>
+										Cancel
+									</button>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+
+			<!-- Mobile card view -->
+			<div class="md:hidden space-y-4" id="people-mobile-list">
+				for _, person := range people {
+					<div class="bg-white rounded-lg shadow-md p-4 person-card" data-person-id={ fmt.Sprintf("%d", person.Id) } data-name={ person.Name } data-role={ person.GetRole() } data-employee={ fmt.Sprintf("%t", person.IsEmployee) } data-location={ person.GetLocation() }>
+						<div class="flex justify-between items-start mb-3">
+							<h3 class="text-lg font-semibold text-gray-900">{ person.Name }</h3>
+						</div>
+						<div class="mb-3">
+							<label class="text-xs text-gray-500 uppercase">Role</label>
+							<div class="role-display mt-1">
+								<span class="role-text px-2 py-1 text-sm rounded-full bg-blue-100 text-blue-800">{ person.GetRole() }</span>
+							</div>
+							<div class="role-edit hidden mt-1">
+								<input
+									type="text"
+									class="role-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+									value={ person.GetRole() }
+									list={ fmt.Sprintf("roles-mobile-%d", person.Id) }
+									placeholder="Enter or select role"
+								/>
+								<datalist id={ fmt.Sprintf("roles-mobile-%d", person.Id) }>
+									for _, role := range roles {
+										<option value={ role }></option>
+									}
+								</datalist>
+							</div>
+						</div>
+						<div class="mb-3">
+							<label class="text-xs text-gray-500 uppercase">Employee</label>
+							<div class="employee-display mt-1">
+								if person.IsEmployee {
+									<span class="employee-badge px-2 py-1 text-sm rounded-full bg-green-100 text-green-800">Yes</span>
+								} else {
+									<span class="employee-badge px-2 py-1 text-sm rounded-full bg-gray-100 text-gray-800">No</span>
+								}
+							</div>
+							<div class="employee-edit hidden mt-1">
+								<label class="relative inline-flex items-center cursor-pointer">
+									<input
+										type="checkbox"
+										class="employee-checkbox sr-only peer"
+										if person.IsEmployee {
+											checked
+										}
+									/>
+									<div class="w-11 h-6 bg-gray-200 peer-focus:outline-hidden peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+									<span class="ml-2 text-sm text-gray-700">Employee</span>
+								</label>
+							</div>
+						</div>
+						<div class="mb-3">
+							<label class="text-xs text-gray-500 uppercase">Location</label>
+							<div class="location-display mt-1">
+								<span class="location-text text-sm text-gray-900">{ person.GetLocation() }</span>
+							</div>
+							<div class="location-edit hidden mt-1">
+								<input
+									type="text"
+									class="location-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+									value={ person.GetLocation() }
+									placeholder="Enter location"
+								/>
+							</div>
+						</div>
+						<div class="flex space-x-3">
+							<button
+								class="edit-btn px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+								onclick="startEdit(this)"
+							>
+								Edit
+							</button>
+							<button
+								class="save-btn hidden px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm"
+								onclick="saveRole(this)"
+							>
+								Save
+							</button>
+							<button
+								class="cancel-btn hidden px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm"
+								onclick="cancelEdit(this)"
+							>
+								Cancel
+							</button>
+						</div>
+					</div>
+				}
+			</div>
+
+			@peopleScript()
+		}
+	}
+}
+
+templ peopleScript() {
+	<script>
+		// Filter functionality
+		function filterPeople(searchTerm) {
+			const term = searchTerm.toLowerCase().trim();
+			const clearBtn = document.getElementById('clear-search');
+			const filterCount = document.getElementById('filter-count');
+
+			// Show/hide clear button
+			if (term) {
+				clearBtn.classList.remove('hidden');
+			} else {
+				clearBtn.classList.add('hidden');
+			}
+
+			// Filter table rows
+			const rows = document.querySelectorAll('.person-row');
+			let visibleCount = 0;
+			rows.forEach(row => {
+				const name = (row.dataset.name || '').toLowerCase();
+				const role = (row.dataset.role || '').toLowerCase();
+				if (name.includes(term) || role.includes(term)) {
+					row.classList.remove('hidden');
+					visibleCount++;
+				} else {
+					row.classList.add('hidden');
+				}
+			});
+
+			// Filter mobile cards
+			const cards = document.querySelectorAll('.person-card');
+			cards.forEach(card => {
+				const name = (card.dataset.name || '').toLowerCase();
+				const role = (card.dataset.role || '').toLowerCase();
+				if (name.includes(term) || role.includes(term)) {
+					card.classList.remove('hidden');
+				} else {
+					card.classList.add('hidden');
+				}
+			});
+
+			// Update count
+			const totalCount = rows.length;
+			if (term) {
+				filterCount.textContent = `Showing ${visibleCount} of ${totalCount} people`;
+			} else {
+				filterCount.textContent = '';
+			}
+		}
+
+		function clearSearch() {
+			const searchInput = document.getElementById('search-filter');
+			searchInput.value = '';
+			filterPeople('');
+			searchInput.focus();
+		}
+
+		function startEdit(btn) {
+			const container = btn.closest('[data-person-id]');
+			container.querySelector('.role-display').classList.add('hidden');
+			container.querySelector('.role-edit').classList.remove('hidden');
+			container.querySelector('.employee-display').classList.add('hidden');
+			container.querySelector('.employee-edit').classList.remove('hidden');
+			container.querySelector('.location-display').classList.add('hidden');
+			container.querySelector('.location-edit').classList.remove('hidden');
+			container.querySelector('.edit-btn').classList.add('hidden');
+			container.querySelector('.save-btn').classList.remove('hidden');
+			container.querySelector('.cancel-btn').classList.remove('hidden');
+			container.querySelector('.role-input').focus();
+		}
+
+		function cancelEdit(btn) {
+			const container = btn.closest('[data-person-id]');
+			const originalRole = container.querySelector('.role-text').textContent;
+			const originalEmployee = container.dataset.employee === 'true';
+			const originalLocation = container.dataset.location || '';
+			container.querySelector('.role-input').value = originalRole;
+			container.querySelector('.employee-checkbox').checked = originalEmployee;
+			container.querySelector('.location-input').value = originalLocation;
+			container.querySelector('.role-display').classList.remove('hidden');
+			container.querySelector('.role-edit').classList.add('hidden');
+			container.querySelector('.employee-display').classList.remove('hidden');
+			container.querySelector('.employee-edit').classList.add('hidden');
+			container.querySelector('.location-display').classList.remove('hidden');
+			container.querySelector('.location-edit').classList.add('hidden');
+			container.querySelector('.edit-btn').classList.remove('hidden');
+			container.querySelector('.save-btn').classList.add('hidden');
+			container.querySelector('.cancel-btn').classList.add('hidden');
+		}
+
+		async function saveRole(btn) {
+			const container = btn.closest('[data-person-id]');
+			const personId = container.dataset.personId;
+			const newRole = container.querySelector('.role-input').value.trim();
+			const newIsEmployee = container.querySelector('.employee-checkbox').checked;
+			const newLocation = container.querySelector('.location-input').value.trim();
+
+			if (!newRole) {
+				showMessage('error', 'Role cannot be empty');
+				return;
+			}
+
+			btn.disabled = true;
+			btn.textContent = 'Saving...';
+
+			try {
+				const response = await fetch('/settings/people/' + personId, {
+					method: 'PUT',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({ role: newRole, isEmployee: newIsEmployee, location: newLocation })
+				});
+
+				if (response.ok) {
+					// Update the role display and data attribute
+					container.querySelector('.role-text').textContent = newRole;
+					container.dataset.role = newRole;
+
+					// Update the employee display and data attribute
+					container.dataset.employee = newIsEmployee.toString();
+					const employeeBadge = container.querySelector('.employee-badge');
+					if (newIsEmployee) {
+						employeeBadge.textContent = 'Yes';
+						employeeBadge.className = 'employee-badge px-2 py-1 text-sm rounded-full bg-green-100 text-green-800';
+					} else {
+						employeeBadge.textContent = 'No';
+						employeeBadge.className = 'employee-badge px-2 py-1 text-sm rounded-full bg-gray-100 text-gray-800';
+					}
+
+					// Update the location display and data attribute
+					container.querySelector('.location-text').textContent = newLocation;
+					container.dataset.location = newLocation;
+
+					// Reset to view mode
+					container.querySelector('.role-display').classList.remove('hidden');
+					container.querySelector('.role-edit').classList.add('hidden');
+					container.querySelector('.employee-display').classList.remove('hidden');
+					container.querySelector('.employee-edit').classList.add('hidden');
+					container.querySelector('.location-display').classList.remove('hidden');
+					container.querySelector('.location-edit').classList.add('hidden');
+					container.querySelector('.edit-btn').classList.remove('hidden');
+					container.querySelector('.save-btn').classList.add('hidden');
+					container.querySelector('.cancel-btn').classList.add('hidden');
+
+					showMessage('success', 'Changes saved successfully!');
+
+					// Add new role to datalists if it's not already there
+					addRoleToDatalist(newRole);
+				} else {
+					showMessage('error', 'Failed to save changes. Please try again.');
+				}
+			} catch (error) {
+				console.error('Error saving changes:', error);
+				showMessage('error', 'Failed to save changes. Please try again.');
+			} finally {
+				btn.disabled = false;
+				btn.textContent = 'Save';
+			}
+		}
+
+		function showMessage(type, text) {
+			const container = document.getElementById('message-container');
+			const successMsg = document.getElementById('success-message');
+			const errorMsg = document.getElementById('error-message');
+
+			container.classList.remove('hidden');
+
+			if (type === 'success') {
+				successMsg.classList.remove('hidden');
+				successMsg.querySelector('p').textContent = text;
+				errorMsg.classList.add('hidden');
+			} else {
+				errorMsg.classList.remove('hidden');
+				errorMsg.querySelector('p').textContent = text;
+				successMsg.classList.add('hidden');
+			}
+
+			// Auto-hide after 3 seconds
+			setTimeout(() => {
+				container.classList.add('hidden');
+				successMsg.classList.add('hidden');
+				errorMsg.classList.add('hidden');
+			}, 3000);
+		}
+
+		function addRoleToDatalist(newRole) {
+			// Get all datalists and add the new role if not present
+			const datalists = document.querySelectorAll('datalist');
+			datalists.forEach(datalist => {
+				const options = Array.from(datalist.options).map(opt => opt.value);
+				if (!options.includes(newRole)) {
+					const option = document.createElement('option');
+					option.value = newRole;
+					datalist.appendChild(option);
+				}
+			});
+		}
+	</script>
+}
+
+func toRolesJSON(roles []string) string {
+	jsonBytes, _ := json.Marshal(roles)
+	return string(jsonBytes)
+}

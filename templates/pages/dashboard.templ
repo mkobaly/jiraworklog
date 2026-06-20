@@ -1,0 +1,326 @@
+package pages
+
+import (
+	"fmt"
+	"github.com/mkobaly/jiraworklog/templates/layouts"
+	"github.com/mkobaly/jiraworklog/types"
+)
+
+templ Dashboard(latestMaintenance *types.MaitenanceRatio, missingChargesCount int, mismatchedChargesCount int, peopleMissingRolesCount int, jiraConnected bool, jiraDisplayName string) {
+	@layouts.Base("Dashboard") {
+		<div class="mb-6">
+			<h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
+			<p class="text-gray-600 mt-2">Welcome to Jira Worklog Tracker</p>
+		</div>
+
+		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+			<!-- Maintenance Ratio Widget -->
+			<a href="/reports/maintenance" class="block bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
+				<div class="flex items-center justify-between mb-4">
+					<h2 class="text-lg font-semibold text-gray-900">Maintenance Ratio</h2>
+					if latestMaintenance != nil {
+						<span class="text-sm text-gray-500">{ latestMaintenance.YearMonth }</span>
+					}
+				</div>
+				if latestMaintenance != nil {
+					<div class="space-y-3">
+						<!-- Project Hours -->
+						<div>
+							<div class="flex justify-between text-sm mb-1">
+								<span class="text-gray-600">Project</span>
+								<span class="font-medium text-green-600">{ fmt.Sprintf("%.1f hrs", latestMaintenance.Project) }</span>
+							</div>
+							<div class="w-full bg-gray-200 rounded-full h-2">
+								<div
+									class="bg-green-500 h-2 rounded-full"
+									style={ fmt.Sprintf("width: %.1f%%", maintenancePercent(latestMaintenance.Project, latestMaintenance)) }
+								></div>
+							</div>
+						</div>
+						<!-- After Market Hours -->
+						<div>
+							<div class="flex justify-between text-sm mb-1">
+								<span class="text-gray-600">After Market</span>
+								<span class="font-medium text-blue-600">{ fmt.Sprintf("%.1f hrs", latestMaintenance.AfterMarket) }</span>
+							</div>
+							<div class="w-full bg-gray-200 rounded-full h-2">
+								<div
+									class="bg-blue-500 h-2 rounded-full"
+									style={ fmt.Sprintf("width: %.1f%%", maintenancePercent(latestMaintenance.AfterMarket, latestMaintenance)) }
+								></div>
+							</div>
+						</div>
+						<!-- Ratio Display -->
+						<div class="pt-2 border-t border-gray-100">
+							<div class="flex justify-between items-center">
+								<span class="text-sm text-gray-600">Project Ratio</span>
+								<span class={ "text-xl font-bold", ratioColor(latestMaintenance.Ratio()) }>
+									{ fmt.Sprintf("%.0f%%", latestMaintenance.Ratio()*100) }
+								</span>
+							</div>
+						</div>
+					</div>
+				} else {
+					<p class="text-gray-500 text-sm">No data available</p>
+				}
+			</a>
+
+			<!-- Missing Project Charges Widget -->
+			<a href="/reports/missing-charge" class={ "block bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition", missingChargesBorder(missingChargesCount) }>
+				<div class="flex items-center justify-between mb-4">
+					<h2 class="text-lg font-semibold text-gray-900">Issues Missing Project Charge</h2>
+					<svg class={ "w-6 h-6", missingChargesIconColor(missingChargesCount) } fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						if missingChargesCount == 0 {
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+						} else {
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+						}
+					</svg>
+				</div>
+				<div class="text-center">
+					<span class={ "text-4xl font-bold", missingChargesTextColor(missingChargesCount) }>
+						{ fmt.Sprintf("%d", missingChargesCount) }
+					</span>
+					<p class="text-gray-600 text-sm mt-1">Issues without project charge</p>
+				</div>
+				if missingChargesCount > 0 {
+					<div class="mt-4 text-center">
+						<span class="text-sm text-blue-600 hover:text-blue-800">Click to view and fix →</span>
+					</div>
+				} else {
+					<div class="mt-4 text-center">
+						<span class="text-sm text-green-600">All issues have charges assigned</span>
+					</div>
+				}
+			</a>
+
+			<!-- Mismatched Project Charges Widget -->
+			<a href="/reports/mismatched-charge" class={ "block bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition", mismatchedChargesBorder(mismatchedChargesCount) }>
+				<div class="flex items-center justify-between mb-4">
+					<h2 class="text-lg font-semibold text-gray-900">Mismatched Project Charges</h2>
+					<svg class={ "w-6 h-6", mismatchedChargesIconColor(mismatchedChargesCount) } fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						if mismatchedChargesCount == 0 {
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+						} else {
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+						}
+					</svg>
+				</div>
+				<div class="text-center">
+					<span class={ "text-4xl font-bold", mismatchedChargesTextColor(mismatchedChargesCount) }>
+						{ fmt.Sprintf("%d", mismatchedChargesCount) }
+					</span>
+					<p class="text-gray-600 text-sm mt-1">Child issues with different charge than parent</p>
+				</div>
+				if mismatchedChargesCount > 0 {
+					<div class="mt-4 text-center">
+						<span class="text-sm text-blue-600 hover:text-blue-800">Click to view and fix →</span>
+					</div>
+				} else {
+					<div class="mt-4 text-center">
+						<span class="text-sm text-green-600">All charges match parents</span>
+					</div>
+				}
+			</a>
+
+			<!-- People Missing Roles Widget -->
+			<a href="/settings/people" class={ "block bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition", peopleMissingRolesBorder(peopleMissingRolesCount) }>
+				<div class="flex items-center justify-between mb-4">
+					<h2 class="text-lg font-semibold text-gray-900">People Missing Roles</h2>
+					<svg class={ "w-6 h-6", peopleMissingRolesIconColor(peopleMissingRolesCount) } fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						if peopleMissingRolesCount == 0 {
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+						} else {
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+						}
+					</svg>
+				</div>
+				<div class="text-center">
+					<span class={ "text-4xl font-bold", peopleMissingRolesTextColor(peopleMissingRolesCount) }>
+						{ fmt.Sprintf("%d", peopleMissingRolesCount) }
+					</span>
+					<p class="text-gray-600 text-sm mt-1">People without assigned role</p>
+				</div>
+				if peopleMissingRolesCount > 0 {
+					<div class="mt-4 text-center">
+						<span class="text-sm text-blue-600 hover:text-blue-800">Click to assign roles →</span>
+					</div>
+				} else {
+					<div class="mt-4 text-center">
+						<span class="text-sm text-green-600">All people have roles assigned</span>
+					</div>
+				}
+			</a>
+
+			<!-- Jira Connection Widget -->
+			<div class={ "block bg-white rounded-lg shadow-md p-6", jiraConnectionBorder(jiraConnected) }>
+				<div class="flex items-center justify-between mb-4">
+					<h2 class="text-lg font-semibold text-gray-900">Jira Connection</h2>
+					<svg class={ "w-6 h-6", jiraConnectionIconColor(jiraConnected) } fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						if jiraConnected {
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+						} else {
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+						}
+					</svg>
+				</div>
+				<div class="text-center">
+					if jiraConnected {
+						<p class="text-green-600 font-semibold text-lg">Connected</p>
+						if jiraDisplayName != "" {
+							<p class="text-gray-500 text-sm mt-1">{ jiraDisplayName }</p>
+						}
+					} else {
+						<p class="text-red-600 font-semibold text-lg">Not Connected</p>
+						<p class="text-gray-500 text-sm mt-1">API token may be expired or invalid</p>
+					}
+				</div>
+			</div>
+
+			<!-- Quick Links Widget -->
+			<div class="bg-white rounded-lg shadow-md p-6">
+				<h2 class="text-lg font-semibold text-gray-900 mb-4">Quick Links</h2>
+				<div class="space-y-2">
+					<a href="/reports/project-hours" class="flex items-center text-sm text-gray-600 hover:text-blue-600 py-1">
+						<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+						</svg>
+						Project Charge Hours
+					</a>
+					<a href="/reports/weekly-hours" class="flex items-center text-sm text-gray-600 hover:text-blue-600 py-1">
+						<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+						</svg>
+						Weekly Hours
+					</a>
+					<a href="/reports/customer-bugs" class="flex items-center text-sm text-gray-600 hover:text-blue-600 py-1">
+						<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+						</svg>
+						Customer Bugs
+					</a>
+					<a href="/settings/people" class="flex items-center text-sm text-gray-600 hover:text-blue-600 py-1">
+						<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+						</svg>
+						People Settings
+					</a>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+// Helper functions for the dashboard
+
+func maintenancePercent(value float32, mr *types.MaitenanceRatio) float64 {
+	total := mr.Project + mr.AfterMarket + mr.NonRecoverable + mr.Other
+	if total == 0 {
+		return 0
+	}
+	return float64(value / total * 100)
+}
+
+func ratioColor(ratio float32) string {
+	if ratio >= 0.6 {
+		return "text-green-600"
+	} else if ratio >= 0.4 {
+		return "text-yellow-600"
+	}
+	return "text-red-600"
+}
+
+func missingChargesBorder(count int) string {
+	if count == 0 {
+		return "border-l-4 border-green-500"
+	} else if count <= 5 {
+		return "border-l-4 border-yellow-500"
+	}
+	return "border-l-4 border-red-500"
+}
+
+func missingChargesIconColor(count int) string {
+	if count == 0 {
+		return "text-green-500"
+	} else if count <= 5 {
+		return "text-yellow-500"
+	}
+	return "text-red-500"
+}
+
+func missingChargesTextColor(count int) string {
+	if count == 0 {
+		return "text-green-600"
+	} else if count <= 5 {
+		return "text-yellow-600"
+	}
+	return "text-red-600"
+}
+
+func peopleMissingRolesBorder(count int) string {
+	if count == 0 {
+		return "border-l-4 border-green-500"
+	} else if count <= 3 {
+		return "border-l-4 border-yellow-500"
+	}
+	return "border-l-4 border-red-500"
+}
+
+func peopleMissingRolesIconColor(count int) string {
+	if count == 0 {
+		return "text-green-500"
+	} else if count <= 3 {
+		return "text-yellow-500"
+	}
+	return "text-red-500"
+}
+
+func peopleMissingRolesTextColor(count int) string {
+	if count == 0 {
+		return "text-green-600"
+	} else if count <= 3 {
+		return "text-yellow-600"
+	}
+	return "text-red-600"
+}
+
+func mismatchedChargesBorder(count int) string {
+	if count == 0 {
+		return "border-l-4 border-green-500"
+	} else if count <= 5 {
+		return "border-l-4 border-yellow-500"
+	}
+	return "border-l-4 border-orange-500"
+}
+
+func mismatchedChargesIconColor(count int) string {
+	if count == 0 {
+		return "text-green-500"
+	} else if count <= 5 {
+		return "text-yellow-500"
+	}
+	return "text-orange-500"
+}
+
+func mismatchedChargesTextColor(count int) string {
+	if count == 0 {
+		return "text-green-600"
+	} else if count <= 5 {
+		return "text-yellow-600"
+	}
+	return "text-orange-600"
+}
+
+func jiraConnectionBorder(connected bool) string {
+	if connected {
+		return "border-l-4 border-green-500"
+	}
+	return "border-l-4 border-red-500"
+}
+
+func jiraConnectionIconColor(connected bool) string {
+	if connected {
+		return "text-green-500"
+	}
+	return "text-red-500"
+}
