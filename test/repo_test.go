@@ -437,8 +437,11 @@ func TestTimesheetHours(t *testing.T) {
 	}
 
 	// A recent, completed 3-month window: Jan–Mar 2026.
-	from := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
-	to := time.Date(2026, 4, 1, 0, 0, 0, 0, time.UTC) // exclusive upper bound
+	// Use America/New_York so the bounds align with how the SQL buckets months.
+	loc, err := time.LoadLocation("America/New_York")
+	require.NoError(t, err)
+	from := time.Date(2026, 1, 1, 0, 0, 0, 0, loc)
+	to := time.Date(2026, 4, 1, 0, 0, 0, 0, loc) // exclusive upper bound
 
 	rows, err := repo.TimesheetHours([]string{"dev"}, from, to)
 	require.NoError(t, err)
