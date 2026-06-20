@@ -131,8 +131,8 @@ func (s *Postgres) TimesheetHours(roles []string, startDate, endDate time.Time) 
 		FROM worklog w
 		JOIN issue i ON w.issueid = i.id
 		JOIN people p ON w.author = p.name
-		WHERE w.date >= ($2 AT TIME ZONE 'UTC')
-		AND w.date < ($3 AT TIME ZONE 'UTC')
+		WHERE w.date >= $2
+		AND w.date < $3
 		AND p.role = ANY($1)
 		GROUP BY p.role, w.author, i.projectcharge, yearmonth
 		ORDER BY w.author, i.projectcharge, yearmonth;`
@@ -964,5 +964,5 @@ git commit -m "feat(timesheets): wire up handler, route, and nav"
 
 - **Spec coverage:** Tab/nav (Task 5) ✓; From/To month pickers (Task 4 + Task 2) ✓; current month not selectable (`max` attr Task 4 + `defaultAndClampRange` clamp Task 2) ✓; default = previous month only (Task 2/Task 5) ✓; Roles filter (Task 4/Task 5) ✓; Author → grouped by raw project charge → per-month columns (Task 3/Task 4) ✓; per-charge Total column (Task 3/Task 4) ✓; author subtotal row (Task 3/Task 4) ✓; ±10% green/red vs previous month, subtle (Task 3 `trendClass` `bg-green-50`/`bg-red-50` + Task 4) ✓; testing (Task 1 integration, Tasks 2–3 unit) ✓.
 - **Type consistency:** `TimesheetHours` (db tags `role/author/projectcharge/yearmonth/hours`), `TimesheetChargeRow` (`ProjectCharge/MonthHours/Total`), `TimesheetAuthor` (`Author/Role/Charges/MonthTotals/GrandTotal`), and `pages.Timesheets(...)` signature are used identically across Tasks 1, 3, 4, 5.
-- **Boundary consistency:** repo SQL uses `w.date < $3` (exclusive); `monthRangeToTimes` returns first-day-of-next-month as the exclusive end — they match. Both bounds are built in `America/New_York`, matching the SQL's NY month bucketing, so no hours leak across a month edge.
+- **Boundary consistency:** repo SQL compares the `timestamptz` column `w.date` directly against the `$2`/`$3` instants (no `AT TIME ZONE` cast — that would make the comparison depend on the DB session timezone). `w.date < $3` is exclusive; `monthRangeToTimes` returns first-day-of-next-month as the exclusive end — they match. Both bounds are built in `America/New_York`, matching the SQL's NY month bucketing, so no hours leak across a month edge regardless of session config.
 ```
