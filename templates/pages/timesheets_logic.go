@@ -94,10 +94,11 @@ func pivotTimesheet(data []types.TimesheetHours, months []string) []TimesheetAut
 
 // trendClass returns the Tailwind background class for a month cell based on its
 // percent change from the previous month. Neutral (empty string) on the first
-// column or when there is no prior-month baseline (prev == 0). Green when up
-// more than 10%, red when down more than 10%.
+// column, when there is no prior-month baseline (prev == 0), or when the
+// current cell has no hours (cur == 0) — blank/no-hours cells are never tinted.
+// Green when up more than 10%, red when down more than 10%.
 func trendClass(cur, prev float64, isFirst bool) string {
-	if isFirst || prev == 0 {
+	if isFirst || prev == 0 || cur == 0 {
 		return ""
 	}
 	pct := (cur - prev) / prev

@@ -53,4 +53,6 @@ func TestTrendClass(t *testing.T) {
 	require.Equal(t, "bg-green-50", trendClass(120, 100, false))
 	// More than -10% is red.
 	require.Equal(t, "bg-red-50", trendClass(80, 100, false))
+	// A blank/no-hours cell (cur == 0) is neutral, never tinted.
+	require.Equal(t, "", trendClass(0, 100, false))
 }
