@@ -50,9 +50,13 @@ func TestTimesheetHours(t *testing.T) {
 		t.Fatal()
 	}
 
-	// A recent, completed 3-month window: Jan–Mar 2026.
-	from := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
-	to := time.Date(2026, 4, 1, 0, 0, 0, 0, time.UTC) // exclusive upper bound
+	// A recent, completed 3-month window: Jan–Mar 2026. Bounds are built in
+	// America/New_York so they align exactly with the query's NY month bucketing
+	// (this mirrors how the handler calls the method via monthRangeToTimes).
+	loc, err := time.LoadLocation("America/New_York")
+	require.NoError(t, err)
+	from := time.Date(2026, 1, 1, 0, 0, 0, 0, loc)
+	to := time.Date(2026, 4, 1, 0, 0, 0, 0, loc) // exclusive upper bound
 
 	rows, err := repo.TimesheetHours([]string{"dev"}, from, to)
 	require.NoError(t, err)
@@ -159,7 +163,7 @@ git commit -m "feat(timesheets): add TimesheetHours type and repo method"
   - `previousMonth(now time.Time) string` → `YYYY-MM` of the month before `now`'s month.
   - `defaultAndClampRange(from, to string, now time.Time) (string, string)` → fills blanks/invalids with `previousMonth(now)`, clamps any month later than `previousMonth(now)` down to it, and ensures `from <= to`.
   - `enumerateMonths(from, to string) []string` → ordered inclusive list of `YYYY-MM` from `from` to `to`.
-  - `monthRangeToTimes(from, to string) (time.Time, time.Time)` → start = first day of `from` (UTC), end = first day of the month after `to` (UTC, exclusive).
+  - `monthRangeToTimes(from, to string) (time.Time, time.Time)` → start = first day of `from`, end = first day of the month after `to` (exclusive). Both instants are built in `America/New_York` so the UTC-timestamp filter in the SQL aligns exactly with the query's NY month bucketing (no boundary leakage).
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -228,15 +232,18 @@ func TestEnumerateMonths(t *testing.T) {
 }
 
 func TestMonthRangeToTimes(t *testing.T) {
+	loc, err := time.LoadLocation("America/New_York")
+	require.NoError(t, err)
+
 	start, end := monthRangeToTimes("2026-01", "2026-05")
-	require.Equal(t, time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC), start)
-	// Exclusive upper bound is the first day of the month AFTER May => June 1.
-	require.Equal(t, time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC), end)
+	require.True(t, start.Equal(time.Date(2026, 1, 1, 0, 0, 0, 0, loc)))
+	// Exclusive upper bound is the first day of the month AFTER May => June 1 (NY).
+	require.True(t, end.Equal(time.Date(2026, 6, 1, 0, 0, 0, 0, loc)))
 
 	// To in December rolls the exclusive bound into the next January.
 	start, end = monthRangeToTimes("2026-12", "2026-12")
-	require.Equal(t, time.Date(2026, 12, 1, 0, 0, 0, 0, time.UTC), start)
-	require.Equal(t, time.Date(2027, 1, 1, 0, 0, 0, 0, time.UTC), end)
+	require.True(t, start.Equal(time.Date(2026, 12, 1, 0, 0, 0, 0, loc)))
+	require.True(t, end.Equal(time.Date(2027, 1, 1, 0, 0, 0, 0, loc)))
 }
 ```
 
@@ -313,14 +320,22 @@ func enumerateMonths(from, to string) []string {
 	return months
 }
 
-// monthRangeToTimes converts a YYYY-MM range into UTC time bounds for querying:
+// monthRangeToTimes converts a YYYY-MM range into time bounds for querying:
 // start is the first day of the from month; end is the first day of the month
 // AFTER the to month (exclusive upper bound covering all of the to month).
+// Both instants are built in America/New_York so they align exactly with the
+// query's NY month bucketing — otherwise worklogs in the midnight-to-dawn UTC
+// window at a month edge would leak into the adjacent NY month. If the zone
+// fails to load, fall back to UTC.
 func monthRangeToTimes(from, to string) (time.Time, time.Time) {
+	loc, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		loc = time.UTC
+	}
 	f, _ := time.Parse("2006-01", from)
 	t, _ := time.Parse("2006-01", to)
-	start := time.Date(f.Year(), f.Month(), 1, 0, 0, 0, 0, time.UTC)
-	end := time.Date(t.Year(), t.Month()+1, 1, 0, 0, 0, 0, time.UTC)
+	start := time.Date(f.Year(), f.Month(), 1, 0, 0, 0, 0, loc)
+	end := time.Date(t.Year(), t.Month()+1, 1, 0, 0, 0, 0, loc)
 	return start, end
 }
 ```
@@ -944,5 +959,5 @@ git commit -m "feat(timesheets): wire up handler, route, and nav"
 
 - **Spec coverage:** Tab/nav (Task 5) ✓; From/To month pickers (Task 4 + Task 2) ✓; current month not selectable (`max` attr Task 4 + `defaultAndClampRange` clamp Task 2) ✓; default = previous month only (Task 2/Task 5) ✓; Roles filter (Task 4/Task 5) ✓; Author → grouped by raw project charge → per-month columns (Task 3/Task 4) ✓; per-charge Total column (Task 3/Task 4) ✓; author subtotal row (Task 3/Task 4) ✓; ±10% green/red vs previous month, subtle (Task 3 `trendClass` `bg-green-50`/`bg-red-50` + Task 4) ✓; testing (Task 1 integration, Tasks 2–3 unit) ✓.
 - **Type consistency:** `TimesheetHours` (db tags `role/author/projectcharge/yearmonth/hours`), `TimesheetChargeRow` (`ProjectCharge/MonthHours/Total`), `TimesheetAuthor` (`Author/Role/Charges/MonthTotals/GrandTotal`), and `pages.Timesheets(...)` signature are used identically across Tasks 1, 3, 4, 5.
-- **Boundary consistency:** repo SQL uses `w.date < $3` (exclusive); `monthRangeToTimes` returns first-day-of-next-month as the exclusive end — they match.
+- **Boundary consistency:** repo SQL uses `w.date < $3` (exclusive); `monthRangeToTimes` returns first-day-of-next-month as the exclusive end — they match. Both bounds are built in `America/New_York`, matching the SQL's NY month bucketing, so no hours leak across a month edge.
 ```
