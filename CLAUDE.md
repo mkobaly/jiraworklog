@@ -2,21 +2,26 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Build Commands
+## Building — ALWAYS use ./build.sh
+
+**Rule: to build or verify a change, ALWAYS run `./build.sh`. Do NOT run `go build`, `templ generate`, or `go run` directly for this purpose.**
+
+`./build.sh` is the single source of truth for building: it runs `templ generate` (regenerating the `_templ.go` files from `.templ` templates), compiles the Tailwind CSS, and builds both the Linux and Windows binaries. Running `go build` on its own can compile against stale generated templates and silently miss `.templ` changes; `build.sh` prevents that.
 
 ```bash
-
-# Build for both platforms and generates go code from templ templates
+# Build everything (templ generate + CSS + Linux/Windows binaries). This is THE build command.
 ./build.sh
 
-# Run with verbose logging
-./bin/jiraworklog -v
-
-# Run with custom config
-./bin/jiraworklog -c /path/to/config.yaml
+# Run the built binary
+./bin/jiraworklog -v                       # verbose logging
+./bin/jiraworklog -c /path/to/config.yaml  # custom config
 ```
 
-## Development Workflow
+Because `build.sh` cd's into the repo root and runs a one-shot `templ generate`, it avoids the templ caching pitfalls that can occur when mixing `templ generate` with `templ generate --watch`. Prefer `build.sh` over invoking the tools individually.
+
+## Development Workflow (optional, human hot-reload only)
+
+For interactive iteration a developer may run templ in watch mode and `go run` directly. This is a convenience loop for a human, **not** the build/verify path — Claude should still use `./build.sh` to build and verify.
 
 ```bash
 # Terminal 1: Watch templ files and auto-regenerate
@@ -25,8 +30,6 @@ templ generate --watch
 # Terminal 2: Run the application
 go run ./cmd/jiraworklog -v
 ```
-
-After modifying `.templ` files, the generated `_templ.go` files must be regenerated.
 
 ## Running Tests
 

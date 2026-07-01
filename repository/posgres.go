@@ -449,9 +449,9 @@ func (s *Postgres) LastSeenIssues(threshold time.Duration) ([]int, error) {
 	cutoff := time.Now().Add(-threshold)
 	result := []int{}
 	err := s.DB.Select(&result, `	
-		SELECT id 
+		SELECT id
 		FROM issue
-		WHERE dateUpdated < $1
+		WHERE (dateUpdated IS NULL OR dateUpdated < $1)
 		and updatedate >= now() - INTERVAL '3 months'
 		LIMIT 200;`, cutoff)
 	return result, err
