@@ -227,21 +227,37 @@ func (j *JiraSyncIssuesJob) processDeletes(threshold time.Duration) error {
 	if err != nil {
 		return errors.Wrap(err, "error fetching last seen jira issues")
 	}
-	slog.Info("processing potentially deleted issues", slog.Int("cnt", len(lastSeenIssues)))
+	slog.Warn("processing potentially deleted issues", slog.Int("cnt", len(lastSeenIssues)))
 	for _, id := range lastSeenIssues {
 		_, err := j.jira.Issue(strconv.Itoa(id))
-		if errors.Is(err, jiraworklog.ErrIssueNotFound) {
-			err = j.repo.DeleteIssue(id)
-			if err != nil {
-				slog.Error("error deleting issue", slog.Int("id", id))
+		if err != nil {
+			slog.Warn("jira fetch issue error for deletion check", slog.Int("id", id), slog.Any("err", err))
+			if errors.Is(err, jiraworklog.ErrIssueNotFound) {
+				slog.Warn("deleting issue", slog.Int("id", id))
+				err = j.repo.DeleteIssue(id)
+				if err != nil {
+					slog.Error("error deleting issue", slog.Int("id", id))
+				}
 			}
-		}
-		if err == nil {
+		} else {
 			err = j.repo.UpdateIssueLastSeen(id)
 			if err != nil {
 				slog.Error("error updating last seen for issue", slog.Int("id", id))
 			}
 		}
+		// if errors.Is(err, jiraworklog.ErrIssueNotFound) {
+		// 	slog.Warn("deleting issue", slog.Int("id", id))
+		// 	err = j.repo.DeleteIssue(id)
+		// 	if err != nil {
+		// 		slog.Error("error deleting issue", slog.Int("id", id))
+		// 	}
+		// }
+		// if err == nil {
+		// 	err = j.repo.UpdateIssueLastSeen(id)
+		// 	if err != nil {
+		// 		slog.Error("error updating last seen for issue", slog.Int("id", id))
+		// 	}
+		// }
 	}
 	return nil
 }
